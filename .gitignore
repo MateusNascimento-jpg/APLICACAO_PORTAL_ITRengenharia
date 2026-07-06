@@ -9,4 +9,10 @@ node_modules/
 npm-debug.log*
 
 # Pastas do VS Code (opcional, mas recomendado)
-.vscode/ 
+.vscode/
+
+# Scripts de diagnóstico/teste (rascunhos de desenvolvimento, contêm dados internos)
+Diagnosticos/
+
+# Arquivo de workspace do VS Code
+*.code-workspace
