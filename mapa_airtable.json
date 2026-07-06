@@ -1,0 +1,2966 @@
+{
+  "gerado_em": "2026-06-30T13:48:19.058Z",
+  "base_id": "(omitido)",
+  "tabelas": {
+    "Amostras": {
+      "id": "tblWIRa4ZXc4Z8Qsq",
+      "registros_lidos": 800,
+      "schema_oficial": [
+        {
+          "nome": "ID Amostra",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Nome Amostra",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Ensaios",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Last Modified Time",
+          "tipo": "lastModifiedTime"
+        },
+        {
+          "nome": "Quantidade",
+          "tipo": "number"
+        },
+        {
+          "nome": "Unidade Quantidade",
+          "tipo": "multipleSelects"
+        },
+        {
+          "nome": "Tipo de Amostra",
+          "tipo": "multipleSelects"
+        },
+        {
+          "nome": "Data de Chegada",
+          "tipo": "date"
+        },
+        {
+          "nome": "Cliente",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Total de Trabalhos",
+          "tipo": "count"
+        },
+        {
+          "nome": "Trabalhos com Mesmo ID Amostra",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Última Atualização",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Dias Desde a Chegada",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Caracterização Amostra",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "Resumo Contato Cliente",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "Ensaios2",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "ID Externo",
+          "tipo": "barcode"
+        },
+        {
+          "nome": "Barcode",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "ID Ensaio (from Ensaios 2)",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Novos Trabalhos 2",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Observações",
+          "tipo": "multilineText"
+        },
+        {
+          "nome": "Fotos",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Teste de inserção",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Dados Brutos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Record_id_Amostras",
+          "tipo": "formula"
+        }
+      ],
+      "campos": {
+        "Caracterização Amostra": {
+          "tipos": {
+            "objeto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}"
+          ]
+        },
+        "Cliente": {
+          "tipos": {
+            "array<link(rec)>[1]": 794
+          },
+          "preenchidos": 794,
+          "total": 800,
+          "faltando": 6,
+          "exemplos": [
+            "[rec7EbxLFbPao1og2]",
+            "[rectEDZrt5unCtR4Z]",
+            "[recQMZxpPMzGyvAp2]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]"
+          ]
+        },
+        "Data de Chegada": {
+          "tipos": {
+            "data(ISO)": 792
+          },
+          "preenchidos": 792,
+          "total": 800,
+          "faltando": 8,
+          "exemplos": [
+            "2026-03-10",
+            "2025-10-20",
+            "2026-06-16",
+            "2025-10-01",
+            "2025-10-01"
+          ]
+        },
+        "Dias Desde a Chegada": {
+          "tipos": {
+            "numero": 792,
+            "objeto": 8
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "112",
+            "253",
+            "14",
+            "272",
+            "272"
+          ]
+        },
+        "Ensaios": {
+          "tipos": {
+            "array<link(rec)>[2]": 25,
+            "array<link(rec)>[1]": 4,
+            "array<link(rec)>[3]": 5,
+            "array<link(rec)>[5]": 1,
+            "array<link(rec)>[6]": 3,
+            "array<link(rec)>[4]": 1
+          },
+          "preenchidos": 39,
+          "total": 800,
+          "faltando": 761,
+          "exemplos": [
+            "[recbSCiH0F5bdBL50 | recG8OOLKkHeqgGRe]",
+            "[recqrQtxcEEwm0nSi | rec8Xs6f1nkjg6uTW]",
+            "[recqrQtxcEEwm0nSi | rec8Xs6f1nkjg6uTW]",
+            "[rec7icUfTfCvCRvG8]",
+            "[recnmduqzPkd7iQLg | rec3gcepJpajQk21U | recTa9H1DOWzWDTET]"
+          ]
+        },
+        "Ensaios2": {
+          "tipos": {
+            "array<texto>[1]": 312,
+            "array<texto>[2]": 193,
+            "array<texto>[5]": 31,
+            "array(vazio)": 39,
+            "array<texto>[3]": 112,
+            "array<texto>[6]": 7,
+            "array<texto>[4]": 87,
+            "array<vazio>[2]": 2,
+            "array<texto>[7]": 14,
+            "array<texto>[8]": 3
+          },
+          "preenchidos": 761,
+          "total": 800,
+          "faltando": 39,
+          "exemplos": [
+            "[MR-I]",
+            "[DP-IND, MR-IND | Expansão Edométrica]",
+            "[Durabilidade de Agregados, Granulometria - Agregados, Massa específica - Agregados]",
+            "[MR-I | DP-I]",
+            "[MR-I | DP-I]"
+          ]
+        },
+        "Fotos": {
+          "tipos": {
+            "array<anexo>[3]": 17,
+            "array<anexo>[2]": 20,
+            "array<anexo>[1]": 14,
+            "array<anexo>[4]": 2
+          },
+          "preenchidos": 53,
+          "total": 800,
+          "faltando": 747,
+          "exemplos": [
+            "[ANEXO{nome:\"TimePhoto_20251001_163008[1].jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_163016[1].jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_162834.jpg\", tipo:\"image/jpeg\", url:(omitida)}]",
+            "[ANEXO{nome:\"TimePhoto_20251001_163851.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_163908.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_162801.jpg\", tipo:\"image/jpeg\", url:(omitida)}]",
+            "[ANEXO{nome:\"TimePhoto_20251001_163525.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_163541.jpg\", tipo:\"image/jpeg\", url:(omitida)}]",
+            "[ANEXO{nome:\"TimePhoto_20251001_162812.jpg\", tipo:\"image/jpeg\", url:(omitida)}]",
+            "[ANEXO{nome:\"TimePhoto_20251001_163625.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_163723.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20251001_162839.jpg\", tipo:\"image/jpeg\", url:(omitida)}]"
+          ]
+        },
+        "ID Amostra": {
+          "tipos": {
+            "texto": 799
+          },
+          "preenchidos": 799,
+          "total": 800,
+          "faltando": 1,
+          "exemplos": [
+            "KM 115+000 - 3% - 28D",
+            "REG 2102 (CAI-TPS-TAC-G31-089)",
+            "Pó de Brita - Pedreira Britago",
+            "REG 2005 (ST-TPS-TAC-C31-089) - 50% de Bica",
+            "REG 2034 (ST-TPS-TAC-C31-096) - 60% de Bica"
+          ]
+        },
+        "ID Ensaio (from Ensaios 2)": {
+          "tipos": {
+            "array<texto>[2]": 25,
+            "array<texto>[1]": 4,
+            "array<texto>[3]": 5,
+            "array<texto>[5]": 1,
+            "array<texto>[6]": 3,
+            "array<texto>[4]": 1
+          },
+          "preenchidos": 39,
+          "total": 800,
+          "faltando": 761,
+          "exemplos": [
+            "[DRX | Lâmina Petrográfica]",
+            "[MR-I | DP-I]",
+            "[MR-I | DP-I]",
+            "[Microdeval]",
+            "[Triaxial - CU | Sucção | Permeabilidade]"
+          ]
+        },
+        "Last Modified Time": {
+          "tipos": {
+            "data(ISO)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "2026-03-10T17:45:02.000Z",
+            "2026-06-16T16:55:43.000Z",
+            "2026-06-16T18:09:56.000Z",
+            "2026-06-16T16:55:43.000Z",
+            "2026-06-16T16:55:43.000Z"
+          ]
+        },
+        "Nome Amostra": {
+          "tipos": {
+            "texto": 385
+          },
+          "preenchidos": 385,
+          "total": 800,
+          "faltando": 415,
+          "exemplos": [
+            "KM 115+000 - 3% - 28D",
+            "CAI-TPS-TAC-G31-089",
+            "Pó de Brita - Pedreira Britago",
+            "SH-TAC-TNM-C31-007",
+            "CAI-TPS-TAC-G31-067"
+          ]
+        },
+        "Novos Trabalhos 2": {
+          "tipos": {
+            "array<link(rec)>[1]": 181,
+            "array<link(rec)>[3]": 145,
+            "array<link(rec)>[2]": 202,
+            "array<link(rec)>[6]": 30,
+            "array<link(rec)>[8]": 17,
+            "array<link(rec)>[4]": 96,
+            "array<link(rec)>[7]": 23,
+            "array<link(rec)>[5]": 49,
+            "array<link(rec)>[9]": 3,
+            "array<link(rec)>[11]": 1
+          },
+          "preenchidos": 747,
+          "total": 800,
+          "faltando": 53,
+          "exemplos": [
+            "[rec2848UL83I1MxRs]",
+            "[recrNG2mA7bNBty0m | recDxfq5pDg4I0Flh | recHuN8AgZqBcYJvz]",
+            "[recCWCh1YOrcBpd6A | recuvRm52e3WBrx8y | recOfkHRnRMyjFEe5]",
+            "[recZMOlFNXkDcevrQ | recOJP7cyvvmDfayf]",
+            "[recSSF9KlXAHu9ac5 | reciNG1me0gfr6BwU]"
+          ]
+        },
+        "Observações": {
+          "tipos": {
+            "texto": 43
+          },
+          "preenchidos": 43,
+          "total": 800,
+          "faltando": 757,
+          "exemplos": [
+            "2 - 2,3",
+            "7,00 - 8,00",
+            "0,06 à 5 m",
+            "0,06 à 7 m",
+            " 2,00 - 2,30\n"
+          ]
+        },
+        "Ordem de Serviço": {
+          "tipos": {
+            "array<link(rec)>[1]": 795
+          },
+          "preenchidos": 795,
+          "total": 800,
+          "faltando": 5,
+          "exemplos": [
+            "[rec4r2jzrRN6RAOlx]",
+            "[recqFFEHL4nEOfq2b]",
+            "[recxreeG26nm54eLB]",
+            "[recqFFEHL4nEOfq2b]",
+            "[recqFFEHL4nEOfq2b]"
+          ]
+        },
+        "Quantidade": {
+          "tipos": {
+            "numero": 434
+          },
+          "preenchidos": 434,
+          "total": 800,
+          "faltando": 366,
+          "exemplos": [
+            "60",
+            "1",
+            "1",
+            "30",
+            "1"
+          ]
+        },
+        "Record_id_Amostras": {
+          "tipos": {
+            "link(rec)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "rec055AOegZU3xCwU",
+            "rec07UGHi3gTBYc9b",
+            "rec08yYICxqQXEElt",
+            "rec0BM5pTJQozRNI0",
+            "rec0EJNGGn3R4SetK"
+          ]
+        },
+        "Resumo Contato Cliente": {
+          "tipos": {
+            "objeto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}"
+          ]
+        },
+        "Tipo de Amostra": {
+          "tipos": {
+            "array<texto>[2]": 38,
+            "array<texto>[1]": 537,
+            "array<texto>[3]": 4
+          },
+          "preenchidos": 579,
+          "total": 800,
+          "faltando": 221,
+          "exemplos": [
+            "[Saco Plástico - Grande | Bloco Indeformado]",
+            "[Agregado]",
+            "[Saco Plástico - Grande]",
+            "[Saco Plástico - Grande]",
+            "[Tubo Shelby]"
+          ]
+        },
+        "Total de Trabalhos": {
+          "tipos": {
+            "numero": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "1",
+            "3",
+            "3",
+            "2",
+            "2"
+          ]
+        },
+        "Trabalhos com Mesmo ID Amostra": {
+          "tipos": {
+            "array<link(rec)>[1]": 306,
+            "array<link(rec)>[2]": 194,
+            "array<link(rec)>[5]": 52,
+            "array<link(rec)>[3]": 107,
+            "array<link(rec)>[6]": 17,
+            "array<link(rec)>[4]": 66,
+            "array<link(rec)>[8]": 4,
+            "array<link(rec)>[7]": 14,
+            "array<link(rec)>[9]": 1
+          },
+          "preenchidos": 761,
+          "total": 800,
+          "faltando": 39,
+          "exemplos": [
+            "[recL4Jt6sqCdyeTwi]",
+            "[recpm3gw3crcsFF9K | recuENaDqeBQECBpO]",
+            "[recP6vNXd4FVVDFg9]",
+            "[recz1ceNUombTcZ1k | recG2LN1q39Aodrkz]",
+            "[reczUeBTuKsrUMZpV | recmy8QK5CE2cXrW9]"
+          ]
+        },
+        "Unidade Quantidade": {
+          "tipos": {
+            "array<texto>[1]": 483,
+            "array<texto>[2]": 7
+          },
+          "preenchidos": 490,
+          "total": 800,
+          "faltando": 310,
+          "exemplos": [
+            "[kg]",
+            "[Saco]",
+            "[Tubo]",
+            "[Bloco]",
+            "[kg]"
+          ]
+        },
+        "Última Atualização": {
+          "tipos": {
+            "data(ISO)": 761
+          },
+          "preenchidos": 761,
+          "total": 800,
+          "faltando": 39,
+          "exemplos": [
+            "2026-03-10",
+            "2025-10-21",
+            "2026-06-16",
+            "2025-10-01",
+            "2025-10-01"
+          ]
+        }
+      }
+    },
+    "Clientes": {
+      "id": "tblkQxQ6q7cBKXZ3C",
+      "registros_lidos": 20,
+      "schema_oficial": [
+        {
+          "nome": "ID Cliente",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Nome Cliente",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "CNPJ",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Info Contato",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Amostras",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Contagem Amostras",
+          "tipo": "count"
+        },
+        {
+          "nome": "Data de Entrega Mais Recente",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Jobs",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Novos Trabalhos",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Novos Trabalhos 2",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Record_id_Clientes",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Ensaios",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Nome do Ensaio (from Ensaios)",
+          "tipo": "multipleLookupValues"
+        }
+      ],
+      "campos": {
+        "Amostras": {
+          "tipos": {
+            "array<link(rec)>[66]": 1,
+            "array<link(rec)>[3]": 1,
+            "array<link(rec)>[27]": 1,
+            "array<link(rec)>[20]": 1,
+            "array<link(rec)>[1]": 5,
+            "array<link(rec)>[32]": 1,
+            "array<link(rec)>[19]": 1,
+            "array<link(rec)>[2]": 2,
+            "array<link(rec)>[26]": 2,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[4]": 2,
+            "array<link(rec)>[9]": 1,
+            "array<link(rec)>[576]": 1
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "[reclspFnscH0tIX5Z | recBy7JBDS0HZX6ni | recLdBe6jjmHHYah1 | recOk0YBpnoFJxaNx | recR6jemb9jQaEluV | recDWcG6GFovIWBDZ | recghhzKC3MLNkjtb | recnqtNdNyR0XhRLK | recq8LvHQ0cUDce9E | reczaPUCwanwJKQqE | recHz4FsmNmn9njKz | recDj6ZCeW5wa9IcA | recEcjD8Yo9i2DlPs | recpjMZOLuV4XLAxI | rectryCsUP5Q4m0BD | recYEGSgK5kt94xRm | recvEd8dGxbtRD7jZ | rec6F9CUcyt2JzdpB | recBx3UprMUh0Jx1v | rec60dtzFs8oZSc2g | reczb9vWOGg2YJ9Jf | recMpI1fEAAs9VdY6 | recl8iMo4mhqI41B4 | recXJYGRv310l1hmU | recFbMsYylktOsosr | recKDuy7lKteeP8OW | recqFSFzVFpN0ybgh | rechWJQpHsS4Uv1Ap | recQbgu56zj83hQud | rec3ZgrhHWCwAletP | recTFCFk7Vf7mfNpx | recA0h6tbCu3rS0WU | recAsgnmkZR1gaEqi | rec0vA2nNI2SPUXJK | recZ5YDendlWgJ8t1 | rec5aWLtWIEuWBSui | rec8fCrvEUnqreiH3 | recYCediRoV6j94pG | recWQCMZRhnahtiL0 | recBqr2h46r7KivjI | reclKKyhv1hvZZmI2 | rectCQs5oW1FjGSAk | recpQsbtYlqVxcIML | recekTL5DIy9YnaCP | rec3ygG7tuwKQEtMI | recyRJs1rCQ12RFMo | recl8HrNDcuZ3tYqU | rechDl2yGWhTufjGr | recvdhrviB6EONQyc | recd9FPJObH1N6hxw | recGLAbrZFjtJt06V | reckBjQ52DlqcB2j9 | rec6s9G59kzFKZKYb | recMKvlbRUmtF6YB9 | rec9lgX7u1V3WHUZA | recyGvDTfjMDwAmlR | recZeXYND5skqs48l | recwf3k9NUsNfaGwM | recIu9H5honpf2ep5 | recMQofAVPwBC0x0y | recGjXFSTpiMjtbPX | recsUC1QjNSq0Tqtx | recFLwjhdHjXGkYel | recctgV4i8bwBpkP1 | recXBt08zRUutVFZu | recrMdxGsGiXqNmUo]",
+            "[recZ31wVM0pzrXYHy | reckQIqKMa4oo0uiT | recYnK0CxqQMLJhy0]",
+            "[recRMolOJzZexygdz | recXTrb3ew6ae1l4p | recC6WhCXDPFY3gR9 | recziWd73YFVuklIv | recM5K5JWJjZB4Suo | recKh1aWz1HUZqciV | recKem2lkJ9ji299y | recSLxZkMvVGOjFoe | recKhA7I0CbT2HH7Q | rec8JP9mLLQvsGIkE | recCO0SvuuzNqziuE | receGdmFumXTDXp96 | recoqePXUENAn24m2 | recgulksj9DkSGs37 | recjfy8ATRjcmsmfa | recqMJg7BkFAtlCUh | rectsOHE2UJBcuIDi | recsf3fERDFNPARRs | rec96FAewaMHjOsnJ | recgGlWfbblEm4GAe | recKHUWFWU9pCnbdt | recA0bkA0Cd64kqBR | recYnIDhrcVYSxaxr | recktORySJ2mbWZN4 | recNd6eAZA5ETEtS8 | recuiA1Kj1C7Zkt0k | recBmGenZLmh1pvfp]",
+            "[recgS6WWPyeYWPVRz | recoVppWpIlT0nhzX | recNwDoNvNvRMvt3j | recf5TxGErc4GZ4oP | rec36t4AezmDr27zQ | receqWn1KPIkRdyGi | recNb1R08WVvfnSaK | recgSs1JziIdNKpsS | rec0SfTjh9OcRfYWk | recAY4Txrq0V3eVlV | reccwr0vIzMvaLJ8h | recmOBDGrmsRGQ5Pp | reciC3R3iFfUozBJF | rec055AOegZU3xCwU | recpL7t6dQcKQYJp1 | recKkyocHU8VZHCDX | recPCiNRmyxwQuoqj | recB06UIMQS9JB8Vq | recQgIO4cj0DWxvlz | rec2Rkd9JpPfuOs4p]",
+            "[recCqVCV5gufMlqsa]"
+          ]
+        },
+        "CNPJ": {
+          "tipos": {
+            "texto": 2
+          },
+          "preenchidos": 2,
+          "total": 20,
+          "faltando": 18,
+          "exemplos": [
+            "51.***.***/****-55  (mascarado)",
+            "03.***.***/****-79  (mascarado)"
+          ]
+        },
+        "Contagem Amostras": {
+          "tipos": {
+            "numero": 20
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "66",
+            "3",
+            "27",
+            "20",
+            "1"
+          ]
+        },
+        "Data de Entrega Mais Recente": {
+          "tipos": {
+            "data(ISO)": 20
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "2026-02-24",
+            "2025-09-09",
+            "2026-04-14",
+            "2026-03-10",
+            "2025-11-26"
+          ]
+        },
+        "Ensaios": {
+          "tipos": {
+            "array<link(rec)>[3]": 1
+          },
+          "preenchidos": 1,
+          "total": 20,
+          "faltando": 19,
+          "exemplos": [
+            "[recqrQtxcEEwm0nSi | recl3jwQNKeowNUQL | recLEJ72dt2r2douG]"
+          ]
+        },
+        "ID Cliente": {
+          "tipos": {
+            "texto": 20
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "Grupo Aterpa",
+            "PLANALTINA",
+            "Qualitec",
+            "Neovia",
+            "Vilasa"
+          ]
+        },
+        "Info Contato": {
+          "tipos": {
+            "texto": 5
+          },
+          "preenchidos": 5,
+          "total": 20,
+          "faltando": 15,
+          "exemplos": [
+            "Leonardo - 48 9141-6746",
+            "Messias Pedro - +55 62 8262-2385",
+            "Messias Pedro - +55 62 8262-2385 - ",
+            "Rodrigo - 65 9219-3331",
+            "Waldney - 38 9810-5317"
+          ]
+        },
+        "Nome Cliente": {
+          "tipos": {
+            "texto": 20
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "Ensaios de Solo-Cimento ",
+            "Planaltina-GO",
+            "Qualitec",
+            "Neovia",
+            "Vilasa"
+          ]
+        },
+        "Nome do Ensaio (from Ensaios)": {
+          "tipos": {
+            "array<texto>[3]": 1
+          },
+          "preenchidos": 1,
+          "total": 20,
+          "faltando": 19,
+          "exemplos": [
+            "[Módulo de Resiliência - Próctor Intermediário | Módulo de Resiliência - Próctor Modificado | Módulo de Resiliência - Próctor Normal]"
+          ]
+        },
+        "Novos Trabalhos 2": {
+          "tipos": {
+            "array<link(rec)>[192]": 1,
+            "array<link(rec)>[15]": 1,
+            "array<link(rec)>[27]": 1,
+            "array<link(rec)>[20]": 1,
+            "array<link(rec)>[1]": 3,
+            "array<link(rec)>[113]": 1,
+            "array<link(rec)>[61]": 1,
+            "array<link(rec)>[2]": 1,
+            "array<link(rec)>[91]": 1,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[130]": 1,
+            "array<link(rec)>[9]": 1,
+            "array<link(rec)>[1538]": 1,
+            "array<link(rec)>[28]": 1,
+            "array<link(rec)>[10]": 1
+          },
+          "preenchidos": 18,
+          "total": 20,
+          "faltando": 2,
+          "exemplos": [
+            "[recHt9uTWtacAydLD | recqsHqvvCTsLjIO3 | rec9h4xnRc4Any8yu | rec8dwWfGeqjmdGQF | recXoPIRfD5nSzABw | recQkc3pRj1BwRtuV | recCVuDo5jMtnhD0W | recjwwsFskCXCgAe5 | rec5I4QU6luchvihw | recURa8SvXnZp11rV | recQoy9UAK597aq9t | rec5c9PuzCgans5uY | receYalt6VR8XLgTa | recveHVmIxcM0yfbJ | rec52khWwhnNhvBbU | recRto1SyjOo1brCi | recGj3TKF3xm3gARq | reclu9zHixzeDm1MI | rec2u4GlPxzWcqmwr | recskRTZBlPhtRBHG | recurVfh9ecTN9D0K | recFLGWnonIXqLJlk | recxwWCCOsyocF7QR | recOdGIllBP3sgQIs | recuoJBtCnEIaD5kB | rec1v8JvOUPW42Fo0 | rectdw5s7HTMwnRyS | recr4yeSFdDoecp3V | recGNrXyEdBcaCOo3 | recNC0UJmuTDmjp9l | recfvEBvN23Nkf68R | recKwrE9WsCn4px2Z | recT4QLgGALS5atfp | rech0hNwdtetg4WcW | recNhDuqD88O1MOVQ | recRy6VRYbdK2B4sp | recfTGiA9NKMYcPTi | rec1mUVvrqz4lo3n4 | rece8iX9631OuHeKq | recAdph5FuNO1wghZ | recL6AzMkqOUZDnG1 | recGw0txNzUbuKXjs | recpbuEq2bQX7bRRK | recgaej67G2RGywod | recrvUGoIsYv5X8oF | recolODRIRD8mPLCM | recL0vVsD8ImZSEKf | recZyDtZAfM18o65y | rec32Z2Ye3r34htmK | receqDH8jSYUMMW9b | recOxerYerMpZiKnS | recdMR592Sz1nONue | recegYrCUHKpiXvDR | recmhEyu7bAj5DYKk | reczLXVeyelbNtiVK | recdBjIukoc9m48a6 | recyay6HUsNpMdNrs | rec7ApoyITlqnI2tS | recriuz0yOYOIorDs | recwxeyWwMc6oiS2Q | rec3OL9pumrmkC6TF | recMAeSkQl0rSyXgk | recDNHX9qLHvBgwW5 | recgadHka8CZrWIlJ | recNQEdZsqe8Sg7lQ | rec4oVXChRkna20op | recMkfMLgU6uXQKWb | recmABcFBjFLBVhWe | rec6lkfe6R6LB4pYE | recfclbXcbshovc2N | recJtFPhErRUrMsv4 | reczIpGtXz5bvQFxu | rec8FlpSTwhAe0hhd | rec5wLmtWtvOk4Lw6 | rec51dhlSnD15XEAP | recIxS4QSNUiqjz70 | reclXBP3EZlLzm1Gn | recRzpsj98dN3FRdW | recpJAInFlJM4kkYS | recgq217RtrncSYtx | recgQqnTfEkGabw0s | recnvD2w1EfOm2ccH | recNwZfowiDDzgxi6 | recWmY2JnYJ3IeWkc | recNiMKqBt34YHHoX | rec8d5cWYEtEDCAx3 | rec3ym914L8TSt736 | recKqfqZ48iYOT4rR | recEK6yF88Gyb40Bt | recCZa8ZxNvbhzpev | rec6jZ7CE0ZIgVaiY | recgbv75VfGqApYak | rect4CI2WjROkyeV4 | rec7KUN3A04nYlkCb | rec1lvciyr4Cltcat | recVFL9CwLK4e40Ad | recxe5UBNYYlhE5Rw | recpfBg0Lp7t7mmT9 | rec95UAFI1VTe04fT | rec6QmGm8SjhMG4Eb | recS4tlg14tekXRlw | recpgvki3sc2QcrTm | recxrmCiuo1b3oPRV | rec07qZ9w4R46LHjt | recEwk3nJDkXnMokc | recBXN9hRi0aLDP5x | recgd2SYTnq0zOf8N | recdFtbkeCd1MMhqA | rec81kJrkdxglV9UU | recLZTKiVex1cqiwN | recjSyxrJ10cffFgV | reczeOQyaDAuuOGQh | rec74s3dnNkWxl6kA | reckHo0JzsfirPynk | recSZOBrS3I3BVEEh | recpHGG2rntktp48f | recgINvR4Linybn7P | recRJXNPfKt4odXzP | recy6IPxVItk0dJXo | recus9rb4Lwd4SWlm | recer47N4GhKXNGwb | recgxTWYG7zvxZygv | recszh5AhobqDUFST | recEj0R1VF1WNn2KK | recfB0TBtOHd6fR24 | rec61bZBOjGJRPOdY | reckpO2Z6oniomUtm | recjsakPM9Dl0QDi8 | recgjLi0V7RohKbHt | rech6OSO5pfe7kWxR | recI1KGC6Eu2EorLy | recovPcwrbaQ25Ueq | recciQr1ou2SjLM3T | rec8HfrqqgCoi9Gke | recV76Ui4Ip5uwbEg | recUb5CKTNJ3ayJND | rec2qWQghcCkp3ExT | recO0q4L8G9lyCyOg | reciiwAd4YK9MdC6T | recs96Sl3aPueIN4d | recQY1cixGomx0kZC | recNMdKQn9kNbFHii | rece5Llo7k4316655 | recxgg9lvt6Ws8fkm | recJYb5jknDYB9HYc | rec534uZIrFEKIjTz | rec6VVtPa0yBhdEUQ | recYKmXmpHnBYcuEe | recEIwkq8JHdVTRg6 | recNoFXAvwNBJQRbG | reclM3Rkmv7SYt7eh | receqEUodBnDzj1el | recVhFe0DyqWT0DeQ | recAaRRvv6M7aJlOU | rectQ3fw1N8dl9oE8 | recXH2VCMtC0flvTJ | rec9tD9RS8Sp6jtJz | rec8rWRwd2cmEdSKq | reclZPcb66G4xCvB7 | recBpttVjayZZjsEh | recnG3IpszqMBsKqX | recMhkJyr2f5h7C3v | recAUkBh1Zm1GnwSm | recu0iAs9Lwr3ad8C | recFRb8Wo39WVZWl8 | rec7CKlVEmCHBv3Hv | rec2a4FNkavyDE4sO | recvdEtABecFFGuX3 | recnOzxjUQPlmJenF | recZ4hlSzK09mhzwn | recMV4Y8V5f6L1d7E | recxRD43t4t1pbTpM | recfOzJTvrCpWajgx | rec7qCdQ0xHApZ7rl | recyhXzHIZV3DcZuj | recygvKkb0SJAWvWg | reciAVI1aVbTf7OOo | recYMzQRVK4G91HhN | recUA4FZcLjwKBtdX | recR2kUgJHgWapzGW | recoiNBQbDYllSA74 | reckqdCIH63uWFEOA | recOEJAMTyrcRWNDb | reccYR08VBfgTbbGZ | recrN8r76Ys9Da7e9 | recSXlMwGHMPYM0kk | recfOQz4iIZhVXAdp | rec1tKk5h1pet7xAB | recYuQYPLJk0DVQsB | reclMDwdJ7Fo7N4AW | recqFU4ZLuYNIaMTE | recuDBx5CESoN77Mk]",
+            "[recsqPQpO571TR3c7 | recgvnKJsTJKtaJrK | rec1FH0gqCUhSVnbO | recfAKNbKaRaKSgKd | receCzFpplXMuCygA | rec356nTfT4Bdyaq1 | recxMxoSoGZOv72gH | recbkKo0cYMY0UYM5 | recfv8gAGoxotKfCk | recfB7QvrOVGYhXBj | rechYvxaY6iQ4dT1j | recwvOsdHEWJ2A4VI | rec3CNJi8KO3fLfIU | recsWSExQVq48BwMy | recR9AXVmsuqrB49e]",
+            "[recYwnJpFbx4qZ76P | recwFtyY3I7LzpZpN | recz6yiolLhvnfOVX | recjpeVY6u612AlVH | recvEGA8UGQbcQYTG | recksI0vrXijL9CyF | reciTrWup8gfV83lg | recwUegRTnwuqLB8b | recMn9OQg1oksktxY | recj6AE2ZoAaO5sle | rec4eSsh8xAn169PX | rec5ABM4u2MsEn1sJ | recVqeUrC6zFOAqmT | recxEBgGVt7MG6yqq | rec05I5SmieRNehac | recFbGsAe8kRfkiOi | rec2D0bT8C9SdNF52 | recvQmDiNXSkyQXma | recMMHwZXSX0fijGP | reciTsz1HFb2UtO96 | recUK77TRPXsNk0mS | recHeNvfEnnOpmrv7 | recZ6VYFMrZ2V97MB | recYw4xgwtSq6qevT | recuBfT5UISZxm8ml | recjdtG6YA3kZFP2s | recuuIhvjY7Prishv]",
+            "[rec3ravHzTLf1TqLq | recCsLg7KkA4qtQvw | rec6wvw5wmJX7jOil | recYFqNM1TK5jrZKO | recvwTRvdLn6nBHFy | recJgzWpDXNBJoJAu | rec2848UL83I1MxRs | rec0uNpRxTBHCB8Mh | recu3O6eltoJNjcpT | rec9DIY3aAh3dOxaq | recSDLE4nmoF2w8LJ | rec3yuqpOQbw9tGRH | rec0mdarg3SSnSUi4 | recfVs0PVo5sphR2A | rec9LWrfol7tF4yKY | rec5HSnORw5LOAOjr | reckvRfexHA0fTRCY | rec7bJEQQfEgjUHIc | recOw70jwmHZwrsvA | recgtTAGxv9Gy3JYb]",
+            "[recckuZcIbkqWiK1c]"
+          ]
+        },
+        "Ordem de Serviço": {
+          "tipos": {
+            "array<link(rec)>[2]": 2,
+            "array<link(rec)>[1]": 14,
+            "array<link(rec)>[3]": 2,
+            "array<link(rec)>[24]": 1
+          },
+          "preenchidos": 19,
+          "total": 20,
+          "faltando": 1,
+          "exemplos": [
+            "[recDERsRZLXJOhR0t | recZIBhHAI4B779Bu]",
+            "[recEH8FLng8s1UFe2]",
+            "[recQuN9wlPUxHYvHr]",
+            "[rec4r2jzrRN6RAOlx]",
+            "[recXNkrWw90WlXf2y]"
+          ]
+        },
+        "Record_id_Clientes": {
+          "tipos": {
+            "link(rec)": 20
+          },
+          "preenchidos": 20,
+          "total": 20,
+          "faltando": 0,
+          "exemplos": [
+            "rec1hlJEeemVfliGt",
+            "rec5QQ9S5FuqXQBAT",
+            "rec73Zrrnel1LBMN0",
+            "rec7EbxLFbPao1og2",
+            "recBDuOi4Brte97NI"
+          ]
+        }
+      }
+    },
+    "Trabalhos": {
+      "id": "tblXgUEe2J0Tnqmpm",
+      "registros_lidos": 800,
+      "schema_oficial": [
+        {
+          "nome": "ID Trabalho",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Ensaio",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Amostras",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Status",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Data Última Atualização",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Atualizado Por",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Nome do Ensaio",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Dias Desde a Última Atualização",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Resumo do Progresso do Trabalho",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "Cliente",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Nome da Amostra",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Nome do Usuário Rollup (from Atualizado Por)",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Record ID",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Text to Paste",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Observações",
+          "tipo": "multilineText"
+        },
+        {
+          "nome": "Text to Paste2",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Gerado",
+          "tipo": "checkbox"
+        },
+        {
+          "nome": "Lista de Ensaios",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Novos Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Clientes2",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "ID Cliente (from Clientes2)",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Photos",
+          "tipo": "multipleAttachments"
+        }
+      ],
+      "campos": {
+        "Amostras": {
+          "tipos": {
+            "array<link(rec)>[1]": 610,
+            "array<link(rec)>[5]": 5,
+            "array<link(rec)>[27]": 2,
+            "array<link(rec)>[2]": 20,
+            "array<link(rec)>[4]": 30,
+            "array<link(rec)>[3]": 33,
+            "array<link(rec)>[6]": 29,
+            "array<link(rec)>[12]": 3,
+            "array<link(rec)>[10]": 9,
+            "array<link(rec)>[14]": 6,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[7]": 9,
+            "array<link(rec)>[9]": 8,
+            "array<link(rec)>[15]": 3,
+            "array<link(rec)>[8]": 2,
+            "array<link(rec)>[18]": 3,
+            "array<link(rec)>[56]": 2,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[22]": 1,
+            "array<link(rec)>[26]": 1,
+            "array<link(rec)>[28]": 2
+          },
+          "preenchidos": 780,
+          "total": 800,
+          "faltando": 20,
+          "exemplos": [
+            "[recF31fQSiVNkamJN]",
+            "[recqxmI4UiO7RoVCx]",
+            "[recTypMAu9qZc6e9G]",
+            "[recSLg3kfdGxtpfiJ | recBWmsyauNOvkXEj | rect6yP3vvm1XkMwd | recHVQPdHaqjqRS1A | recZGUHZ6cTbVHDLL]",
+            "[recDghjxtm5pNuffi]"
+          ]
+        },
+        "Atualizado Por": {
+          "tipos": {
+            "array<link(rec)>[1]": 641
+          },
+          "preenchidos": 641,
+          "total": 800,
+          "faltando": 159,
+          "exemplos": [
+            "[recVZRLFKNpy22SoC]",
+            "[recgvzV9xZ77yTOMH]",
+            "[recam8stHIhyg0xXA]",
+            "[recKwRiRr1WkDWVk7]",
+            "[recgvzV9xZ77yTOMH]"
+          ]
+        },
+        "Cliente": {
+          "tipos": {
+            "array<link(rec)>[1]": 780
+          },
+          "preenchidos": 780,
+          "total": 800,
+          "faltando": 20,
+          "exemplos": [
+            "[recUzsAKN4Uveg1gi]",
+            "[rectEDZrt5unCtR4Z]",
+            "[recFLWGB2XoLqFbLj]",
+            "[recFLWGB2XoLqFbLj]",
+            "[rectEDZrt5unCtR4Z]"
+          ]
+        },
+        "Data Última Atualização": {
+          "tipos": {
+            "data(ISO)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "2026-01-26T14:10:10.087Z",
+            "2025-12-09T18:59:04.064Z",
+            "2025-10-30T11:53:03.398Z",
+            "2025-12-01T18:27:00.000Z",
+            "2025-08-19T13:38:06.433Z"
+          ]
+        },
+        "Dias Desde a Última Atualização": {
+          "tipos": {
+            "numero": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "154",
+            "202",
+            "242",
+            "210",
+            "314"
+          ]
+        },
+        "Ensaio": {
+          "tipos": {
+            "array<link(rec)>[4]": 28,
+            "array<link(rec)>[3]": 101,
+            "array<link(rec)>[1]": 430,
+            "array<link(rec)>[2]": 160,
+            "array<link(rec)>[5]": 33,
+            "array<link(rec)>[6]": 24,
+            "array<link(rec)>[7]": 21,
+            "array<link(rec)>[8]": 1
+          },
+          "preenchidos": 798,
+          "total": 800,
+          "faltando": 2,
+          "exemplos": [
+            "[recBA4ifYW1g92WBD | recB5gjLugpKSsMEu | recD16IHmZkQceX8E | recvx8kMCGQyZ27T2]",
+            "[recB5gjLugpKSsMEu | recvx8kMCGQyZ27T2 | recD16IHmZkQceX8E]",
+            "[recD16IHmZkQceX8E | recvx8kMCGQyZ27T2 | recB5gjLugpKSsMEu]",
+            "[recqrQtxcEEwm0nSi]",
+            "[recbSCiH0F5bdBL50 | recG8OOLKkHeqgGRe]"
+          ]
+        },
+        "Gerado": {
+          "tipos": {
+            "booleano": 9
+          },
+          "preenchidos": 9,
+          "total": 800,
+          "faltando": 791,
+          "exemplos": [
+            "true",
+            "true",
+            "true",
+            "true",
+            "true"
+          ]
+        },
+        "ID Trabalho": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "JDS_SPT 4-B (1 m)_AD-IND, Limite, Densidade Real, Sedimentação",
+            "GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052)_Limite, Sedimentação, Densidade Real",
+            "Geotecnus_SH 7 - COTA 1_Densidade Real, Sedimentação, Limite",
+            "Geotecnus_3694, 3692, 3618, 3698, 3649_MR-I",
+            "GEODEEP_SERRA DA LAGOA_DRX, Lâmina Petrográfica"
+          ]
+        },
+        "Lista de Ensaios": {
+          "tipos": {
+            "texto": 779
+          },
+          "preenchidos": 779,
+          "total": 800,
+          "faltando": 21,
+          "exemplos": [
+            "JDS_SPT 4-B (1 m) | AD-IND, JDS_SPT 4-B (1 m) | Limite, JDS_SPT 4-B (1 m) | Densidade Real, JDS_SPT 4-B (1 m) | Sedimentação",
+            "GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Limite, GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Sedimentação, GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Densidade Real",
+            "Geotecnus_SH 7 - COTA 1 | Densidade Real, Geotecnus_SH 7 - COTA 1 | Sedimentação, Geotecnus_SH 7 - COTA 1 | Limite",
+            "Geotecnus_3694 | MR-I, Geotecnus_3692 | MR-I, Geotecnus_3618 | MR-I, Geotecnus_3698 | MR-I, Geotecnus_3649 | MR-I",
+            "GEODEEP_SERRA DA LAGOA | DRX, GEODEEP_SERRA DA LAGOA | Lâmina Petrográfica"
+          ]
+        },
+        "Nome da Amostra": {
+          "tipos": {
+            "array<texto>[1]": 265,
+            "array<texto>[5]": 5,
+            "array<texto>[2]": 22,
+            "array<texto>[6]": 29,
+            "array<texto>[3]": 15,
+            "array<texto>[10]": 3,
+            "array<texto>[14]": 4,
+            "array<texto>[7]": 8,
+            "array<texto>[15]": 3,
+            "array<texto>[18]": 3,
+            "array<texto>[12]": 1,
+            "array<texto>[22]": 1,
+            "array<texto>[9]": 1,
+            "array<texto>[4]": 2,
+            "array<texto>[25]": 1,
+            "array<texto>[27]": 2
+          },
+          "preenchidos": 365,
+          "total": 800,
+          "faltando": 435,
+          "exemplos": [
+            "[SPT 4-B (1 m)]",
+            "[CAI-TPS-TAC-G31-052]",
+            "[3694 | 3692 | 3618 | 3698 | 3649]",
+            "[AMOSTRA DE MÃO \"METARENITO\"]",
+            "[ST-TPS-TAC-C31-098]"
+          ]
+        },
+        "Nome do Ensaio": {
+          "tipos": {
+            "array<texto>[4]": 27,
+            "array<texto>[3]": 91,
+            "array<texto>[1]": 438,
+            "array<texto>[2]": 156,
+            "array<texto>[5]": 35,
+            "array<texto>[6]": 25,
+            "array<texto>[7]": 18
+          },
+          "preenchidos": 790,
+          "total": 800,
+          "faltando": 10,
+          "exemplos": [
+            "[Adensamento - Amostra Indeformada  | Limites de Atterberg | Massa Específica Real dos Grãos do Solo | Análise Granulométrica por Sedimentação]",
+            "[Limites de Atterberg | Análise Granulométrica por Sedimentação | Massa Específica Real dos Grãos do Solo]",
+            "[Massa Específica Real dos Grãos do Solo | Análise Granulométrica por Sedimentação | Limites de Atterberg]",
+            "[Módulo de Resiliência - Próctor Intermediário]",
+            "[Materiais rochosos usados em rodovias – Análise Petrográfica – Procedimento]"
+          ]
+        },
+        "Nome do Usuário Rollup (from Atualizado Por)": {
+          "tipos": {
+            "array<texto>[1]": 641,
+            "array(vazio)": 159
+          },
+          "preenchidos": 641,
+          "total": 800,
+          "faltando": 159,
+          "exemplos": [
+            "[Kássio Fialho]",
+            "[Vinícius Levay]",
+            "[Lucas]",
+            "[Pedro]",
+            "[Vinícius Levay]"
+          ]
+        },
+        "Novos Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[4]": 54,
+            "array<link(rec)>[3]": 126,
+            "array<link(rec)>[5]": 30,
+            "array<link(rec)>[2]": 164,
+            "array<link(rec)>[27]": 2,
+            "array<link(rec)>[1]": 269,
+            "array<link(rec)>[6]": 39,
+            "array<link(rec)>[12]": 4,
+            "array<link(rec)>[10]": 9,
+            "array<link(rec)>[14]": 6,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[7]": 10,
+            "array<link(rec)>[9]": 8,
+            "array<link(rec)>[15]": 3,
+            "array<link(rec)>[8]": 2,
+            "array<link(rec)>[18]": 3,
+            "array<link(rec)>[50]": 2,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[22]": 1,
+            "array<link(rec)>[25]": 1,
+            "array<link(rec)>[28]": 2
+          },
+          "preenchidos": 737,
+          "total": 800,
+          "faltando": 63,
+          "exemplos": [
+            "[rechrW4Lk49INL1G4 | recdseSkPYdY4gkMl | recS45QePJTTU7nhQ | recucjLFvJBeq2SId]",
+            "[rechqK9ygCEvhZZaf | recifaFmiL4TN5J9g | recS1EbVEVPcBVEaR]",
+            "[recRg053RvZmGHnE4 | recM15NjrJ3Xwi3Hx | recYklrezhQgrF4NH]",
+            "[rec7aM8yJNvSFsApQ | recyWrplXozzM5xg4 | rec9NFnKv9tgRRuZl | recWahlgchnXajclq | recXDVUBPVXoFxRbt]",
+            "[recvmvsmhoQgF8Q0B | recbcgsvjAxMr6GIy]"
+          ]
+        },
+        "Observações": {
+          "tipos": {
+            "texto": 18
+          },
+          "preenchidos": 18,
+          "total": 800,
+          "faltando": 782,
+          "exemplos": [
+            "7 dias de cura úmida \n\n As tensões normais aplicadas no ensaio devem ser: 25, 75, 150, 300 kPa;",
+            "Verificar amostra ",
+            "https://1drv.ms/f/c/982785751ca268ed/EqAR6GdrpixEj1Ad4bVS35kBexoV2zlDQsXkQrD1FwrkSQ?e=I7QZsc",
+            "- Triaxial UU (não consolidado e não drenado) com 3 corpos de prova\n- Cisalhamento direto, com 3 CPs, com saturação, (tensões confinantes de 50, 100 e 200 kPa)\n…",
+            "Verificar amostra"
+          ]
+        },
+        "Ordem de Serviço": {
+          "tipos": {
+            "array<link(rec)>[1]": 780
+          },
+          "preenchidos": 780,
+          "total": 800,
+          "faltando": 20,
+          "exemplos": [
+            "[recqyDXNC3YkSCYur]",
+            "[recqFFEHL4nEOfq2b]",
+            "[reckZaMtDKGdr8H2i]",
+            "[rectnk9MfwFuNpHId]",
+            "[recxaOpFlrIl8YAVh]"
+          ]
+        },
+        "Record ID": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "JDS_SPT 4-B (1 m)",
+            "GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052)",
+            "Geotecnus_SH 7 - COTA 1",
+            "Geotecnus_3694, 3692, 3618, 3698, 3649",
+            "GEODEEP_SERRA DA LAGOA"
+          ]
+        },
+        "Resumo do Progresso do Trabalho": {
+          "tipos": {
+            "objeto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}"
+          ]
+        },
+        "Status": {
+          "tipos": {
+            "texto": 522
+          },
+          "preenchidos": 522,
+          "total": 800,
+          "faltando": 278,
+          "exemplos": [
+            "Aguardando Preparação",
+            "Preparado",
+            "Em Andamento",
+            "Preparado",
+            "Em Andamento"
+          ]
+        },
+        "Text to Paste": {
+          "tipos": {
+            "texto": 798
+          },
+          "preenchidos": 798,
+          "total": 800,
+          "faltando": 2,
+          "exemplos": [
+            "JDS_SPT 4-B (1 m) | AD-IND,JDS_SPT 4-B (1 m) | Limite,JDS_SPT 4-B (1 m) | Densidade Real,JDS_SPT 4-B (1 m) | Sedimentação",
+            "GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Limite,GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Sedimentação,GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Densidade Real",
+            "Geotecnus_SH 7 - COTA 1 | Densidade Real,Geotecnus_SH 7 - COTA 1 | Sedimentação,Geotecnus_SH 7 - COTA 1 | Limite",
+            "Geotecnus_3694, 3692, 3618, 3698, 3649 | MR-I",
+            "GEODEEP_SERRA DA LAGOA | DRX,GEODEEP_SERRA DA LAGOA | Lâmina Petrográfica"
+          ]
+        },
+        "Text to Paste2": {
+          "tipos": {
+            "texto": 779
+          },
+          "preenchidos": 779,
+          "total": 800,
+          "faltando": 21,
+          "exemplos": [
+            "JDS_SPT 4-B (1 m) | AD-IND,JDS_SPT 4-B (1 m) | Limite,JDS_SPT 4-B (1 m) | Densidade Real,JDS_SPT 4-B (1 m) | Sedimentação",
+            "GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Limite,GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Sedimentação,GEODEEP_REG 1953 (CAI-TPS-TAC-G31-052) | Densidade Real",
+            "Geotecnus_SH 7 - COTA 1 | Densidade Real,Geotecnus_SH 7 - COTA 1 | Sedimentação,Geotecnus_SH 7 - COTA 1 | Limite",
+            "Geotecnus_3694 | MR-I,Geotecnus_3692 | MR-I,Geotecnus_3618 | MR-I,Geotecnus_3698 | MR-I,Geotecnus_3649 | MR-I",
+            "GEODEEP_SERRA DA LAGOA | DRX,GEODEEP_SERRA DA LAGOA | Lâmina Petrográfica"
+          ]
+        }
+      }
+    },
+    "Ensaios": {
+      "id": "tblYtVM2crMxpxHgG",
+      "registros_lidos": 43,
+      "schema_oficial": [
+        {
+          "nome": "ID Ensaio",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Nome do Ensaio",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Norma",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Número de Trabalhos",
+          "tipo": "count"
+        },
+        {
+          "nome": "Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Tempo de Conclusão Médio",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Status do Trabalho Mais Recente",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Resumo do Procedimento do Ensaio",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "Observações sobre o Status do Trabalho",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "QR Code",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Direct Link",
+          "tipo": "formula"
+        },
+        {
+          "nome": "QR Code URL",
+          "tipo": "formula"
+        },
+        {
+          "nome": "QR Label",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Barcode",
+          "tipo": "barcode"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Amostras",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Novos Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Dados Brutos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Record_id_Ensaios",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Clientes",
+          "tipo": "multipleRecordLinks"
+        }
+      ],
+      "campos": {
+        "Amostras": {
+          "tipos": {
+            "array<link(rec)>[4]": 3,
+            "array<link(rec)>[2]": 1,
+            "array<link(rec)>[23]": 1,
+            "array<link(rec)>[1]": 6,
+            "array<link(rec)>[3]": 3,
+            "array<link(rec)>[9]": 2,
+            "array<link(rec)>[24]": 1,
+            "array<link(rec)>[6]": 1
+          },
+          "preenchidos": 18,
+          "total": 43,
+          "faltando": 25,
+          "exemplos": [
+            "[rec7FUax3NUIyg2C0 | recQHtqMrPEX9sE6u | reclxskhhmwoodWV9 | recNXUvXmHCuNtbSZ]",
+            "[recc3dRlqm2LHN6i0 | rec64WfuWHGIbqojh]",
+            "[recsK7PkOMfQuHiyY | reck8ygtSV2FN7zYc | reccgdTxRLYEP8aXO | recYlff0gLcUbK3kN | rec1iqOOOWFLs4wcW | recRghoLHfD02HLjE | recKWT3tngo6dOeYt | recvU9fNPTjejVzk2 | recH335OUIP5QCmFR | recKNHjmqV5TOzYBz | recEUq8T2DosUztvz | recU9CWvu7OUIvOns | recCfrGUBV9ff5oyh | rec3ghQLbhT9BPsmr | recxFi1U2N6X0yC8l | reccgLNDldS8WZZhk | recnIoYDK9HRw8wWt | recgjozPLagRwP0Lp | recTurqqAuQjp71EC | recS6GcF2qGo9741b | recGQ07LeKDfTzdPT | recnZ2sRZLLbHEgZS | recm90hXBUhcJ4Dee]",
+            "[recYnK0CxqQMLJhy0]",
+            "[recsK7PkOMfQuHiyY | reck8ygtSV2FN7zYc | reccgdTxRLYEP8aXO]"
+          ]
+        },
+        "Clientes": {
+          "tipos": {
+            "array<link(rec)>[1]": 3
+          },
+          "preenchidos": 3,
+          "total": 43,
+          "faltando": 40,
+          "exemplos": [
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]"
+          ]
+        },
+        "Direct Link": {
+          "tipos": {
+            "texto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "https://airtable.com/[BaseID]/rec3UPYeTEYAvutFz",
+            "https://airtable.com/[BaseID]/rec3gcepJpajQk21U",
+            "https://airtable.com/[BaseID]/rec7icUfTfCvCRvG8",
+            "https://airtable.com/[BaseID]/rec8Xs6f1nkjg6uTW",
+            "https://airtable.com/[BaseID]/recB5gjLugpKSsMEu"
+          ]
+        },
+        "ID Ensaio": {
+          "tipos": {
+            "texto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "Expansão Edométrica",
+            "Sucção",
+            "Microdeval",
+            "DP-I",
+            "Limite"
+          ]
+        },
+        "Nome do Ensaio": {
+          "tipos": {
+            "texto": 38
+          },
+          "preenchidos": 38,
+          "total": 43,
+          "faltando": 5,
+          "exemplos": [
+            "Expansão ou Colapso de Solo Unimensional",
+            "Determinação da resistência ao desgaste – Ensaio Micro-Deval",
+            "Deformação Permanente - Intermediário",
+            "Limites de Atterberg",
+            "Solos estabilizados - determinação da resistência à tração por compressão diâmetral"
+          ]
+        },
+        "Norma": {
+          "tipos": {
+            "texto": 31
+          },
+          "preenchidos": 31,
+          "total": 43,
+          "faltando": 12,
+          "exemplos": [
+            "ASTM D4546",
+            "NBR 5564:2021 - Anexo J",
+            "DNIT 179/2018 - IE",
+            "DNER-ME 181/94",
+            "DNER-ME 094/94"
+          ]
+        },
+        "Novos Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[5]": 1,
+            "array<link(rec)>[4]": 3,
+            "array<link(rec)>[14]": 2,
+            "array<link(rec)>[172]": 1,
+            "array<link(rec)>[210]": 1,
+            "array<link(rec)>[63]": 1,
+            "array<link(rec)>[125]": 1,
+            "array<link(rec)>[234]": 1,
+            "array<link(rec)>[10]": 1,
+            "array<link(rec)>[20]": 1,
+            "array<link(rec)>[90]": 1,
+            "array<link(rec)>[12]": 1,
+            "array<link(rec)>[17]": 2,
+            "array<link(rec)>[13]": 3,
+            "array<link(rec)>[49]": 2,
+            "array<link(rec)>[97]": 1,
+            "array<link(rec)>[78]": 1,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[25]": 2,
+            "array<link(rec)>[3]": 2,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[24]": 1,
+            "array<link(rec)>[21]": 1,
+            "array<link(rec)>[73]": 1,
+            "array<link(rec)>[15]": 1,
+            "array<link(rec)>[33]": 1,
+            "array<link(rec)>[44]": 1,
+            "array<link(rec)>[2]": 1,
+            "array<link(rec)>[6]": 1,
+            "array<link(rec)>[314]": 1,
+            "array<link(rec)>[82]": 1,
+            "array<link(rec)>[242]": 1
+          },
+          "preenchidos": 41,
+          "total": 43,
+          "faltando": 2,
+          "exemplos": [
+            "[recfJ78AdN2jrZr6f | recmHsCyP36EiHRj5 | rec0VwQmknApnRFfc | recTw87ANgOTN4lpd | recHuN8AgZqBcYJvz]",
+            "[recIofIAyBOyM0mUE | rec6KxxxymBgKia5r | recOHdQwA9ZrRfeu1 | recS1jEd6rKudfY81]",
+            "[recFzjalyfFNMIE8S | recKT2kMIFS82g3PT | rec6pjA1KVUXfB9uB | recFQm5mrpydtF5n6 | rec6qIt78XgJoaoRJ | recFYjmrIA6FMmDD8 | recfdanjJbOoi6NyI | rectQRtdcGmSfXDRi | recQtN6aP9UolBPSK | recyVMbjoykiJZ7VY | recNh54HTca6hGw94 | recj3evgNrZ31fKcI | recJEsx2TXOrNZhkk | recnl0HtWWWZaAc7R]",
+            "[recM7FEpb7KyvIf9H | recezUuo0ki4dE0rK | rec9nkFvRTasx9lXT | recFhUji1bk4If3Nu | rec5HODv42hsQ0wKr | recYfvJKvwRFFNIHt | rec3ibDpZdim4BFjv | recsQrFqKYYiGVeY0 | recCaYsZBxxAlssSL | recwoR7H6Rrpvili0 | recE3BtZipYyR9mya | recAMxMqAdzuj52CS | reca2szEYV0gVJjHu | recurRce5GnuwVf30 | recJ4TYsiVkdazTM8 | recGMGUWu7aJyKBtm | recaONGlqTMcjhOHz | rec1e8tevKYR5QQI6 | recBTT2XJuPPxgIYH | reczLmDsDJcbUQkCb | recb58D7A7MU2vghb | rec2FiSeMzVOA9mTM | recifrBFACdt1ugkc | recUnmMS6Rnj9ksVQ | rec33eno2fY36G8fu | rechhS7c7lvhP8M1I | reca9vlosUyXEMRU9 | recxgJxAjMxWnVwGg | rec02EHqh4fWoS59m | recJ6cRxLPNw1wN0W | rec1Q9S9tBv4U1H86 | recXIOaTRHEoUwPZn | recK3HzZtOOtinvOk | reciJCRKqFq5QYox0 | rec1auJp5sHdfh7Ea | recpE4FRcdKn63EFz | recsbUr2zNlv9Y2ZB | rec72MVNWNvqX8Bbk | recJ70CduQm7BQyeD | recviWkwbZyZpBT8I | recL8dZRR1lSwam4j | reccllpIEAxSaYunS | rec4epx4kwzQi8p3O | recwsSAIO29zeGFHZ | recjnDZ6wa6i9Id4x | recWoYJIZvA5JbAzr | recCkcIXcwtonQlLS | rec2KmPXw9BXj9JRk | recPlxXRMYYCHvet2 | recUsMiw46dC6Rdsk | reczboMoStxEWosWa | recECuz257I0vEd5X | rec3yhietWWM3DOSO | reckRE7MixuEPF1sC | recFLPNTi6QWAIyth | recG3tDNdpLKoFFZj | rec190ZVVsHpUQy7t | recOJP7cyvvmDfayf | recxd17GFpSoocTX2 | reccgdKXpJc3VlQRz | recsYDJhOuRhTCKtn | reccGylvfPv3mTwEj | recr95Xi3FfXmNCji | recYGa90EpTEhpgO9 | recuAQ20HXp891Afb | recdV7HMXKbmSbJFf | recmrHdxd4zbOwAjk | recLCjL7FMNl9aHbT | recYc2zvRvIUg4bNt | rec39RTqIPJALbKkE | recpOR8LrJEoC4uCb | reci9ycIwmErg0D0S | recbR2gyF4gRxkd2G | recAYcOu2PSwcXhPL | rec0BPiFSODFTR73K | recrQnSlJ86FmCdY5 | recRk4FGTBNOgNkFV | reccHdArlUZMV6efC | reciNG1me0gfr6BwU | recjIE3D01dNbPZok | recGp4uWolXdy6Ots | receTPZC9ebUtUBl0 | recRRPOjRD9wNNEyG | recg1FWjDI8ooCuAh | recMfEAx48fYaZadB | recbDW58Hk0QLXFFr | recp2cvz8DgR2PxrV | rec9z50NLhRyZLCF0 | reciR9l7eqJTtYXTv | recKD2uiclSB3YgFo | recCnYIjOcStK6exZ | recWwwLm6IqM6Ztak | reciLICU4vZW6b3iJ | rechOsimOZ8HacewV | recDXVri1DpfEXPBU | recvxCpxlW4sx4xfj | recJ1L0ZL67pm6iGx | recuEqaVEeEebZe2V | recjfBBBBxZQA6TiR | reccb8TbrRupjMZFk | recyX4VMdwYEGZzmt | recGKPqEmWa5pVSnK | recOV4tbJIGlR5PFi | recNW5ceTjF1gCgjY | rec8tgofs3N4NXxAJ | rec5MbS3RcPvHYHKN | recqKpsrkDdVU5ekX | rec5nkowiylm7E26q | recEmFjV2dYlMpg03 | recrIVANswaVbhbEu | recoYrQD9O3BtceAo | rec2RheOEKYbDXB6j | recS0n2RL8vdavs8B | recYRxJgBsVndZzSD | rec7s4335IVOCXJKY | recoGhsnHGONcuLzq | recFjkJ2Vnq80AMuW | rechuvwGZI163rTCh | recxjISPONBjD6XR3 | rec5r13gZUKcZg3Co | recJzxuleV4qI6hmk | recB8FUsJDLbS71ro | recYZYD6tDAOlwgLu | recMbRMTJ4c7G4YyH | recXK3SGseEELV0aZ | recCL6T8Vf18JOovm | reckQ1ZqmPZNLzucK | recGyLnyAWoHbhCmk | recObCzNo71W6NKbr | recTQkFhZbBTgtL6g | recHKyIOGJmSgRUkb | recmPtFlv5g4wbpE3 | rec5OoI1n6tnf7UoP | reccR3Oc4NdJkZhPB | recZRBn6FVDLtuW6v | recpJUVC1FlIwZEkZ | recNNkg77yGChPqMs | recKw4jkwkgdHNsuf | recIUSPkxu746jRxf | recidh4H5TlVTShCM | recUaODGrOjWzt3S4 | recPMUt8tGsXrYOMY | recHhKKDY2HxqyXKu | recC0ibJdFQa4yCOE | recF4c1Vdfme14acr | recJG8nJKb692R0av | reckgvTXYikfaJsgi | recBgU1930cvIgPeN | recVWXirYnxKBQ1WB | rec4b1ZlfXBgF6vXO | recymacCbWSFWfvTi | rec4loTK0lOCb4Cig | rec1ayuo6adJK9InM | recgC8CZFEBPSwtgC | recfycAh9c9DfaSfe | recnh05d4kd7hWDl0 | recjaTiTzj8CjVM8l | recUCgNJRrke71UA3 | reciVw1T9QRiuOH2L | recdovDmhECKsd3Xr | recjGuTrz0oOP78Kl | recUL7e6GtkeOECkr | recU0ART5Ktx1q0jt | recmadpCvrENtizEt | reclxc676z1BWTkRB | recQSJqfAL8IWfQsD | recio2kvfGg8H2BqU | rec5QWs6pBGQIubMd | recsSmpvltDNr2JLk | recCE4LEbF0LNzOXC | recbwnwoUmFevMcbQ | rec9Vp0W6TgyvpL7U]",
+            "[recHTSTn27edCbCJI | rec37oysaNWHigznf | rec3PgzWxtYK79JHC | recX0WejSLa9JJhOG | reck0rAITSpziMaDr | receY7fOnGZVDYOxA | recCQBv7mZKstwQeF | recSjhYXdnelRD3Cv | recjpd9seacCq9v8c | recj9XaWBGIae1SD6 | recNO1Cmjkf0FWv6g | recICVzfHBvnON26s | rec0uP4UH2IQ38Pos | recHvSMt9CpkYNpnv | recV3xMx4qIxC2biE | rec5ltob9B8QmAElX | recaIfwRug9sdbW8d | recU1m15EUUOPWEvj | rec002N3ZSU6YPxjO | recYidihTTk0iW9cw | rec7EVWK8fJUtLJzR | rec9tMITiNodN5rsn | recMuxO2BGZxjC4QG | recLLRh2qp6dkmfmB | recgGxrVLscWY4kA1 | rec9mu06SsnSmtWOm | recrvExoGhlx2Lj9a | recCE1M7PgaXuGDX4 | rec9edIFbeRz6go2C | recVf9YE9lQW6xfTr | recBqwbckp94OsMzX | recCzjyJMs1eY59va | recwvCcDuxPBOOuw1 | recS2lFFT3MbWcBRD | recNfxtWinTt9FjSY | recyUgIVbPryGzNw4 | recABGI3UPiiNKKYx | rec7yNr0sZpkH5XDo | rec5rXmo1sg34KXOz | recuWxOZuU9jsFLi0 | recbfAKFwHbzIHIq9 | recroimiV5EvhpYeY | rec3kB7JZwt698GDi | recjbudy5c3Mhyj4r | recvfGMHOrmvSa2Jq | recOQcA92YrRUlj7C | recd28wOp02LYOkRH | recNWC0aL1FP7EcY3 | recvue2k9mAfWMHKU | recwUUsaZIFMGPzA5 | recKrJz9NeMctVyuQ | recDBK51wzGSjYx1O | recBOFyv7b0cbBkrs | recrMTOo5Ku4pJe33 | recXdTZ4DCGzLpKl2 | recR16vRqoC2LQHBD | recgvnKJsTJKtaJrK | recxMxoSoGZOv72gH | recxcMrVhnzMzsLDC | recsWSExQVq48BwMy | recGXmZI5lVqrCFWG | recji5kjM5pv7VS4v | recOM0NOR0FC1PZXc | rec3rrnLpwmqnxqv1 | rechsG07csv7VROUA | recKYwDcQraeQ7Rxj | recJctnn00QCcbVOu | recMmelXFoMc6e8ae | rec8VvHjImb2ci6cw | recjeEpzPUm3xTSF8 | reckzYiG5XkegSI5i | recsZmuMakQtPeRTi | recOa37blhYLOXMYD | recE1vuUWFYHOGZWe | rec7P2BROJ5sdtUpC | recT0Te7nfsZN9EZT | rect7VVLD9FQ1hM5T | recGgKdmrwNTnB0jN | recKZ4Y6kkxpWOoZ9 | recDYdbKFreOvQ274 | recDO46VFb9NGRw6a | recYJgDBmHWjqeUQu | recXWvj1zEYid6QJ6 | recqZMCM1DwbXvIrI | rec6dcRkVgK1TI8F6 | recXnp8cPD5TYzZvk | recLsaI10Nc618gNl | recLvy5l2zwMbzAFA | recYklrezhQgrF4NH | recXo76788D5g1Aem | recQ3H2z8ylPBTdiH | rec4orXkYmAexg8uo | recO3KhziUksI5UVm | recsmiDtuAnkuEWs5 | recKR9AQSonAIUhlT | recafx4SYDyaoClOM | recy3kKz2tOkIlRBg | recSblOnwKQLanz34 | recxyyDyWi4r8lwJK | recTjvfBxzvi3ny5l | recYWYKeCdkhH8QFX | recU0lKw5VWecqLLw | reccMZrLL4jS68B23 | recBNGh9YH365cYl5 | recDWQCcHlxAAm8Fx | recRMExmUAWWVOLmO | recEUtIgKH0cGWmGG | recGQMGAHxLCvPdUj | recu2aO3NgZpv0T94 | recVW3AUF9Sq6TRiW | recXvCztNAdvm3uxG | recDJfARQzl0RJR4t | recSo4gbJFI5PTj0Q | recXHEju5GepiGNJN | recDkzxhzHo6DhvMX | rec4OzyrqLgkTjl1W | recer1jcDKE8egnV5 | rec3mJ4BUa1bKFweE | recsC353uDK1xjnVw | recJK8MFaBOAaxNtK | recP9p1CTpV9QA7rW | recU119SvrHQ5ICdj | rechqK9ygCEvhZZaf | rec5Gg9jVkoBbCgYR | recacKJZuMoui4AHT | recOxwuPzWTkIkb0V | recqZWUobuAS5EK7f | recohFbn6DwYZCzCc | recFjxv83V8dc4JBR | rec3s96FGDZVGX7LO | reczbB4ZCUUnguj9Y | recvU8OujXTyMdZSQ | recKXJka4rpsDS9jP | recj9yDzmqbjK1lkT | rectGw63QYgd0iWJN | recSd7lYDYIoa69Dj | rectqAO1Z0g49y9Pg | recmctZCKsVgwwMM5 | recrIzYdPXjYZLBlu | recOVaKSZKDfItdUt | recZRVn9EdowJAuhx | rec8Oj1GFRB8MoaoD | rec40GgxWlXSqX0dq | rec3g9iEWEyZjPwTY | recPmEJm53bwgPrwz | recPW9WVxrNSnE2Bu | recfjx2AuEmh3SiKN | rec4dGUQSfmi7JZWt | recKRSyV8Tfm5JCXD | recwzr32oMKtHtpTc | rec4CMbSpAztl888Y | recKh4ldy1w4H7IVx | recbwgPyZ2nz4Rba1 | recvqn7pzJZVyNslf | recERbA2H2WAakCME | recFKC1m1SHRjTNTU | recFquE4nzo9p3gUf | recexL4UK4r8mkSYS | recN8Puzhwufr4WhT | recdBSnw5BftMKxgN | rec7yW11v1aMLua4Z | recdseSkPYdY4gkMl | recDMOerkK4rJXif2 | recSoH8gStsBfG4tc | recYcuppT6ZRGp1QI | recs2vNdoNvdKJJs8 | recpcZZ910LxV5sTl | recRBB4XrFxzKeKFb | reclFZh2Y1o5zuBCR | recocEjbVcfLqpgtc | reca89ZwAPeWghKUi | recJPFMM4EvZm2jNw | recOrkPmIUrJm9rC3 | recsTqpCbamacb5XW | recKHzpSafHOfgiiw | recgpEokbDfhHO4JF | recaVbqElVPjCbUTb | rec8Fxgt5rw6X8wSZ | recMc8cykAu2IOcpi | recwMkAlAAzWCDOn1 | recqMTC8FhL3WmrlI | recDnGfhbWbs6kq2a | recHZ0yFnEWLDscNl | rec22o0DUpUZ1WaAd | recxzF6vqlByk4jQ7 | rec5YnDJhUPUtbBhE | recvBYDOKxdV9tjwK | recaKSuxEkU65VZHp | rec7sOnfzpvqf3AN7 | recaz7NRTqBf6OgY8 | recQBqD8AB8HZPpsP | rec3jWnLWKt5znWdk | recY0zRx0O5siqqUA | rec0f1f2BASJ0ms21 | recfJ333Bqe5UZu8o | reca3WhUoEzTNWLjF | reccEyTuTz28X4FGa | recs1LcQSXlSljFBc | recxQExXPWIZOFuwi | recSPuHGynUVWqH3l | recwrfwE8wQXtZMzw | rec4TqmE1L5a93Txz | rec0sTrkt606MVRno | recBLJHgVkVhRmtYW | recY6eWb4FxBs7H6G | recOFrxrJIQb4AY9L | rechj2I7DGtnHHvif | recj2dCW9DY5PmTRS | recE5R4vTJ6SfVYL3 | rec5LLrc1EOOKfkcE]"
+          ]
+        },
+        "Número de Trabalhos": {
+          "tipos": {
+            "numero": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "3",
+            "5",
+            "11",
+            "144",
+            "179"
+          ]
+        },
+        "Observações sobre o Status do Trabalho": {
+          "tipos": {
+            "objeto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"generated\",\"value\":\"High frequency of jobs in \\\"Aguardando Preparação\\\" suggests a bottleneck at the preparation stage. Recommend allocating additiona…",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}"
+          ]
+        },
+        "QR Code URL": {
+          "tipos": {
+            "texto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fairtable.com%2F%5BBaseID%5D%2Frec3UPYeTEYAvutFz&size=200x200",
+            "https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fairtable.com%2F%5BBaseID%5D%2Frec3gcepJpajQk21U&size=200x200",
+            "https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fairtable.com%2F%5BBaseID%5D%2Frec7icUfTfCvCRvG8&size=200x200",
+            "https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fairtable.com%2F%5BBaseID%5D%2Frec8Xs6f1nkjg6uTW&size=200x200",
+            "https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fairtable.com%2F%5BBaseID%5D%2FrecB5gjLugpKSsMEu&size=200x200"
+          ]
+        },
+        "QR Label": {
+          "tipos": {
+            "texto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "Expansão ou Colapso de Solo Unimensional - Test for ASTM D4546",
+            " - Test for ",
+            "Determinação da resistência ao desgaste – Ensaio Micro-Deval - Test for NBR 5564:2021 - Anexo J",
+            "Deformação Permanente - Intermediário - Test for DNIT 179/2018 - IE",
+            "Limites de Atterberg - Test for "
+          ]
+        },
+        "Record_id_Ensaios": {
+          "tipos": {
+            "link(rec)": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "rec3UPYeTEYAvutFz",
+            "rec3gcepJpajQk21U",
+            "rec7icUfTfCvCRvG8",
+            "rec8Xs6f1nkjg6uTW",
+            "recB5gjLugpKSsMEu"
+          ]
+        },
+        "Resumo do Procedimento do Ensaio": {
+          "tipos": {
+            "objeto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"generated\",\"value\":\"Step 1: Collect and prepare the soil sample according to specified requirements.  \\nStep 2: Weigh the sample accurately.  \\nStep 3…",
+            "{\"state\":\"empty\",\"value\":null,\"isStale\":true}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}"
+          ]
+        },
+        "Status do Trabalho Mais Recente": {
+          "tipos": {
+            "texto": 40
+          },
+          "preenchidos": 40,
+          "total": 43,
+          "faltando": 3,
+          "exemplos": [
+            "Aguardando Preparação, ",
+            "Aguardando Preparação, , Enviado ao Cliente, Concluído",
+            ", Aguardando Preparação, Em Andamento, Preparado",
+            "Lançado, , Enviado ao Cliente, Concluído, Aguardando Preparação, Preparado, Em Andamento",
+            "Aguardando Preparação, Preparado"
+          ]
+        },
+        "Tempo de Conclusão Médio": {
+          "tipos": {
+            "objeto": 43
+          },
+          "preenchidos": 43,
+          "total": 43,
+          "faltando": 0,
+          "exemplos": [
+            "{\"specialValue\":\"NaN\"}",
+            "{\"specialValue\":\"NaN\"}",
+            "{\"specialValue\":\"NaN\"}",
+            "{\"specialValue\":\"NaN\"}",
+            "{\"specialValue\":\"NaN\"}"
+          ]
+        },
+        "Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[3]": 2,
+            "array<link(rec)>[5]": 1,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[144]": 1,
+            "array<link(rec)>[179]": 1,
+            "array<link(rec)>[7]": 1,
+            "array<link(rec)>[74]": 2,
+            "array<link(rec)>[122]": 1,
+            "array<link(rec)>[24]": 1,
+            "array<link(rec)>[23]": 2,
+            "array<link(rec)>[14]": 1,
+            "array<link(rec)>[113]": 1,
+            "array<link(rec)>[2]": 5,
+            "array<link(rec)>[13]": 1,
+            "array<link(rec)>[18]": 3,
+            "array<link(rec)>[9]": 1,
+            "array<link(rec)>[20]": 2,
+            "array<link(rec)>[135]": 1,
+            "array<link(rec)>[22]": 1,
+            "array<link(rec)>[15]": 2,
+            "array<link(rec)>[21]": 1,
+            "array<link(rec)>[6]": 1,
+            "array<link(rec)>[29]": 1,
+            "array<link(rec)>[30]": 1,
+            "array<link(rec)>[55]": 1,
+            "array<link(rec)>[1]": 1,
+            "array<link(rec)>[176]": 1,
+            "array<link(rec)>[10]": 1,
+            "array<link(rec)>[4]": 1,
+            "array<link(rec)>[199]": 1
+          },
+          "preenchidos": 41,
+          "total": 43,
+          "faltando": 2,
+          "exemplos": [
+            "[rec6sN8F7sKBUoupd | recXHb2eMzrspiBPj | recuENaDqeBQECBpO]",
+            "[recTK4o65tvbNJRL0 | reccTpF56LLTcHz6n | recix0uz5xwuSnYVf | recxdWoNGtqjZdh3Q | reci0Vh86phP9Bjxq]",
+            "[recUO1AMHWIOliYyD | recSHeftVdQroLZkX | recrwBvR2Uj90kxpT | recdR8XJBfHbT9aip | recCAiiQJttytImpx | recGjZG9R5CeSnbEH | recLSg1YBvJfvteOr | recvCSE7OT196N34B | rectTb0aAkScSah14 | recZsP6Ld2HrHHT84 | recsCf6L5Xd6VqiF2]",
+            "[recB91AH17ukb7r22 | recm1x8Osd7Dtjn8Y | recqpWgLb4ZAoWJqu | recHhlfG7yXwmkYs0 | recjUKXVL2P9bKYCt | recFGcmZtOCSPelF1 | rec5pm3SoiojocdqQ | reccxsl7uaJNpbpxi | recs8kZeGAlX9uJCF | recCyTdAEdRLmVHGx | recRHEEHIKPEjkkgg | rec7BqqyFQ3REpb4Z | reczvhy5mhFRvxPll | recMEOvQNnRPzAodY | recrtRnCgDP1ifB3v | recBuJe7MVEzj0CYQ | recOCoeLwWQwhJfY6 | recDRlXabR5yK1Xwl | recVXz83AMxNR9cpU | recRzOKCIsqZXfWpw | recj0KypwIGRcavE8 | recGXr2SENV1jgVSS | recmdDtOaCitYg3Ks | recyfhyp2OL1YhULs | recavLmWQxNGPCSOp | recvekdFtdiCTxqEa | recfYjcqiLXgSixtj | recQ1KfQQP2CkxiKt | reckZ4KOaaHNDkF3c | recJMtX7EpZHmELEM | rec7tGjN2hBGzqYa3 | rec964HwbhcWsDo7y | recXbneb8GaCWbPi0 | recc0fOieiInvG0vf | rec9KWCrFdCrR5qA1 | recLUZqCtjXb8fAHS | rec5jNS73QOw2BEdn | recS8crnCgqB53PoV | recmhdUMXiq7scRxu | recuJt8tjRAgqjJz7 | reczPsu0J8arXsaQr | recMUZ1HZqIYKF9jZ | recMbtcoJ58ipaPUK | recQwgI8OfHssXvPd | recpdsSjfUZODUDRi | reck6CB4x7aEjoNSA | recFgkQ1eSzPne4N9 | recuYnqlD7VoIDN47 | recZuj0pfaLZwAEg5 | recONH0IBz2YLB0xP | recE62lntLl4jru9e | recLBZvZGTScxx1i6 | recPv4c8pLXqS0523 | rec8tQ8Fu9iHnO8Gj | rec77g7OYVez7WJuJ | recyAuMqHSSPyj519 | recu0hPm7Bt601bfn | receNwyJDzcoo4szt | recOqteYFKXt711Aj | rec8Fjxla1G3hb2nc | rec7vR50xbWKqq2rN | reckWiQRH8FPhtfTe | recNSeQWsggrIhhWV | recLkUkd45coj00Uu | recLRiE0UpOGN9Fc0 | recD0rd4BMQYGaFWO | recdwpDofz85YlpTp | recHVAWKcwIhOmgnV | rec2Mj6YM7b20aaJg | recCbBExzM4hoRbO6 | recxEZQyP3WxKQP6G | rec781lXbyqytm834 | rec2g6px3i44mMQWo | recbyLgKZdw9g0vTW | rec2Qiwtp40Zeguju | recPfDaM3a55I4rnG | recWnSOLaCl57ENwa | recaqORFKFgjWYJtk | recxtzlryJgzqSHWC | recG2LN1q39Aodrkz | reccg06qnLYskY9Pf | rec8IRnCX3v9g91Wu | recwu0n47b02CkBTj | recxah3qTuMw3pPTN | recv9WUvMtpF78U6i | rec6fi1VcLFO1eXLP | recuNIJRpk69UY09y | recmy8QK5CE2cXrW9 | rec6vGHrneXcjEB1r | recLnCJu2460OClcY | recoenYfK90E7sWyH | recsTSj19fjLPEedq | reclBCFMfJgbQ24tV | rec3HMqopyAICn9Em | recuUAvfDogY5TcM7 | reco47FWdVJKcI7ba | recGYhpiTmqroSKeR | reco8YKpPGo9MGTOq | recMHufJDVC9ATB7F | recyk03SkRnnPUrpE | reccjqPOeNeAyalx8 | recjdWcfTBLXWCQd4 | recrTUAGJSPo7HQd5 | recKKPd4cgNQrCVCS | recBPAqwt8GdYuij7 | recp3nldck0KSSI6x | recCQWRBK5XSa8Ls2 | reck6Y6HdUGjbHEf6 | recyUfWJh8FGAqhxZ | recoDmu3KUt1sakKJ | recvYPh7IlyT9uUe6 | recmYjrUaxqpr3Y1o | recypevCnNr4Gxi2c | rec7UWKmlaF1oXlTs | recsx2ayc5w6O3nRH | recSWb5e9wq6jfoHA | recCkHJFh12QlSo08 | recRnpgGOUIGBeoM2 | recGQR1wQFiA04JTO | rec9HeBOPOPXWoYic | rec4QjupuYulH8jj0 | recgybtLud314WSXp | recp8o2Per31K4cUo | recMSss8gEE7TDeLY | rec4qJtNZZ4EGeP18 | recc4wm89IqRmqlyh | reczRJQbE92BSBKhU | recIJhEWS67ZNCo3E | recpk97zbQpAewqQx | recP39PMwjhFRMh7a | recBtwgdjq4Osu1Fb | recHjMuPmD603ohtu | rec1pA3rDPtNdvdPx | rec0vZdue4qIHc9Ea | recEekqzQp4qbGPI9 | receAkahoZmfws0oR | rec0Yefv8ETGaXzCv | recxzzX4I1j33A3PQ | recbPGa3cN9JxAW9f | recLshgIccyvpW7jl | reclNvRMdK4lYdPzd | reclffcm2eNYJeB5M | rec1gjpGqL11rwhO7 | recZkvR9RoQvXgOM8]",
+            "[recfLlv8uLMVYxtYB | rec8OcWv4uuKG34Cp | reclNFuRcWkhuzkxs | recr53fGSYhE3KBMs | recJAY6ZvZvDQy58i | recBC6ue7zkVUKXwA | rec6MH4aGvynEQPQ0 | recp562ufDBI0yAC2 | recTRXInlK8kQtrke | recrPhfLeM2pv8LgE | recnXdKFFI62Lr0lA | recFnzbPvOA2xM4xr | recpG9G4t0iu7jByX | reclqH1p1LpFD5lGk | recIBTVtLIgGUXR79 | recWMmUMlkWvfrt8b | recEuLsphDdIYXQnV | rectLYU8NS36DIOH0 | recTT8zwsLDFZeT2p | rec8r4YneZ7ePw9qM | recPfDeL8i47t6kYx | recJ94OIAPyiJ4Nlg | rec2tNZR2FSvL8Dqm | recCfnIKM1K7vmIT1 | recmhdUMXiq7scRxu | recuJt8tjRAgqjJz7 | recnNByWDdbsnbVXi | recFDALlbV8z3nUi7 | recT0s4M5XJ96FRjI | recvrR4xBWBI6vy7l | recnik8cJr24EIdyd | recXxM1cHQQviVHS9 | reczIjsrKn343ZijZ | recJDQ5pIhzv3HKoh | recaIItY1GrAjDwq8 | recPatQQERXkW45qG | recHCc1NH2OfDp1FV | recxKfRXHomNf9sMQ | recFDK705evCwwmeZ | recqmAY1cuzedr5L5 | recHOFPY23UASnb8N | recie2YPoUVE44pv9 | recILiuNf7XxH27H7 | rec7Fae2jxmIi6D82 | reci8aBBhnQvRSLqD | recENtS9lLa15XAH5 | recghu7mtoLp4hYlN | recT7A9KIPKjhP0ye | recsI6FDtSPpaF0nR | recdf7q9eLstjxwbc | recJXkq4Y23zyN4Ax | recOy2kdVIx23o1Yt | reck1Dtxuhf6nAqKg | recBtIeYSJsgoXMmX | receRjEs0nBrXlT4B | recSMrS5oh4LY6D6g | recAFbAByjZ7IeOjK | recpdsSjfUZODUDRi | reck6CB4x7aEjoNSA | recFgkQ1eSzPne4N9 | recuYnqlD7VoIDN47 | recZuj0pfaLZwAEg5 | recONH0IBz2YLB0xP | recE62lntLl4jru9e | recumhZ2adKp4TtUW | recLBZvZGTScxx1i6 | rec6onyrBr4flEr3g | recPv4c8pLXqS0523 | rec8tQ8Fu9iHnO8Gj | rec77g7OYVez7WJuJ | recyAuMqHSSPyj519 | recu0hPm7Bt601bfn | recHPMRyZpVJPT4bn | receNwyJDzcoo4szt | recOqteYFKXt711Aj | rec8Fjxla1G3hb2nc | rec7vR50xbWKqq2rN | recVaXPClrB1zkoQx | recjmlfqmGb5oFXEK | recetHS8gbDtHlQ6e | recTcvTwjKFsU7keK | rec3oUeuiUCbMI6dg | reckWiQRH8FPhtfTe | recNSeQWsggrIhhWV | recLkUkd45coj00Uu | recLRiE0UpOGN9Fc0 | recD0rd4BMQYGaFWO | recdwpDofz85YlpTp | recHVAWKcwIhOmgnV | rec2Mj6YM7b20aaJg | recCbBExzM4hoRbO6 | recxEZQyP3WxKQP6G | rec781lXbyqytm834 | rec2g6px3i44mMQWo | recbyLgKZdw9g0vTW | recjBiBEfgVEFxko7 | rec4eNvYxiqqzscNp | recNJ2P4xAeOy1mIb | recCD0y0zgcuINOvE | recef6oR3GHDWYEBj | rec8VomxOh3oGBuEo | reckNaLyshyNtqnJ8 | reckllNUdaiFHYQZQ | recmte8ocgYLAOzVR | recLNpjAI9zTmjEdJ | rec0A80NcpfLedEsi | recqagtyNCt3G9jGm | rec3a40rtE08f4HzD | rec7qaSLaBPAv7Olt | recSQsejdvQzw20dm | rec8JfrxQ4biUw5Bb | recboZEUGvjSWTo5P | recqLaDvl0Ngd9u4T | recdw2EdcNCEBbNMo | rec1VTAN1McyNDFWY | receKi9qr0HEnsZtD | recSychc8WJ5fNAn1 | reclTJehY3JNh4Udm | recaB7pRkqyyVIQWE | recSwpw9RCq3VRPdK | recKhQtBwb16LlMHN | recy3HtC1PuYBNOVH | recdzMrkCVLD87acC | rec3AMfDNK0YJPHxf | recwUI7S75tW2HOr0 | rec5l2gkSh43tictW | rec06wQPzfbhi8lxC | recB2mrrVJGyfpuj1 | reclMXGS05YasUXSt | recwKZvMT7Xi423WY | reccdXmyqrCmvdtcU | rec8inBDXlPmxuQ0H | recEwIMZCz9PbBeZ7 | recVVMr3cD8cPHgz0 | recNp0XCXNm33aNAf | recbKhpLZt0TfcFBX | recW8PstMVPgCvOAN | recXlQv7t1z2GwVFH | recb0P8acOb25LmUL | reccrlbq8dLzARv3F | recpwQtExwJergizw | rec2uLiJWykNYteIf | reckm3x8saObExqjE | rec01BlQ4m2m09dxg | recFOf1niiTl660UI | recGDanS4DUccvkaM | rec90RWkYa9msNEI9 | rec3NssHBV7LrGkKT | reciC8fNm0QX2fRU5 | rec1aludap7zTaJBs | recFxSoITKgjNj766 | recTQ7TnMlBKEQmWc | recLD7Vd0bpCp4KC5 | reczaIaWz4YVL7HmB | rec7u7MhkGG0mEsn4 | receC0DMSNbDdZnqm | recB9nhugfJraOm5P | recTcJVOpvq8KRy2u | recFBGZLNTmvTYqUT | recMTAgzDBU8DZKl1 | recoooOpsKfSIGbrV | recltlhjUR80bZZgk | recnRyWxf5XFqtVVh | recRd374LfhtDWlae | recUf98rprKwyuf6l | recRRBYAKIf0eMg25 | recs2rOrHJc9TNLaN | recNytNJUd9OVU8F4 | recb8WSN3Y3OJFMbw | recPzoHPxUmbIwqth | recdy6haoKK3qMhuz | recy9EMAXArT7n80S | recoiIojvrfmTcVsY | recEh6lMLV8NY1RG0 | recV2ergJjyB45UxY | recyNlHTD2200wnor | recNHd1reVDRZwo53 | recQ9YLzK52vwMXOr | recQKYtu1dAEGGQZi]"
+          ]
+        }
+      }
+    },
+    "Usuário": {
+      "id": "tblXFkPXrw8U4kdtU",
+      "registros_lidos": 8,
+      "schema_oficial": [
+        {
+          "nome": "ID Usuário",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Nome do Usuário",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "E-mail",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "CPF",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Função",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Número de Trabalhos Atualizados",
+          "tipo": "count"
+        },
+        {
+          "nome": "Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Data Última Atualização",
+          "tipo": "rollup"
+        },
+        {
+          "nome": "Novos Trabalhos 3",
+          "tipo": "multipleRecordLinks"
+        }
+      ],
+      "campos": {
+        "CPF": {
+          "tipos": {
+            "texto": 6
+          },
+          "preenchidos": 6,
+          "total": 8,
+          "faltando": 2,
+          "exemplos": [
+            "04.***.***/****-70  (mascarado)",
+            "06.***.***/****-50  (mascarado)",
+            "05.***.***/****-86  (mascarado)",
+            "05.***.***/****-50  (mascarado)",
+            "01.***.***/****-03  (mascarado)"
+          ]
+        },
+        "Data Última Atualização": {
+          "tipos": {
+            "data(ISO)": 6
+          },
+          "preenchidos": 6,
+          "total": 8,
+          "faltando": 2,
+          "exemplos": [
+            "2026-06-26T19:10:00.291Z",
+            "2026-05-12T14:06:09.191Z",
+            "2026-06-29T14:28:57.523Z",
+            "2026-06-29T14:33:24.506Z",
+            "2026-05-12T14:06:26.961Z"
+          ]
+        },
+        "E-mail": {
+          "tipos": {
+            "texto": 3
+          },
+          "preenchidos": 3,
+          "total": 8,
+          "faltando": 5,
+          "exemplos": [
+            "kassio.gomes@itr.eng.br",
+            "mateus.bueno@itr.eng.br",
+            "vinícius.levay@itr.eng.br"
+          ]
+        },
+        "ID Usuário": {
+          "tipos": {
+            "texto": 8
+          },
+          "preenchidos": 8,
+          "total": 8,
+          "faltando": 0,
+          "exemplos": [
+            "Ires Basso",
+            "Pedro",
+            "Kássio Fialho",
+            "Hebert",
+            "Lucas"
+          ]
+        },
+        "Nome do Usuário": {
+          "tipos": {
+            "texto": 8
+          },
+          "preenchidos": 8,
+          "total": 8,
+          "faltando": 0,
+          "exemplos": [
+            "Ires Basso",
+            "Pedro",
+            "Kássio Fialho",
+            "Hebert",
+            "Lucas"
+          ]
+        },
+        "Novos Trabalhos 3": {
+          "tipos": {
+            "array<link(rec)>[208]": 1,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[477]": 1,
+            "array<link(rec)>[12]": 1,
+            "array<link(rec)>[210]": 1,
+            "array<link(rec)>[1250]": 1
+          },
+          "preenchidos": 6,
+          "total": 8,
+          "faltando": 2,
+          "exemplos": [
+            "[recn94I3QzsbNafov | recVY0Ph7oTBC6QzF | recRKXt2jUZgUgh0u | recFqE6USeHFsMEye | reccwMzFCmBDs4ApT | recxwWCCOsyocF7QR | rec8dwWfGeqjmdGQF | recFLGWnonIXqLJlk | recDJV4Me6KsP2Xhy | recP5oHr6fLa2IYx9 | recLNWIQil4UEYljJ | recydSgyWq2sSHXZR | rec1ayuo6adJK9InM | recg5kC1ja4DbsqYf | recj1jHjB1otvVBkV | recTjvfBxzvi3ny5l | recFdOWHzBGhm76Ws | recYp3PBYTs7p6n6Y | rec47UQ5tfvupWSsh | reccMZrLL4jS68B23 | recIrMxVJLpSZUcnh | rec6jZ7CE0ZIgVaiY | recNwZfowiDDzgxi6 | rec9blTVeMRGpsEe3 | recckuZcIbkqWiK1c | recZV6EBBSDBFDJgb | rec4loTK0lOCb4Cig | recQxKoGa9rUlFnEk | recymacCbWSFWfvTi | recgC8CZFEBPSwtgC | rec2p39s6DmRj53oh | recXz48VaQFv1lStS | recrIzYdPXjYZLBlu | recmctZCKsVgwwMM5 | rectqAO1Z0g49y9Pg | recB5z1YeEYxbAPc6 | recDSVIzICBuYVHkf | recjoIRkZGGkHgHpL | recTijaTM12tLldv6 | recJ8xz2Tr89nfAxP | recwzr32oMKtHtpTc | rec4CMbSpAztl888Y | recKh4ldy1w4H7IVx | rec4dGUQSfmi7JZWt | recKRSyV8Tfm5JCXD | rec3g9iEWEyZjPwTY | recbwgPyZ2nz4Rba1 | recfjx2AuEmh3SiKN | recFquE4nzo9p3gUf | recN8Puzhwufr4WhT | rec7yW11v1aMLua4Z | recDMOerkK4rJXif2 | recKsSmV3ZkwCtJcT | recS45QePJTTU7nhQ | recP6F5d8Gs0dZQyY | rect7CDvSqbzDCnhT | recR2w7PlRWCCqkco | recStfjo99BX2272R | reczLAyUPFFA7SMjz | recmBBpxNCACi1yoj | recucjLFvJBeq2SId | rec6HVx8J07VeD2q9 | recretXLeABT54zOj | recSoH8gStsBfG4tc | recYcuppT6ZRGp1QI | recexL4UK4r8mkSYS | recdBSnw5BftMKxgN | recREK2QUCMY69p1d | recDUyZkTxGe4whaQ | recIKGqhafdLTtcbL | recnJTNZC13KiV8PZ | rec0EI7qnp1kNyVA9 | recYJEUax3wmGqqvS | reccNYg6YqpiSjTNe | recM3XHMGOdZAKNAa | recqAeGz7Ne9aJi62 | recTrRTS7t4CPc4F6 | recEzlkyUvRt57IWz | recdBzQoUds2hxRlz | recI7LEr6qwJeECzm | recL4Vi0P6nUdqHZr | recNQNBBNblL2YwlJ | recl0LRFwMRzCrFQK | recjfYlQKpVaL43xM | rec65gTN44crXsbSL | recrSODbN4sBu05IV | recfmb97lAS4ns8Id | recfkVypCc3c3qr6q | recVzUIJcMq4VQ2rn | recFKC1m1SHRjTNTU | recSd7lYDYIoa69Dj | recAMinfMW8LmFTb0 | recFaT4Yqz9QWrWoB | recpv7PKL9jccDKFs | rec1NLilhk8YVYIG5 | recXtM3HhG4rfSt6i | recF3braTfe0wGYZE | recvkcZNWf3qTkOT7 | recX7pZSSFuP5ncUw | recGRxeUXKZ6JQUav | rec7TPmnZE6NdEBqX | recpILDzKt9r59Aa1 | recdseSkPYdY4gkMl | recIzKPvbRkuLBXa4 | rectxVoOwPo6iQFze | recV4oUjoeoIIDapD | rec7hKCaiugF0at36 | recyHOHjvPTKriK2Q | rec621ZNjfkNVhMlW | recbNMRBomE43uiNb | rec7RAkrIiFtJQJea | recLugszI01AxXGve | rec3CG0TTgwhP6Hk8 | reccvEWLqbR85SqVA | rechrW4Lk49INL1G4 | receMVx6kulDTlLFS | reca62X1TgNm3Wk0j | reczAqZB8JhuILt6N | recOwTxvJw197fVxL | rec2FcbKO4v7TL87V | recLJxVmbBBXMk0Pg | recO7fBgrhxFwIQnG | recAUkBh1Zm1GnwSm | recu0iAs9Lwr3ad8C | rec7CKlVEmCHBv3Hv | recnOzxjUQPlmJenF | recBpttVjayZZjsEh | recMhkJyr2f5h7C3v | recnG3IpszqMBsKqX | recM4sdOOBRQwbuzh | recgqdVOVq7GuZWrS | recZ4hlSzK09mhzwn | recvdEtABecFFGuX3 | recMV4Y8V5f6L1d7E | recbTZDOLs58NoRsD | recfOzJTvrCpWajgx | rec7qCdQ0xHApZ7rl | recYuQYPLJk0DVQsB | recSDLE4nmoF2w8LJ | recCsLg7KkA4qtQvw | rec6wvw5wmJX7jOil | recxkVVtSL6sk0uK8 | recszLSjdBWmmGmbN | recoYrQD9O3BtceAo | recxRD43t4t1pbTpM | recT8jqu8rPCKAC2X | recdsZI6x8IHwWyrD | rec6Q0DZSpOvK4Lod | rectHCyVTx2zEBbH7 | recbwnwoUmFevMcbQ | recpfQkEeKZT6pnHm | recl76BoPGI6moV8x | rec9LWrfol7tF4yKY | rec7bJEQQfEgjUHIc | recYFqNM1TK5jrZKO | rec5HSnORw5LOAOjr | recO0pZtRVge40BaK | rec2848UL83I1MxRs | recAUPzEc9jWG5UDv | rec5XzE2fhzp850X9 | rec3PNOF9sEcsGkkW | rec9aXzgdT8vVNeJO | recOw70jwmHZwrsvA | rec3yuqpOQbw9tGRH | recu3O6eltoJNjcpT | rec6WwONyyFOnfuy1 | rec71IcuscvvdaTjq | recL4gYxX2hDRaXe5 | recvEGA8UGQbcQYTG | recz6yiolLhvnfOVX | recYwnJpFbx4qZ76P | recZ6VYFMrZ2V97MB | recHeNvfEnnOpmrv7 | recYw4xgwtSq6qevT | recuuIhvjY7Prishv | recuBfT5UISZxm8ml | recjdtG6YA3kZFP2s | rec9hocUKVM5VIt21 | recUK77TRPXsNk0mS | recmewSZbEpHz2OWt | recgtTAGxv9Gy3JYb | reckvRfexHA0fTRCY | recOGdnCI8Nm64bKB | recjpeVY6u612AlVH | receNdUyIVx5GTUuB | rec01qXAQZaDLgruk | recjDvsfaRHNvK2NQ | recWkUyglQ4VL9G9d | recmlnHl7hVBRzLbb | rec7JDz9F5uc6Zdlt | recpmA20qmxdP5fCf | recjxxnUoyvJE6kjP | recyIGnPYVy8l86wT | recx5cvqcteuPDsL6 | recKznWh8PxVF1hpW | recqwQlt2M83HCXCH | recjDJxOFqFMDtUus | recKmx6qhVDCxYUQC | recTYDoBBllaZZ9x1 | receKAyi1F2GCth5Z | recBjxggaPtE2YGrB | recXSM6MB3FTfSvfD | recOFrxrJIQb4AY9L | rechj2I7DGtnHHvif | recj2dCW9DY5PmTRS | recEaHbdYWgbxJpHH | recjBrCKOx3056i2w | recFyLPIYJdS80pOX]",
+            "[rec9DIY3aAh3dOxaq | recMn9OQg1oksktxY | recj6AE2ZoAaO5sle | rec4eSsh8xAn169PX | recksI0vrXijL9CyF | reciTrWup8gfV83lg | recwUegRTnwuqLB8b | recVqeUrC6zFOAqmT | rec05I5SmieRNehac | recFbGsAe8kRfkiOi | rec5ABM4u2MsEn1sJ | rec2D0bT8C9SdNF52 | recvQmDiNXSkyQXma | recxEBgGVt7MG6yqq | recMMHwZXSX0fijGP | reciTsz1HFb2UtO96]",
+            "[rec0l9gCr7T9dvHgr | recsvIooStzS2LRWV | recAeQ6xPdd0sxPNA | recnLB51j6TnuDjVy | recNPi62xg3F1nJDO | recHTSTn27edCbCJI | rec37oysaNWHigznf | recJbmp5GNPUOcOhr | rec3PgzWxtYK79JHC | recam4Uyoop7jVCNn | recX0WejSLa9JJhOG | reck0rAITSpziMaDr | receY7fOnGZVDYOxA | recCQBv7mZKstwQeF | recSjhYXdnelRD3Cv | recjpd9seacCq9v8c | recj9XaWBGIae1SD6 | recNO1Cmjkf0FWv6g | recICVzfHBvnON26s | rec0uP4UH2IQ38Pos | recHvSMt9CpkYNpnv | recU1m15EUUOPWEvj | recB3AMA6JWxmESog | recGKNUbNaNB6BeWd | rec6Vynbjhtbg9Uy2 | recn4Vhavk2RMIvFw | recDLvLF1kXzfeDI5 | recO2vlTVbegsBccK | recboLzifJ4PRO8W8 | recbxQAs8FDRqq2nk | recvfBvxfQWsdhlAc | recCUOuvDdMZhk5l3 | rec1Ys5XcsHDCs0TB | recTuEpdbqyKOYI7D | recvrX16uktlyBDfr | recKiu4GiLrDfNQoG | recLzK28i22Z1MgZm | recew5n42fOKR6uIy | recaM97wInLvYVy6a | recP8N8p92d6rrpxt | rechVsrK5SjJN5h3N | reczWM1pumags1Hl2 | recxnoBm7FpAxzBOh | recYQVKQwUKP3j2U4 | recNfI9gSIFSqVCdj | recKDcCNDHEUP4mgJ | recuhOx9yWkP4DG9V | recd9WBvLLGFVsJJc | receDTDb4YqZOHzhF | recXk3Aq0aFqxZqzh | recB3zgf1G1turGtI | recvND4WaD109eBFl | recXMTJhj3Dq4dPDv | recrDWql5s3lgzU4t | rec4GHQqVzzq9f5ne | recKt0r46qSlas9j1 | recQ1ccQ4V7pgLleK | recX2GM3WIGYO7hmd | recIWGcuE9Y46f82T | recD44uVZnNIBO0xc | recoqhkKMNnSAnCIm | recnlSM6cn7CvFQ8p | recUdUIG69tmrLBiO | recr4sKBQCcl3llNf | recl4gA2bppQLdib5 | rec4P8nXWEwCRquIj | reccZk98G7anlomyT | rec4oUB1tcUeMDEIK | recaRsnVfcBmoJllE | recPFjjWryjVvO2xP | rece4oSluWgjDwNZz | recm2qrxUNVFXSYg6 | recXtxZuNj3LKt4xv | recIUd6cuu57h5eHH | recymR6pO5pV3vDkF | recUADQNqM6WoMNQI | recnOqum2Fki0suE5 | rec6wQ0odOBOzCLQl | reciJCRKqFq5QYox0 | recNWC0aL1FP7EcY3 | recNnVZqZjE24qSIZ | recc7qp0NMfUBnWls | recO5UG5C5A2je5gw | recY11zrqYut4bwB2 | rec2XSGVQMgZf9XRF | recvue2k9mAfWMHKU | recx6s1zcX7MGKJbh | recl9SVMj3SskKDBh | recVxqH7zQeVmfKo9 | recpzrHS24eICojhy | recTTSSL80BW2SP1t | recFtjmxEWHoCsfMt | rec5f0Lw38hPa0Zrt | rec1FH0gqCUhSVnbO | rec0QjI7cBO8e8KFE | reckif8amxOp5CcmT | recQ9mpJRLM9ai0Zf | recJEsx2TXOrNZhkk | recSxZ7paKbkwkpNy | recyxPuUdEMd4V8xY | recnl0HtWWWZaAc7R | recKxS7wUmd74YIee | recrrJyBVwqQBBSMh | recVYEJBDga3pBAj0 | rec2KmPXw9BXj9JRk | recPlxXRMYYCHvet2 | recmJRjCnmmTfG5Fh | recx4AcGClu79a1pI | recZMOlFNXkDcevrQ | recuxVZDp6p9ICrvN | recG3tDNdpLKoFFZj | rec190ZVVsHpUQy7t | recOJP7cyvvmDfayf | recxd17GFpSoocTX2 | reclapCAIQHueIyjW | recCv0rfu2Lynj2aE | recygTGeJvvBWdw7h | recYGa90EpTEhpgO9 | recuAQ20HXp891Afb | recmrHdxd4zbOwAjk | recGU4F8XYB7NhmHB | recin5SbEGcsbfOR2 | reccHdArlUZMV6efC | recjIE3D01dNbPZok | rec8oIZhaOakaROCZ | recmhEyu7bAj5DYKk | recJtFPhErRUrMsv4 | recgaej67G2RGywod | recolODRIRD8mPLCM | recIxS4QSNUiqjz70 | rec32Z2Ye3r34htmK | recGNrXyEdBcaCOo3 | reczLXVeyelbNtiVK | recr4yeSFdDoecp3V | recegYrCUHKpiXvDR | recdBjIukoc9m48a6 | recyay6HUsNpMdNrs | rec7ApoyITlqnI2tS | recKwrE9WsCn4px2Z | rec51dhlSnD15XEAP | recrvUGoIsYv5X8oF | reczIpGtXz5bvQFxu | recwgXdctOIb5vkZa | recOXMAwPAUvcI9ss | recXo76788D5g1Aem | reczjzZiTIOkTFiyP | recRk4FGTBNOgNkFV | recXQH5OnOrfydg1H | recPPAFWpcQUFXXVt | rec3lhW8AzKlopkqQ | recZCkPl1CkDh5gAg | recd14IbgJw9qL7xo | recdcM1mkwPGAzza0 | rec9qFMDCRHynA3h3 | recCzrxogFYnFpxGB | recc6OzUXw9KfYqZN | recYWYKeCdkhH8QFX | recapvxY6Wms2Khqv | reciDYpYilDYeGcPz | recXFxIKrFpQ9epHa | rec9gYirfo1JB6iMH | reccF7y9dxtTmS8Bc | recK8woBy82gk9bA0 | recBob5U52Yvzcu2H | rec9tMhDLgt9ISSM4 | recOzpT7aFhDkGRae | recGTBDgFofr35r3l | recaPLNALuc360jv3 | recRpeFdKigcom5p3 | reczBNkBd1AsHjCul | recnZiJcJlXdc1zNg | recBoxfzihHdw9x9P | recdDzcibceYBoVAZ | recGuhk5oIrHj5wN2 | rec5GhApBmf88etOi | recxo0moNG5xJsI1Q | recWHgna264HFeROK | recVp4xlvoaGaRDNl | recTh6cMJmengva41 | rec8yhJvsun711dSk | recvLWGVUWkwZLIO7 | recAaNKOGLExJkui3 | recyhRct7S3C7Auxo | recmadpCvrENtizEt | recCOzdUgGMTBAunn | recHLct2wbspjYQFV | recPHmgwmTTWR81yw | rec5QWs6pBGQIubMd | recYKCQfiz2tBKqBo | recpFClNxxr5HvtPN | recseSB9w5uuOGBTe | recARW5jTJRREOaCL | rec5W10a0fZ9ys2nF | recCnYIjOcStK6exZ | recU0lKw5VWecqLLw | recLZTKiVex1cqiwN | rec8vq5LVNt9uFRLo | recWmY2JnYJ3IeWkc | recxrmCiuo1b3oPRV | rec3ym914L8TSt736 | recCZa8ZxNvbhzpev | rect4CI2WjROkyeV4 | recnk13yDPZuUBP4G | reckRE7MixuEPF1sC | recRJXNPfKt4odXzP | recy6IPxVItk0dJXo | recus9rb4Lwd4SWlm | rec5Pb5Oq10gT4VRu | recguzOfZ9Irb1B2f | reciZDOmvRVbtoluG | recumEuIwdM8uhv8G | reclTEZiuhaFttcPu | recsbk0K3OWNcHKFv | reciIVLcEG2NKdYOx | recjk3OzOlTMQNepG | rec40GgxWlXSqX0dq | recPmEJm53bwgPrwz | recPW9WVxrNSnE2Bu | recvqn7pzJZVyNslf | recERbA2H2WAakCME | rec94Vpx7E8q2stLj | rec211LvBHsIUZgDQ | recMZjoN567spXa9U | recIcic7sKXlHVJ41 | recWf0ohvDiI4UkmS | recwmQjR0BVardCRp | recXYK0mXWK0DsgDB | recUWAZTboEnzZhxO | recjzBLg2aq4TQtcW | reco1M2fYasmCG9WT | recrgTj0mwaTXXodt | rec0cCqfPFK6IWX8z | recU330LEtbmM24r8 | recgo5F1BxhTs719k | recEMoEcYV6BmR3AU | rec7xB6RxxL3EgEwi | rec48mVHVSvmTFqKv | recAp0cj39zdlGUy6 | recucZsH7RTJ2hzIU | recYNKqqvGuKWX3di | recvVDHnkZxHiD6J0 | recgOCUU34XitmMWU | rec75LUpGX7wOqxxu | recG0F9nG27t8IJ82 | reca89ZwAPeWghKUi | recJPFMM4EvZm2jNw | recgpEokbDfhHO4JF | recaVbqElVPjCbUTb | rec8Fxgt5rw6X8wSZ | recMc8cykAu2IOcpi | recZSvS65J1cK3gkY | recCxhjg3z59qazMP | recsEVTkaz6QhqdVQ | recVkA3rVHblgxghO | recMmm654MFowbFwZ | recfMDMIkJ6wXjRPo | recdWWR6CyAmCkC4m | recjT4LCCZuBKnd1P | recOLJB19mHMtbecX | rec0iyU1zps6FswbA | recP4DlRg7fSIdF5S | receBZrKBdMRow51Q | recNTvcpToJDM3trl | rec7MY4OoIZnblPIc | recJS4n9cWX89XGfk | recBMhAoW3r54S35q | recVV3Zaroblw4CTT | reckNpTM7YsxjE5Mg | recwMkAlAAzWCDOn1 | reczGyKBYbkQ0jER4 | recNfd5ttkDkIxc19 | recqsdyjvGwJawWXN | recqMTC8FhL3WmrlI | recD0Pe7J8XfxM1ff | recsEmLDTNydw86mM | recZ8L2hMf0w4bpBa | recDnGfhbWbs6kq2a | recnuM3nMOFhLWjde | rec8Oj1GFRB8MoaoD | recre4mb9K8SalLQy | recnCinFZp1XMGVgl | recigzqyaQK1fyp8k | recbxYWDwfxSJs3YG | recSGYJrT2m43DNN5 | recHZ0yFnEWLDscNl | rec22o0DUpUZ1WaAd | recxzF6vqlByk4jQ7 | rec5YnDJhUPUtbBhE | recaKSuxEkU65VZHp | recYtggRLDAI4k0yO | recH9cUNtLlv6OBuR | recwglYMNBQoWV2d9 | recaGFUvLJbA8riX5 | rec781rMaX36fhtuR | recL633oryyrVdX7H | rec51AYNRpyn6sMst | recbqTqS7N50ajMbk | recQbPIQURBcDlW8U | recRvyUlWqEse0azD | recdEaz5bIrSwHF8C | recumIQMFYA9GRA1Y | rec4ZuscYvgtiUtg7 | recDbAOp84Ss4wE0Z | recVMNhsb3RTtf2mS | recbn7kiCn5qZjvrx | rec8Pum6Drs3fmvvp | recEj0R1VF1WNn2KK | recfB0TBtOHd6fR24 | rec61bZBOjGJRPOdY | reckpO2Z6oniomUtm | recI1KGC6Eu2EorLy | recciQr1ou2SjLM3T | recQY1cixGomx0kZC | rece5Llo7k4316655 | recxgg9lvt6Ws8fkm | recJYb5jknDYB9HYc | recNoFXAvwNBJQRbG | reclM3Rkmv7SYt7eh | rec8vVkBR709U9o26 | recDWU3znl22Weii5 | recryi9gqE7MzBxK4 | recjxUHdCU4PP6mes | recu4tfifuSOgmpj4 | recygvKkb0SJAWvWg | reciAVI1aVbTf7OOo | recUA4FZcLjwKBtdX | recR2kUgJHgWapzGW | reckqdCIH63uWFEOA | recOEJAMTyrcRWNDb | recSXlMwGHMPYM0kk | recuDBx5CESoN77Mk | recyZn49FT9k3VSg2 | recu7fhjEn7GugC6W | recmXYD4maNgzXepU | recXP07qBdOViqiQS | recDZCjI5n6tz2CxP | recCFor1ciT5lra8T | recy10ueYhHZq3HZl | rec6VAFVVNi7FJjtx | recGuub5oKQQZxLX0 | reci1WTvbEkiOEkEc | recI3XAWW2eVLG8rb | recdij3hr5OSfChCc | recq3HP4rNc7bIV3m | recExJacBJPRLnOKd | rechsFW2VDyB2YcSl | rec6v1dsI394o7kig | recEcDyK0IAG0ETAr | rec0U9xbnNsaCeswz | rec7sOnfzpvqf3AN7 | rec38WjMJmIKhrcdw | recDAca8HMDCvkhvB | recp6PKtvPQtGSvq9 | recaZY1iaS7SrIiLh | recDd7AUNnF7FjfcV | reco7gHQW3PS4fiCL | recsuGFr23uTiHUsY | recHlif9aaJzGaQmS | rec1Hn8CkRZf3YOYO | rec3ravHzTLf1TqLq | rec0sTrkt606MVRno | recjsakPM9Dl0QDi8 | rec534uZIrFEKIjTz | recJgzWpDXNBJoJAu | recvwTRvdLn6nBHFy | recfVs0PVo5sphR2A | recAaRRvv6M7aJlOU | reckICfo6Ls8QnEqP | recBLJHgVkVhRmtYW | recGtoWGWumjaX10U | rec0mdarg3SSnSUi4 | recOAtTQm4c9HhdJG | recX0ir3EMGBJ8gGB | recY6eWb4FxBs7H6G | rectIWbPc9O2tn4l7 | recXp9Z7HCgZelxtx | recKhzjVck17Rc81f | recz7XZ7kOscGhL40 | recfIatNXEg1AVUTC | reciYe98cUNeMTLQ0 | recoerXl6MPMLfv9r | recMbuTdUlpUG5UTi | recm3kH9ovGHHSane | rectPUdjOP1Bn5Qwh | recJ8KnLeUj3mRfit | recDeJ3ae4uYQzMuv | recG0bZ2X30VRS5ty | recN1aPv6KU5GFy5z | rec0BeDbzR9CaFUQd | reczjDRSWNope5RaN | recMDKYXcW5s92aYS | recOTckPH1wYCWTIJ | recwFtyY3I7LzpZpN | rec3Zlv2uPDVxfzTt | reckCnKh81koapTRW | recTJqGy4UZj5h7cZ | recazmmzra80a9tER | recUpBnjChY5ZO3sR | recdTh6JSldNu2ViC | reckbZh8VUDuhe4tf | recEzwkPqFDtOmkHP | recqG0m0OgKugjcw2 | recenmybkA3rCZvnz | recVcc7hrJBmLuvfh | recHhrj8vvWNFHF63 | recTiDDssTaEfn4ZV | recDF3wMZlKyu54ZI | rec8lItQBW1xnT1vb | recTtC9TG67XRdTf3 | recLOGFz5scBXynLj | recTiRBEtPBcuGDTL | recjL6wjPxKXHPXWK | recX00yon4cbjTQki | reck6GB6qDzcUP2zP | recNkoH9M9EkbnmvU | recjVgEOQMg23wOLj | recrpI6cN0v0a3I4e | recNiKlKINWsFwhN5 | recKhMPYODUGRBDro | recphQNdMqiCwZJRA | rec61OxGwoT9nc4Qe | recY3BGpUlQIEaKRr | recQ3qVkvUs74TaXh | reccZR6zME2thmAsk | recE5R4vTJ6SfVYL3 | recp6q5z1K3AvZA9V | recrdKexrcMLcL36q | recWZM8rMKQDtq7h3 | recfTTbKiS1vXiIOT | rec5LLrc1EOOKfkcE | recsQsB9zL2XMnox3 | rect0yD9gQCDA729f | recfdjhiib507nenq | rec6yvn3iWg5JVAAM | reclLnJpFqdC4WpbV | recvcWSlm6oTxBjh2 | recFlEpUkahGWZ471 | recspz8UNlWGJj4IU | reclUFKISJzBNDRXB | recndKIQVDTgY501j | recTLUJ9rHuVj3YIP | recoqFzG1xjSK0PQ6 | rec57Kep9mzf37q5C | recHCr8UOabvf8wlS | recvTmr05mD8O6iGf | reca7DIKQeauF0OeK | recWFa9nKChFXfBbi | recaMtaYR8R01CVn1 | recnoKo3WQnEN65yt | recgy02VlIX30SYv1 | recrui9LgP17IQe0Q | recMT2AsHjCBBATvZ | recMX5qnQtcnvFLx3 | recFRsypsYpw0hTAd | recfYKlqq0iNblCju | recbidhP1scYfSgBp | recP6ilWqrcWoTyA2 | rec4CS6qjoFtDvHqE | recdat7nwsD9Xr4xY | rec4COodXlvxei3sP | recO2cKsuBMDv3lwn | recIXse0lhSDDkXn4 | rec8dR9dVQ4Dy5zht | rec7jAGTyIbIOrAFR | recRvoF8JCf6euUEg | recfSpoSRvSqF2N8b | recCWCh1YOrcBpd6A | recuvRm52e3WBrx8y | recOfkHRnRMyjFEe5 | recbV4Osa4phGswZ3 | rec5R6ftDae9DadiY | recQHwBQHb6x2xDtU | reckbiOo3NPRGUPG7 | recUL9VWccFSBT4em | recTeqN2YBIPUT9wK | rec97P3MsdlMYtw4Z | recBSk2Gc8q4zXulh]",
+            "[recAy4kB4u5Mh4G82 | recP1mgGzbUVbrIGK | recp7r6Y2EkSzel2e | recL8dZRR1lSwam4j | recc1eKOtazTRtJQG | recMbRMTJ4c7G4YyH | recC0ibJdFQa4yCOE | recLGQ1cZAVd1bo1V | recRQtj4mqpmlTaNE | recZPobZTYkeHQzfm | receBCi9D2ju3mk4P | recllNm0VhmWSwaAW]",
+            "[recV3xMx4qIxC2biE | recIRWUJfazmF5uxa | recA16ORjQuS6FAlG | reczrqIbvg9klXcer | recyMAPIMHFh4CCul | recaIfwRug9sdbW8d | recOkAXXNqT3BzyGu | recj6I0qsgMk7oRaW | recvPj69Z9IkaKg3Z | recSTbRoJMUVbWiFC | recWQrpTty6MokuhG | reciUpO0HSYgA4i8l | reckOAZQ3jaRPdio1 | rec0U1FJ3e8m17qud | recrqoxbr4bFZjSmX | rec19Czxe8nyTUF9i | reccImfcS81mwoYsp | recJXH2pM5brbzNuC | recK3HzZtOOtinvOk | rec002N3ZSU6YPxjO | recYidihTTk0iW9cw | rec6OQfybgItuQGBj | recXtD4XHRvouzTeY | rectIxRp4fM5HnACL | recGXV66yPlJF5B7y | rec7EVWK8fJUtLJzR | recUarqCmPI0GmkGF | recSTURb0P7nd3SVl | recuNBFR0F7NnuPA9 | rec8PPamV0MqNrgTc | recE73VcdrJAhFg9Q | recANlmZw0TUzT2E5 | rec9tMITiNodN5rsn | recpgb0DiIFcJa7Ag | rec1HExdDU0OkCMU8 | recilJygIZG3iNLlW | recZ5hh0BuUfZftSt | recqTFOzRxCVXYRK9 | recMuxO2BGZxjC4QG | recRVSB5MftdLIil9 | recKJpSmUHHSyUNSb | rec3RhcXiBZgjUSKn | recDF0ZGU0ozJ024D | recpTX1w840N0YVhp | recCLbzI1i6q0JYBd | recsB9PwT3Dhj0lV1 | recgGxrVLscWY4kA1 | rec4r4JQxrwXMB9An | recw8Wy0Jjk2ujTDp | recJUNJmO4iZOJOR8 | rec8kwCZ8CvhW8bkG | rec2P8dZjLqjk5ohM | rec0FPxvbtK7ClLDo | recVRyCtN3W3nd5DB | recpJGxoqkLMrh4dd | rec74ZQGmWgiA2c89 | recnBgLj1jUS5gTUx | recZNhiK5tOJnu7yu | recDcHxfFq4zLu1wG | reczyMu3bcXbMVwCs | rechNVFHNAND0l6N3 | recdBT1AQWuoeEmXM | recazFKl7HLu2ODiJ | recbe8rglUoxcEmOx | recJe6F3ExhICMZYn | recQ5siLmkUvtJS3v | recV6z27kxaGVfc8F | recS0GJxuDX6LI5hf | recDcfQOj50GEpuKa | recFIpaer8D7CExm0 | reca9UaMvy7Qjlfey | rec8vfDo8aAScUWrV | recKAy7wSaUjIVUq3 | recJvnEAldlpu3VbX | recrha9NQUl1PERtp | recZju7sSZq2Threa | recc71GAfVXZawAmR | recRCCATurNol8RjQ | rect1nLKTbp2zHRtY | recNYYKChIytkKAwC | rec5uIwCKnO9Vkr2E | recNBg9dh9SB6dNV6 | recS42ITHsCS65zES | recHTGbRnDbbvgDSI | recT3o7VRsFgC14cP | recEnpEOwSGMlHLIo | rec9qxCmKeDQc8nLT | recBJ9w3WTLfGNv7W | recm9GbZ0hWhAA4RD | recTS7baBUZsL54Ba | recQ85ghPd6wgsCQV | recvUmnAtkZwVIEF6 | recKYItY8NLvWPOdg | recj6XZOllS5KtwxL | recVq4adRyk4UYRPk | recEFsWT93XVertqQ | recB6R2P8PWSQQhjR | recDMD7dMcL46mj1P | recRua8vLJdD4uzsl | recLBmBj45l05vJd2 | rect2Cp9XNmB7BCMM | recZcSf6djw2QGgkb | recAK3iHGFVKhaX1b | recUAT0A9XypykO3g | recZDvaimfGEIDGHS | recosQChyjtUewiI2 | reclspGUIynDTJI0F | recR7BSFjmzIz37Ut | recqE3R7cPGEdz2pv | reckUdr7Mk1QEGiIv | recjiCV4BcbozGntm | recyIoqcVPoD29y9l | recNN5pDoT3IWMT9M | recHVDivUrm1wXbaG | recFtFCvP9Xc9QFdX | recynuSPobvtVVoMy | recCE1M7PgaXuGDX4 | rec9edIFbeRz6go2C | recBqwbckp94OsMzX | recCzjyJMs1eY59va | recwvCcDuxPBOOuw1 | recS2lFFT3MbWcBRD | recNfxtWinTt9FjSY | recyUgIVbPryGzNw4 | recABGI3UPiiNKKYx | rec7yNr0sZpkH5XDo | rec5rXmo1sg34KXOz | recuWxOZuU9jsFLi0 | recbfAKFwHbzIHIq9 | recroimiV5EvhpYeY | rec3kB7JZwt698GDi | recjbudy5c3Mhyj4r | recvfGMHOrmvSa2Jq | recOQcA92YrRUlj7C | recd28wOp02LYOkRH | recvkH7kEXSvObfMr | recystjw4bY9Hnt1l | recpXe5m032wV2kFu | recez69TzMJgddsXg | recsp4g3FJ7pZkyDM | recuZlEBRvOnvcm4s | recrMTOo5Ku4pJe33 | rec9mu06SsnSmtWOm | recfv8gAGoxotKfCk | recfAKNbKaRaKSgKd | rechYvxaY6iQ4dT1j | recTw87ANgOTN4lpd | recVZi46ghXUBrR29 | recQLWiE13M2QpuuG | recS9zENsoiLPx1PW | recJv68PY2LqcuECz | rec3KW8BP26TS6GtJ | rec1WvgCDhMCVryWh | recHIjYsM5GOtjqI7 | recZkNeZrbAMKLadY | recYwNqoUIN41A6vG | recQoCrWkrg0ihiZ4 | recwzLw9QOTiJr7ip | rec42dKsNsTShc0dk | reciUcY3RqXAhYHqr | reckgvTXYikfaJsgi | recBgU1930cvIgPeN | recVWXirYnxKBQ1WB | rec4b1ZlfXBgF6vXO | recOSxvQWUlldKAOV | recOVaKSZKDfItdUt | recZRVn9EdowJAuhx | recplBOXpZJX1recK | recfn3QvB8gWbATgJ | recaz7NRTqBf6OgY8 | recua4dWS9mVizjPs | recJwqzSl6Uc889EU | recQBqD8AB8HZPpsP | recw66MDfXmpz9aN9 | rec5p51bBijGMhS0U | recoMkwOpbVhT8kzk | rec3jWnLWKt5znWdk | rectoTpujscDAdebS | rec1pCQo7YNRqCe65 | recXDJzYpJn4yrYw1 | recY0zRx0O5siqqUA | recGhavpxdkWqhSIc | rec0f1f2BASJ0ms21 | recFOSA69xZoUuAjS | recATgh2TLUhLjm7L | recfJ333Bqe5UZu8o | recSiXykC85OhUGNC | recmLMp7uOrt4PJma | reca3WhUoEzTNWLjF | recnKPvLtbeYWX7ya | recvGEE06ZkH4r0TS | recz2PE1lAb9P47QS | reccEyTuTz28X4FGa | recvxcZXXSOeP9leQ | recv45NiQZpplo6fR | recKZCikO1tjTW9eP | recjCxZE5wJCB51MU | recHokEpWZghyBjfN | rec43dSh70ZQOqCMI | recxQExXPWIZOFuwi | recAF0nd2f19Dzp24 | recOs0jZJpo6Pnsdk | recNWB9izRHrvHo7z | recSPuHGynUVWqH3l | recwrfwE8wQXtZMzw | recRs9qJFnTYSVQLH | recKrkcW5y9JNPxwG | rec4TqmE1L5a93Txz | recheMLcvv4YRZxEI | rectawsRTVBmxq4V6]"
+          ]
+        },
+        "Número de Trabalhos Atualizados": {
+          "tipos": {
+            "numero": 8
+          },
+          "preenchidos": 8,
+          "total": 8,
+          "faltando": 0,
+          "exemplos": [
+            "19",
+            "3",
+            "326",
+            "6",
+            "185"
+          ]
+        },
+        "Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[19]": 1,
+            "array<link(rec)>[3]": 1,
+            "array<link(rec)>[326]": 1,
+            "array<link(rec)>[6]": 1,
+            "array<link(rec)>[185]": 1,
+            "array<link(rec)>[114]": 1
+          },
+          "preenchidos": 6,
+          "total": 8,
+          "faltando": 2,
+          "exemplos": [
+            "[recvYvZ3fHIivTUUF | recDpdldoJYcPxfzg | rec8nAR1ftqL3bsb3 | recYzFcLnILszbCfp | recXONBEJo2qkrOcd | recVJe5uwSMahixSU | rec1ZTbr1LVNislSs | recj0eI1aKyBJHhdH | recEMqFwRxti1jTwf | recIzEOLMU4ysjRAl | reczirQEv7HWSxAKC | reccdXmyqrCmvdtcU | rec8inBDXlPmxuQ0H | recEwIMZCz9PbBeZ7 | recVVMr3cD8cPHgz0 | recNp0XCXNm33aNAf | recvMS1Q0Chp2FgSN | recpOaa0OJz5ZuYor | rec1nL0JVYZnnpeUv]",
+            "[recwqjb8zzwupz8oE | recgybtLud314WSXp | rec0BqOJKLG32mqnX]",
+            "[recSZl9CbLYJjitB0 | recK0XJMkq0TYWmHf | recj0nY9o0vsMqlYe | recZICYZYe4GaP4NR | recNCSHodRAzPa7ma | recfLlv8uLMVYxtYB | rec8OcWv4uuKG34Cp | recdsAiy9UxwNnbUz | recXAOMH79ilnUPVI | reclNFuRcWkhuzkxs | recxynqyDm24fyrFH | rec1daFtfJe9UEKMa | recKt6afmY4UuEiqB | recqpC6b9bPa4wuEb | recLQjNKa05UUbiNV | recr53fGSYhE3KBMs | recJAY6ZvZvDQy58i | recBC6ue7zkVUKXwA | rec6MH4aGvynEQPQ0 | recp562ufDBI0yAC2 | recg0MdsXmbHSuzHb | rec7BqqyFQ3REpb4Z | recHbOoGi49YJoxVM | recTRXInlK8kQtrke | recT0s4M5XJ96FRjI | recrPhfLeM2pv8LgE | recnXdKFFI62Lr0lA | recFnzbPvOA2xM4xr | recpG9G4t0iu7jByX | reclqH1p1LpFD5lGk | recGiZxMG3gnNz3fB | recwqjiyOrSZfwXhA | recavLmWQxNGPCSOp | recvekdFtdiCTxqEa | recfYjcqiLXgSixtj | recQ1KfQQP2CkxiKt | recix0uz5xwuSnYVf | recxdWoNGtqjZdh3Q | reci0Vh86phP9Bjxq | recZ9ZdNEkANVDx2e | recMUZ1HZqIYKF9jZ | recApS3OKIp0iS4A4 | recICF4l2EkIT5SSL | recsGN22KOjyxW4vT | recqHeuM6yGRDexRZ | recRbFrWFxlcGsL26 | recGAwFabycmhO7MH | recCQUFGFRzgdYqWl | recsFyE0gdSb2CnaD | recyRcyuI9s1rQOL4 | rec9sET2xC3DLgpW2 | recxSuYR6RlFhzQIS | recsK9EAVEobB3FmP | recpt6vp3g1eCoMXh | rec52sZxxZcfKf6w8 | recaC02Q1805zivAk | recfctsIxSFsL79NQ | rectB7ioiSFHVjedO | rec2Tg8Yac5N7JM5g | recSQwsJK2OvaftYQ | recQGHxw6Mf7wp27W | rechbbfBSANAemV5P | recq86GlTLLbkPtxH | recicCMjF4Rjk18p0 | recn2yqLA6KHxIKM4 | recdVgPFVy4zl1zRT | recpnBH34j7wtZK9f | rec71LkDaTfYm6i6D | recbQ8rtzuJEOAwkt | recH6Dxd3eGscKRHr | rec1h8o63lyJfCqXD | rectiVbmZ1OeJU58N | recMbtcoJ58ipaPUK | recHOFPY23UASnb8N | recmxXBd8TSyf0rgj | recie2YPoUVE44pv9 | recBtIeYSJsgoXMmX | receRjEs0nBrXlT4B | recAFbAByjZ7IeOjK | recBkafkLpr3uL8Zx | reca1NXutg49hLuDy | recJmb6VIWwXj2bR3 | recLCc4dOf0l8DGgk | recQwgI8OfHssXvPd | rec6sN8F7sKBUoupd | recXHb2eMzrspiBPj | recfvNI4rNMRIWTmb | rec7AijePseKyat7b | recKXaMQmYyf7EmjD | recIYEUUPv5OkffL3 | recqOheBWKQyH9fKg | rec0dlVAvzU0NoDFo | recS5gL1c395RB7P4 | recZsP6Ld2HrHHT84 | recsCf6L5Xd6VqiF2 | recn46mQECxHAKHWM | reccwkyEES2A2WQK0 | reco5gcnd3tZ9CmwY | recCD0y0zgcuINOvE | recQkUkgen01iyV2O | recOWENijYg5JNKZM | recOtgUIroFHwbZKB | recHXG0h21RwTV0bl | recef6oR3GHDWYEBj | rec6qQso7pi2Zuipk | rec6Iaq5VLFLqAZ1h | recaqORFKFgjWYJtk | reclFfebSdbxKtGF6 | recxtzlryJgzqSHWC | recz1ceNUombTcZ1k | recG2LN1q39Aodrkz | recpq8Ax8fq7DeGWD | reccg06qnLYskY9Pf | recRPvxIEPtpY6VPF | rec8IRnCX3v9g91Wu | recHz000E0bRvAk6F | recwu0n47b02CkBTj | recxah3qTuMw3pPTN | rec6fi1VcLFO1eXLP | recJid1Us0zqnPyaM | recuNIJRpk69UY09y | reczUeBTuKsrUMZpV | recmy8QK5CE2cXrW9 | recWNHgY5Nq3YcoCL | recqEG2e7yBv8sp3h | rec1rvSVvnFhvn0sL | recYB8JAxh35c9lqi | rec3kgGKBWWuDkJql | recHL9B3awHj9vF0g | recQyJYzoTQaNBVLz | recqagtyNCt3G9jGm | rec9HeBOPOPXWoYic | rec0lCxzKnBQNumkC | recLIbFCuFONQccuT | rec4QjupuYulH8jj0 | recIiCYJVtUFMlhkN | recoK4Po5vWKifTVf | recDopeYo8t4b6xaS | recc4wm89IqRmqlyh | recTSsGYGr3eVyW70 | recgzcjzDLkecQTMt | rec1VTAN1McyNDFWY | recBVBP3N0Nem7Bni | recxSzAnjdc9HNHEb | recw1Yjuygx7rzQhl | recuVAm6wSYUX6Lkg | recgCAP06ptNwRSDa | reckdouzZmf4j0AmV | receKi9qr0HEnsZtD | recNgmQZgB2viws2U | recoRCAv77ZyFssVL | reczRJQbE92BSBKhU | reczkpo35GNVot52X | reczWIJcAK6lOTQj9 | recIJhEWS67ZNCo3E | rec0rKu3jb4Sv6xfX | recJHmbKxynTmTYFp | rece2Jr5SQQK8eWxX | recO7NjAvt1PfvBUz | recpk97zbQpAewqQx | recFhoV3DkET0tO2r | recP39PMwjhFRMh7a | recBtwgdjq4Osu1Fb | recHjMuPmD603ohtu | recD9FYZKfiYzDkWg | recplt0kB41fPomSy | recoE7UrIlwXq5Na5 | rec1pA3rDPtNdvdPx | recoLzjbqQXXUQ5gm | rec0vZdue4qIHc9Ea | recmcI8mdNBjfqlur | recEekqzQp4qbGPI9 | recrJIiqQOrHYFlqh | receAkahoZmfws0oR | rec2TAfzmNivqoWhd | rec0Yefv8ETGaXzCv | recxzzX4I1j33A3PQ | recbPGa3cN9JxAW9f | rec4wT36ToZfxsurx | recNwehWGi9nUrp73 | recLshgIccyvpW7jl | rec8L2aQkNPZgWKcM | reclNvRMdK4lYdPzd | reclffcm2eNYJeB5M | rec1gjpGqL11rwhO7 | rec64yiQivIwBnH7O | recYeAaF9C7M9FUzD | recGXs50dDyt57lvs | recWFKscQH4NALXE9 | rec1cQH1QMXd4Yfye | rec7JsOCpVyEXsvpq | rechVTK7WlzCD0R0d | recL5IkPwzJVnViHd | recTLdcpjCqqxhRgF | recOxWFPyEjisXuil | recICoyJ7YU7mZlaX | recVEWCr65WZAC5TV | recvNSQw83lfzHsp6 | recLI5MIBmLDx1lYM | recW8PstMVPgCvOAN | rec7Ky6CpBqagEDf8 | recNOtcUy4AQWEggh | recXlQv7t1z2GwVFH | recEdPJ4tkXYGA1hX | recD2iiWnltUupynk | recb0P8acOb25LmUL | reccrlbq8dLzARv3F | recpwQtExwJergizw | rec2uLiJWykNYteIf | reckm3x8saObExqjE | rec01BlQ4m2m09dxg | recFOf1niiTl660UI | recGDanS4DUccvkaM | rec90RWkYa9msNEI9 | rec3NssHBV7LrGkKT | rec1aludap7zTaJBs | recbp904Fg2SJ5goc | recFxSoITKgjNj766 | recZkvR9RoQvXgOM8 | recTQ7TnMlBKEQmWc | recxMTNd3EHEwnrOM | rec7Dqbc2nWWsIJfc | rec8PxqaTX5gjJWvU | recLD7Vd0bpCp4KC5 | reczaIaWz4YVL7HmB | rec7u7MhkGG0mEsn4 | recWEb1pzOstx8rLN | receC0DMSNbDdZnqm | recM2Z1fT92tUaC2n | recbRp3AwPt6BgXpd | recjav6jmOrvTUz8c | recrJR7iPYqDjt5ex | receNqQlByATeygkl | recH6gR0CjiEwmkbX | recTclt1FvbeyZ8ay | recE4kjRm5jWskmpO | recxRHDkElxV3YRUa | recAqJeuBRWuoO2kl | recqPK4tYn5LtqxiT | recgdIjOKIxclzRSa | rec3zdMF697ehYC6F | recRWiT31BBRf1HtC | recCRe8uuNajp4Ecu | recurZ9eb6NUhJGON | recFJfGJ6Kmhlu6UU | recNwz7TeMdMi0OvE | recvMG0m97rlnxuWJ | recpHL1PkNKVs3Y59 | recCW8bpP0rFhPN8e | rec1gdq69NFV7qc2P | recB9nhugfJraOm5P | recRSHuUlxno61BQJ | reczBhdGDHoGCHYZr | reckLLLzKTrk9kNnQ | recVt9mKZJGRQjaMX | recL4Jt6sqCdyeTwi | recaXT0MUWz0rBnlU | recUp3P1i5vlmhb8i | recoiIojvrfmTcVsY | recEh6lMLV8NY1RG0 | rec88z8rVN5nPPSv7 | recV2ergJjyB45UxY | recksQLugU49rIslx | rec1uLhHBj50sigyS | recOpSamp2CTNXAix | recpekuSfbbIJY6kF | rec4OXcQt4hSu7mIO | recO92ePny7pCI8ri | rec8dq1nkQErb6tRi | reclZaQCxnofX3M3P | recXlA71DtXFvfp8y | recYXOecWmLKYF6W3 | recQfrwbxxEqVR3Xm | recjqKhL2GyWf6DRq | recGIiuCGPbVUFuA9 | recmA0xGyTXNwoKsQ | recEjqroKiUICooZ7 | recyNlHTD2200wnor | rec7pwyZtZDcxqm2S | recphJJfgjAW7yQe0 | recYmMVIxsWj4of2J | recZsQ624RJja5QbC | recY2YA7FmXlGw79G | recSDiTAsLhl2zpAg | recWf5JeSevWiDonr | recCQ5e6I41PvaJGz | recLva1qIhHdx0Agn | recE84rlnNvNQOQ5u | rec4jqPqu8taqbsoP | recyrgALL4CVens7o | recn0C8d7tRqGVGPg | recIUIAOAGLOOsiPC | recZGXhPBV2YHKD4M | recvawsFaZHAJzPBe | recAgvKLT2ZMaIBlB | recepqtcglcctG682 | recC1rWzzeeDyjeIi | recvyd1Rl4dK7S11U | recQK9PMxejONPVkq | recOzVm1F4hocLL5m | rech2hc99wpmuFzLw | reciPgOkTVo2Q3jHj | recKkVPocfU8vQsBE | rec5DLP9twZF2RQYT | recCW9SrTed9yMNqS | recDCAlQzX2uTmdGs | rectkjmYk1IqXhSH8 | recnGVfJxlEbnqrPB | recertoZuJ5HtCFNl | recpitWNgjfqBspJV | recxoPuPERnzEdfhr | recNJcgvsrLtVV2H1 | recdypkjhuJy6eeHC | recQ9YLzK52vwMXOr | recQKYtu1dAEGGQZi | reclC3mZ1xczo2D71 | rechJVrv3EjivHOqq | receP8kb1Q37VNzyH | recLzL0s4GpY6Dj0E | recXhehlgs1nOaue2 | rec11HAVcfKi9cxZ2 | recP6vNXd4FVVDFg9 | recofGKceziqC482N | recnseqiMh0YMM4EL | recZ1Rr8utaFcbtvn | recOkeSHcJptP2ouR]",
+            "[recKiczMndYW6fpcl | recdnZg79ND1fVn03 | reckuu396Tt1eliGC | recxLzb5EKDdqaH8t | recdxQS6ZmDJ3KvKB | rec2mqaZjwGueb8Zx]",
+            "[recFkgujJXPt52XzH | recIBTVtLIgGUXR79 | recWMmUMlkWvfrt8b | recEuLsphDdIYXQnV | recfQmb5ydvZxnUbf | rectLYU8NS36DIOH0 | recO3tK51Ite4woCD | recVMP7Tv99eYV1Pb | recomh374UaoL2nkT | recJeKPVTYnpu6kki | recO23PKzInBXMP7A | recWG4yWYj7MrW6FO | recj0KypwIGRcavE8 | recGXr2SENV1jgVSS | recLclpYUFZeorOSU | reckZ4KOaaHNDkF3c | recJMtX7EpZHmELEM | rec7tGjN2hBGzqYa3 | rec964HwbhcWsDo7y | recXbneb8GaCWbPi0 | recc0fOieiInvG0vf | rec9KWCrFdCrR5qA1 | recLUZqCtjXb8fAHS | rec5jNS73QOw2BEdn | rec3JXa9b6iNvQ5MX | recS8crnCgqB53PoV | rec8r4YneZ7ePw9qM | recF7MRd05zAakCGU | recNsuADh3n6dUJ2f | reca8n138LMwnwWyQ | recPu7y9eTCi0rnjB | recPfDeL8i47t6kYx | recJ94OIAPyiJ4Nlg | recZ7ksQDNyhtInRW | recnhBsAjwLOBNB8E | rec2tNZR2FSvL8Dqm | recCfnIKM1K7vmIT1 | rec5uNUqiTrDxJh0H | recmhdUMXiq7scRxu | recCR5s9RsXgQaEGM | recuJt8tjRAgqjJz7 | recnNByWDdbsnbVXi | reczPsu0J8arXsaQr | recSpZ13KUy01GJre | recvB6WNj7bSPwTs5 | recqiKPqYtXraWNkZ | recADvs3EsE5N4qVH | recHJ9TFoDiVwGuUJ | recTzeqcjDm7DkTnm | recbNEppkjcGCw1qu | reclPOVCphgLTEqAj | recWdh2uq7jpnQnoR | recE75SZkDpVVCNVo | recPATZB1OKtaKLNu | recUDxDPxo6FPZRQ9 | recpk9N1bNUU24tem | rec4a7U0rYUgLHH6p | recrdbYSUt5VL4Pro | recrP9sn5to8A41vP | recCsgcZ03epqDjiB | recowHBxWkcIR8WRh | reclUKyG8NueUTJh9 | recg2x9MKJlup7Vw5 | recAMLJgmjWnDH1Bc | recZM0swZa9B9iLZZ | rec6IGxRQeOelS8yM | recyZWjWKGElxiVfA | recnQm4QZHodVndYA | recBddbA2TbKVjfea | reciQ0MrMu2ZUCPCP | recxhvJueMBFw0kRy | recUkhfXZAfCmySVN | recE2zfkkuw7tpn3e | rec4hRnNY0zJdrvLA | recbf02xG9KOz9bJS | recZIs8nzRMZbahOc | recfSBFoniJFKe25b | rec1AnFSAwMnkfWdh | recL1SvfSYcaDQFOE | recENGnywObyEg0N4 | recjLSDTbfk8Nhd1i | recuIi9R8wYod4BCy | recNeSFavmuKgg8s4 | recp3i6L45exsyDYo | recacUBySLzkA4bEa | rec3RxAQNpToUZzUX | recMwUd3sRK7zDiTN | recsDWMZCLazh1uTO | recA880hCeG8E4Jd5 | recBjvzUOc6XRhjbT | reccAY3xYvL5PRxmr | rec435HH8XTpai6DO | recwQP4nwXvYX6UyJ | recGfBbX9BZAlY40X | recwmqcgbu95ZTokx | recvrR4xBWBI6vy7l | recnik8cJr24EIdyd | recXxM1cHQQviVHS9 | reczIjsrKn343ZijZ | recJDQ5pIhzv3HKoh | recaIItY1GrAjDwq8 | recPatQQERXkW45qG | recHCc1NH2OfDp1FV | recxKfRXHomNf9sMQ | recFDK705evCwwmeZ | rec9PHhIPeq3MxGss | recpdsSjfUZODUDRi | reck6CB4x7aEjoNSA | recRMqRMoS88M4Mnd | rec7sUHmqow7PQPAh | recNJ2P4xAeOy1mIb | rec8VomxOh3oGBuEo | reckNaLyshyNtqnJ8 | reckllNUdaiFHYQZQ | recpm3gw3crcsFF9K | recpvBIRWIJAAza2n | recuFbwGpnqNGzQPW | recbrFXQtrrWW1AbU | rec7M16WTQ2JwMxbT | rec6vGHrneXcjEB1r | recLnCJu2460OClcY | recoenYfK90E7sWyH | recHVlBrq2WnveJzB | rec4c4Nvde9tTTddl | recroxXZ7UjqM1oZe | recdgT0FGPPw9FZKv | recuENaDqeBQECBpO | recdpG4s9Kfzn4iTA | recRE0FiDuDnRlc0h | recSIKxa18ZmLR9dW | rec0A80NcpfLedEsi | recY1lMlrzkfaMshb | recp8o2Per31K4cUo | receIbes1TPQU2Sfa | recMSss8gEE7TDeLY | rec4qJtNZZ4EGeP18 | recwQCNeqH9F8nX2I | recJiH5XzDZZA3h79 | recQr0ppgs4nhAy4K | recxS7M7u9N4sXcZ5 | recKxTccdfLgAXTbV | recfzIG7DHv6gN2O3 | recNt8bY4EIHgENro | recC54jTOjxVPP6PR | rec3a40rtE08f4HzD | rec7qaSLaBPAv7Olt | rec24jufOPa4hB3dY | recSQsejdvQzw20dm | recQBHXjgSRnbE9HT | rec8JfrxQ4biUw5Bb | recboZEUGvjSWTo5P | recqLaDvl0Ngd9u4T | recdw2EdcNCEBbNMo | recSychc8WJ5fNAn1 | reclTJehY3JNh4Udm | recaB7pRkqyyVIQWE | recSwpw9RCq3VRPdK | recKhQtBwb16LlMHN | recy3HtC1PuYBNOVH | recdzMrkCVLD87acC | rec3AMfDNK0YJPHxf | recwUI7S75tW2HOr0 | rec5l2gkSh43tictW | recB2mrrVJGyfpuj1 | reclMXGS05YasUXSt | recOgGt0yYgWwv9gq | recbKhpLZt0TfcFBX | recTcJVOpvq8KRy2u | recFBGZLNTmvTYqUT | recMTAgzDBU8DZKl1 | recoooOpsKfSIGbrV | recltlhjUR80bZZgk | recnRyWxf5XFqtVVh | recRd374LfhtDWlae | recUf98rprKwyuf6l | recRRBYAKIf0eMg25 | recs2rOrHJc9TNLaN | recNytNJUd9OVU8F4 | recb8WSN3Y3OJFMbw | recPzoHPxUmbIwqth | recdy6haoKK3qMhuz | recy9EMAXArT7n80S | recROmGbaKogLI7mY | recL3gHsLNMkslNIp | recNHd1reVDRZwo53]"
+          ]
+        }
+      }
+    },
+    "Ordem de Serviço": {
+      "id": "tblg3yHLdrpYVUNPv",
+      "registros_lidos": 48,
+      "schema_oficial": [
+        {
+          "nome": "ID",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Nome",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Clientes",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Nome Cliente (from Clientes)",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Registros",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Status",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Attachments",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Attachment Summary",
+          "tipo": "aiText"
+        },
+        {
+          "nome": "Novos Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Amostras",
+          "tipo": "singleLineText"
+        }
+      ],
+      "campos": {
+        "Attachment Summary": {
+          "tipos": {
+            "objeto": 48
+          },
+          "preenchidos": 48,
+          "total": 48,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}"
+          ]
+        },
+        "Attachments": {
+          "tipos": {
+            "array<anexo>[1]": 1
+          },
+          "preenchidos": 1,
+          "total": 48,
+          "faltando": 47,
+          "exemplos": [
+            "[ANEXO{nome:\"1755713148435_4649078077796572915.jpg\", tipo:\"image/jpeg\", url:(omitida)}]"
+          ]
+        },
+        "Clientes": {
+          "tipos": {
+            "array<link(rec)>[1]": 48
+          },
+          "preenchidos": 48,
+          "total": 48,
+          "faltando": 0,
+          "exemplos": [
+            "[rectEDZrt5unCtR4Z]",
+            "[recvjv5ItFFby3lma]",
+            "[recjhkJGmLmUOMayc]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]"
+          ]
+        },
+        "ID": {
+          "tipos": {
+            "texto": 48
+          },
+          "preenchidos": 48,
+          "total": 48,
+          "faltando": 0,
+          "exemplos": [
+            "OS 28",
+            "Ferrovia",
+            "Jazidas - Pelotas",
+            "TAC-TST (10)",
+            "OS 61"
+          ]
+        },
+        "Nome": {
+          "tipos": {
+            "texto": 1
+          },
+          "preenchidos": 1,
+          "total": 48,
+          "faltando": 47,
+          "exemplos": [
+            "ZEG Biogas e Energia S A"
+          ]
+        },
+        "Nome Cliente (from Clientes)": {
+          "tipos": {
+            "array<texto>[1]": 48
+          },
+          "preenchidos": 48,
+          "total": 48,
+          "faltando": 0,
+          "exemplos": [
+            "[Geodeep]",
+            "[Fundação de Empreendimentos Científicos e Tecnológicos]",
+            "[Mastersolo]",
+            "[Geodeep]",
+            "[Geodeep]"
+          ]
+        },
+        "Novos Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[48]": 1,
+            "array<link(rec)>[28]": 2,
+            "array<link(rec)>[17]": 3,
+            "array<link(rec)>[69]": 1,
+            "array<link(rec)>[259]": 1,
+            "array<link(rec)>[20]": 1,
+            "array<link(rec)>[274]": 1,
+            "array<link(rec)>[6]": 1,
+            "array<link(rec)>[37]": 1,
+            "array<link(rec)>[120]": 1,
+            "array<link(rec)>[15]": 1,
+            "array<link(rec)>[2]": 3,
+            "array<link(rec)>[104]": 2,
+            "array<link(rec)>[14]": 1,
+            "array<link(rec)>[27]": 1,
+            "array<link(rec)>[1]": 5,
+            "array<link(rec)>[11]": 1,
+            "array<link(rec)>[9]": 2,
+            "array<link(rec)>[72]": 1,
+            "array<link(rec)>[53]": 1,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[33]": 1,
+            "array<link(rec)>[108]": 1,
+            "array<link(rec)>[10]": 1,
+            "array<link(rec)>[4]": 1,
+            "array<link(rec)>[32]": 1,
+            "array<link(rec)>[366]": 1,
+            "array<link(rec)>[79]": 1,
+            "array<link(rec)>[91]": 1,
+            "array<link(rec)>[5]": 1,
+            "array<link(rec)>[29]": 1,
+            "array<link(rec)>[123]": 1
+          },
+          "preenchidos": 43,
+          "total": 48,
+          "faltando": 5,
+          "exemplos": [
+            "[rece7y2XvEQa5bd3X | recMB60e2QmCL8eqE | recm6xp3ssV9DlsM3 | rec1Ys5XcsHDCs0TB | recTuEpdbqyKOYI7D | recvrX16uktlyBDfr | recKiu4GiLrDfNQoG | recLzK28i22Z1MgZm | recew5n42fOKR6uIy | rec74ZQGmWgiA2c89 | recnBgLj1jUS5gTUx | recP8N8p92d6rrpxt | rechVsrK5SjJN5h3N | reczWM1pumags1Hl2 | recxnoBm7FpAxzBOh | recYQVKQwUKP3j2U4 | recNfI9gSIFSqVCdj | recc71GAfVXZawAmR | recas3X7eiGZgvfMd | reczb0tqTDcEyjpMg | rec9qxCmKeDQc8nLT | recvUmnAtkZwVIEF6 | recKYItY8NLvWPOdg | recj6XZOllS5KtwxL | recVq4adRyk4UYRPk | recEFsWT93XVertqQ | recB6R2P8PWSQQhjR | recDMD7dMcL46mj1P | recRua8vLJdD4uzsl | recLBmBj45l05vJd2 | rect2Cp9XNmB7BCMM | recVf9YE9lQW6xfTr | recBqwbckp94OsMzX | recCzjyJMs1eY59va | recwvCcDuxPBOOuw1 | recS2lFFT3MbWcBRD | recNfxtWinTt9FjSY | recABGI3UPiiNKKYx | rec7yNr0sZpkH5XDo | rec5rXmo1sg34KXOz | recuWxOZuU9jsFLi0 | recd28wOp02LYOkRH | recz6CSSekUf25pfX | recaTFDi2rzC11QX3 | receUtNYJMyEmpLq8 | recnfODRKzVDITuXx | rec20SL2pyfWQPWyC | recDu0itFx5iWcaC0]",
+            "[recQxKoGa9rUlFnEk | recZV6EBBSDBFDJgb | recg5kC1ja4DbsqYf | rec2p39s6DmRj53oh | recymacCbWSFWfvTi | rec4loTK0lOCb4Cig | rec1ayuo6adJK9InM | recgC8CZFEBPSwtgC | recj1jHjB1otvVBkV | recPPAFWpcQUFXXVt | rec3lhW8AzKlopkqQ | rec8vq5LVNt9uFRLo | recZCkPl1CkDh5gAg | recd14IbgJw9qL7xo | recFdOWHzBGhm76Ws | recYp3PBYTs7p6n6Y | recTjvfBxzvi3ny5l | recYWYKeCdkhH8QFX | recU0lKw5VWecqLLw | reccMZrLL4jS68B23 | recP5oHr6fLa2IYx9 | recLNWIQil4UEYljJ | recydSgyWq2sSHXZR | rec47UQ5tfvupWSsh | recdcM1mkwPGAzza0 | rec9qFMDCRHynA3h3 | recCzrxogFYnFpxGB | recc6OzUXw9KfYqZN]",
+            "[receKAyi1F2GCth5Z | recBjxggaPtE2YGrB | recXSM6MB3FTfSvfD | recKznWh8PxVF1hpW | recjDJxOFqFMDtUus | recTYDoBBllaZZ9x1 | recx5cvqcteuPDsL6 | recqwQlt2M83HCXCH | recKmx6qhVDCxYUQC | recOFrxrJIQb4AY9L | rechj2I7DGtnHHvif | recj2dCW9DY5PmTRS | recdTh6JSldNu2ViC | reckbZh8VUDuhe4tf | recEzwkPqFDtOmkHP | recqG0m0OgKugjcw2 | recenmybkA3rCZvnz]",
+            "[recplBOXpZJX1recK | recfn3QvB8gWbATgJ | recaz7NRTqBf6OgY8 | recua4dWS9mVizjPs | recdm12Sul4BtUFUe | recI4tWj01h2KPpFC | recJwqzSl6Uc889EU | recQBqD8AB8HZPpsP | recw66MDfXmpz9aN9 | rec5p51bBijGMhS0U | rec9quqBZKDBVybgM | recoMkwOpbVhT8kzk | rec3jWnLWKt5znWdk | rectoTpujscDAdebS | reclJg52uJIKgxBZW | rec1pCQo7YNRqCe65 | recXDJzYpJn4yrYw1 | recY0zRx0O5siqqUA | recGhavpxdkWqhSIc | recDi5VyykrC7Wk1I | recqppJN83UPWcg7U | recDbD1Ql1cNNMlNU | rec0f1f2BASJ0ms21 | recFOSA69xZoUuAjS | recszLSjdBWmmGmbN | recATgh2TLUhLjm7L | recNeRxl14peT9eTM | recfJ333Bqe5UZu8o | recSiXykC85OhUGNC | recxkVVtSL6sk0uK8 | recou0xjDAghT75hm | recmLMp7uOrt4PJma | recWONXpDW5Hdq9jv | reca3WhUoEzTNWLjF | recnKPvLtbeYWX7ya | recvGEE06ZkH4r0TS | recz2PE1lAb9P47QS | recAE7kriPtUAKP9O | reccEyTuTz28X4FGa | recvxcZXXSOeP9leQ | recv45NiQZpplo6fR | recGWkha0QGYAf0YG | rec1aybMe2tRD2vg4 | recs1LcQSXlSljFBc | recKZCikO1tjTW9eP | recjCxZE5wJCB51MU | recHokEpWZghyBjfN | rec43dSh70ZQOqCMI | recxQExXPWIZOFuwi | recAF0nd2f19Dzp24 | recOs0jZJpo6Pnsdk | rec78gUVW74CWOyxH | recNWB9izRHrvHo7z | recSPuHGynUVWqH3l | rec2LtYSYmpcVtbCg | recHT86OHMQUVOUNP | rec8B7HggEWUsp4II | recuPk0fvGaz6Ak98 | recwrfwE8wQXtZMzw | recGhMheqHbXE604y | recdsZI6x8IHwWyrD | recRs9qJFnTYSVQLH | recKrkcW5y9JNPxwG | rec4TqmE1L5a93Txz | recheMLcvv4YRZxEI | rectawsRTVBmxq4V6 | recYxZhd6T8FW9Cf3 | recw0NyOv3WBpzVWw | recsQvYVV994xE4gE]",
+            "[rec01zzI7mcSouaPj | recKD2uiclSB3YgFo | rechRvrDpTSg7mhXE | recCnYIjOcStK6exZ | rec5W10a0fZ9ys2nF | rec2KcoGLCMjZFxMs | recPMUt8tGsXrYOMY | rectbjMoGTJVuJUJZ | rec6bnpRGu291XYGv | recclErPMisiEbHTl | recRxAcB3ycyXRbaF | recafx4SYDyaoClOM | recI07NvxVihNxovi | recum9tCCJViiswyi | recy3kKz2tOkIlRBg | rec2x46m4Tf6jMWDS | recvjAmpk6Cf8KooE | recxyyDyWi4r8lwJK | recfVhJDdAEsoRBEY | recTTSYPbNoxKcSnk | recapvxY6Wms2Khqv | recJ64ksFZWJhNJfq | recJbHwav6aNCke56 | recFdntkAaAj1NW2T | rec11yn1nQx4w13hi | recO4HFT1dNDmUFd8 | reccTcpU3eEg7P1RL | recQgJgSh74DdZBrc | recpoAexOM1IoLIob | recYRSglIwU7OwnHb | recTd0Kmh3Hlv06i0 | recPWLOatS3WVhWF1 | recSI4oEeY48QANti | recRtrtfgkkrsHP9E | recOSxvQWUlldKAOV | recPY4t5zJ4B2SOee | recB74vPcfBKIa4cD | recV3CcbFhG6QI0Di | recUnIG8rToDBGjbA | recS1EbVEVPcBVEaR | rec0KD2r61uCFxutJ | rec0rcyaZLL0dIKIe | recYGG8yE5IfteZFm | recaaVxuBiRWhEwGQ | recrQbX0wnIczNslW | recVBQrVnZUvYB7r4 | recWZqtx6GxYb4n9F | recfmNv3keRXGnsNW | recPXV6i1qQuQvxwi | recn3jag9h0tOj6Nn | recgliHnUjJoJhrYX | recikUdBWbxnvwqzO | recIKnsUQD40x21co | rec3sz4RjapwSdIal | recLPhELfgxIvnvdk | recul1UApcawa91ry | rec7YBZ9X2Ahafn3G | rec4w8wnk2b3Eziiv | recoqI6nLpWLnUJ5o | recFX6anohbRHh4de | recVzSXageHf0E1Uj | rec4502PR0mUNETwy | recSH010vopLCkcUz | recifaFmiL4TN5J9g | recpovCLBH6wKULWr | recSwNMEvQTGGle8K | recUAmcvYQc3rnlIK | recReQ2npV66IwzxT | recT4cosOwE7C2Sc7 | recBNGh9YH365cYl5 | recDWQCcHlxAAm8Fx | recRMExmUAWWVOLmO | recEUtIgKH0cGWmGG | recGQMGAHxLCvPdUj | recu2aO3NgZpv0T94 | recVW3AUF9Sq6TRiW | recXvCztNAdvm3uxG | recDJfARQzl0RJR4t | recSo4gbJFI5PTj0Q | recXHEju5GepiGNJN | recDkzxhzHo6DhvMX | rec4OzyrqLgkTjl1W | recer1jcDKE8egnV5 | rec3mJ4BUa1bKFweE | recsC353uDK1xjnVw | recJK8MFaBOAaxNtK | recP9p1CTpV9QA7rW | recU119SvrHQ5ICdj | rechqK9ygCEvhZZaf | rec5Gg9jVkoBbCgYR | recacKJZuMoui4AHT | recOxwuPzWTkIkb0V | recqZWUobuAS5EK7f | reciDYpYilDYeGcPz | recXFxIKrFpQ9epHa | rec9gYirfo1JB6iMH | reccF7y9dxtTmS8Bc | recK8woBy82gk9bA0 | recBob5U52Yvzcu2H | rec9tMhDLgt9ISSM4 | recOzpT7aFhDkGRae | recGTBDgFofr35r3l | recaPLNALuc360jv3 | recRpeFdKigcom5p3 | reczBNkBd1AsHjCul | recnZiJcJlXdc1zNg | recBoxfzihHdw9x9P | recdDzcibceYBoVAZ | recGuhk5oIrHj5wN2 | rec5GhApBmf88etOi | recxo0moNG5xJsI1Q | recWHgna264HFeROK | recVp4xlvoaGaRDNl | recTh6cMJmengva41 | rec8yhJvsun711dSk | recAlmQiFCosUFzpI | recoIgU4AXHOF7MyS | rectAp8fePWrNhMqm | rec3rmoFgLfhW3aU6 | recvAi6MjsbIpgCbC | recK5WJDShTth0O4J | recRMDWQHQ3aZKnXf | reccxkDSBgI0UFRuk | recG3Rec4Z7qhWxaf | recGhX2ZYcEMdaPTr | recQFFMomDkQm3lgj | recUCc6bYiL0cBcua | recnEvfwxv5amZg0F | recjaTiTzj8CjVM8l | recB3nrktYeaLdMo3 | recrxp1rBKV6EVv1R | recWzNcBfNVFpXYVj | recQHgMeGsLxDgvPa | reczUSmYbv5fm0goJ | reckxx4z9pQ2NjfqU | recdovDmhECKsd3Xr | reci3KUFcyzgZ5q1l | recwhuUMZUbvWKsoE | recqhVURfaVdIfUZ5 | recSeYZxeOKFevEC8 | rec9hYLRQGIQKYy1f | recdMvOhscU3l8gXe | recvLWGVUWkwZLIO7 | recAaNKOGLExJkui3 | receNh7HnvoQCmqri | recOgbiDGixujmjPj | recUL7e6GtkeOECkr | rec80nDfE8mwBrJWR | rec2DrUb04KvmXQY7 | recn3DUw7q6Qhxykl | recQZ3ghico9Dh885 | recU0ART5Ktx1q0jt | rec6NZ1MU4leUaJqR | rec9AAtW5flNowMmx | recLugszI01AxXGve | recixEU2903GqnwU3 | recUdJYrEYMycHTPd | recK0fMxV3eQ59ioQ | recyhRct7S3C7Auxo | recmadpCvrENtizEt | recRtsOtynUvsTQ7z | recntSXz0R66HSb5D | recjxEvIRPfHbhLIo | recCOzdUgGMTBAunn | recQSJqfAL8IWfQsD | recm9ta11U1kMgJ8p | recFNuhXgQOetYrvd | rec0iqOeZ5UJt21VD | recGLeY3GbVCCoYgw | recio2kvfGg8H2BqU | rec2lml1krT3wEoHe | recFwstEoNfaQ5xse | recxuykftD1TvWwLp | recHLct2wbspjYQFV | recGlaN7SRvZZcPt1 | recdd1KMj2sFT3qWB | recYKCQfiz2tBKqBo | recpFClNxxr5HvtPN | recseSB9w5uuOGBTe | rec8s0I2f42qQUTrE | recnuMViyofeWIYLa | recTMgbHTLCgjdXmS | rec9Vp0W6TgyvpL7U | recocEjbVcfLqpgtc | reca89ZwAPeWghKUi | recJPFMM4EvZm2jNw | recOrkPmIUrJm9rC3 | recsTqpCbamacb5XW | recKHzpSafHOfgiiw | recgpEokbDfhHO4JF | recaVbqElVPjCbUTb | rec8Fxgt5rw6X8wSZ | recMc8cykAu2IOcpi | recBfQMOEusFHbNxW | recnq5C71BlMHEt2P | recZSvS65J1cK3gkY | recCxhjg3z59qazMP | recsEVTkaz6QhqdVQ | recVkA3rVHblgxghO | recMmm654MFowbFwZ | recrtLbl4iXqs6qJE | recfMDMIkJ6wXjRPo | recdWWR6CyAmCkC4m | recO7fBgrhxFwIQnG | rec6wBf22PcyHAMcU | recjT4LCCZuBKnd1P | recOLJB19mHMtbecX | rec0iyU1zps6FswbA | recP4DlRg7fSIdF5S | receBZrKBdMRow51Q | recaQPVYsI1SG2XX2 | recNTvcpToJDM3trl | recM4sdOOBRQwbuzh | rec7MY4OoIZnblPIc | recBbf23ar4zpxL7W | recJS4n9cWX89XGfk | recBMhAoW3r54S35q | recVV3Zaroblw4CTT | recsuGFr23uTiHUsY | recOPHSU41gyxN5Cp | reco7gHQW3PS4fiCL | reczCHXeeNpN7uKNY | recojTROMiZGZS9fR | recZUQhkcdzoFMOcS | rec20nNKNxugVbkV1 | recibocrjwDxjOFjz | recDZCjI5n6tz2CxP | recCFor1ciT5lra8T | recy10ueYhHZq3HZl | rec6VAFVVNi7FJjtx | recGuub5oKQQZxLX0 | recwigXl7LfQk7Syr | reci1WTvbEkiOEkEc | recI3XAWW2eVLG8rb | recdij3hr5OSfChCc | recq3HP4rNc7bIV3m | recExJacBJPRLnOKd | recbTZDOLs58NoRsD | recKP8IH3PjzxEzs5 | rechsFW2VDyB2YcSl | rec6v1dsI394o7kig | rec9ZEr8EpAxiIVWz | recEcDyK0IAG0ETAr | rec0U9xbnNsaCeswz | rec7sOnfzpvqf3AN7 | rec38WjMJmIKhrcdw | recDAca8HMDCvkhvB | recZveVDlIjrJUz7B | recp6PKtvPQtGSvq9 | recaZY1iaS7SrIiLh | recDd7AUNnF7FjfcV | recHlif9aaJzGaQmS | rec1Hn8CkRZf3YOYO | rec0sTrkt606MVRno | recOAtTQm4c9HhdJG | recpqPwh7C95RfA6T | recX0ir3EMGBJ8gGB | reclKAvtfjSJARyML | recY6eWb4FxBs7H6G]"
+          ]
+        },
+        "Registros": {
+          "tipos": {
+            "array<link(rec)>[22]": 1,
+            "array<link(rec)>[4]": 3,
+            "array<link(rec)>[3]": 5,
+            "array<link(rec)>[13]": 2,
+            "array<link(rec)>[57]": 1,
+            "array<link(rec)>[20]": 2,
+            "array<link(rec)>[1]": 10,
+            "array<link(rec)>[78]": 1,
+            "array<link(rec)>[42]": 1,
+            "array<link(rec)>[2]": 2,
+            "array<link(rec)>[36]": 1,
+            "array<link(rec)>[16]": 1,
+            "array<link(rec)>[27]": 2,
+            "array<link(rec)>[11]": 3,
+            "array<link(rec)>[24]": 1,
+            "array<link(rec)>[10]": 1,
+            "array<link(rec)>[14]": 3,
+            "array<link(rec)>[9]": 2,
+            "array<link(rec)>[23]": 1,
+            "array<link(rec)>[210]": 1,
+            "array<link(rec)>[26]": 1,
+            "array<link(rec)>[5]": 2,
+            "array<link(rec)>[25]": 1
+          },
+          "preenchidos": 48,
+          "total": 48,
+          "faltando": 0,
+          "exemplos": [
+            "[recsEzWirpEXT3fuM | rec4OX6KaOAIC1RhA | rec1wu2B7eZAlLtSR | recmveQmzNoXuHyWB | recACoYJXSN4Ch4SW | recJt4wqZXd2ziOaR | recUsacSP3dThdcnL | recoCsbd3Ig4Tt3CD | reclaXSNW2cjkRmHJ | recUVuyaLMatmXR31 | recqxcY7HJyGXHhnh | recTatoIRn0IbyQ7Y | recnHzQI8L1LA8pTZ | recPF93jn7jWVJ0ip | recU9QUnK9fb7SxHm | recRlLjThODktyZ7a | recMAGwqnzKlGCCrP | recojapUIralJUTe8 | recIfBwNrA6jiGMFa | rec8mFwHoAeDbOOUf | rec9epOKHLU9X2UAc | reckfK0gYd4bk7B6F]",
+            "[recSy6wTj7hWIZnFo | rectMEJkg1Vh3HJtO | recH1BWdmE3Am0Kjf | recd5TdPiQIkwSo7H]",
+            "[reczdGLVZXplt7fNM | recemUt7y8FDcGUv1 | recChXuw3R5rCnJCh]",
+            "[recyrmh18K2bVHQTP | recr6RIusGWbOFywf | recqZX9ZtPyxngANy | rece7CDVYcDNjoMFD | recFY5cqQFOskSiD8 | recSXzM8J2RZaEXyz | recHOXqM716PFV51N | recAuHKbBDh4V3UX0 | rec80aWqc8Adtnn7T | recgaOMfvZ41HSurN | recdljmnfFrTfeCFU | recFGr8SPJnFFqDCJ | recPFHnwgrSHNhL41]",
+            "[recxr4asosC8rYY5y | recxIpi4p8AacHHNq | recte7U06ymvW6R0d | recwKYTQgfiN82SMG | recw8CxSbBoxoj3n9 | recJYg6TUv6UGMp8w | recjy4x6BRSv15hZi | recdZWRx1pFuvGKbk | recRkJlDYUZFzwWP9 | recMG5BqBnLeIXmwb | reclKucDB7H7yeqL1 | rectdVZHH8o75oPDU | recrNmqQlFt9PxlkT | recNSVLwjcub13O8k | recQMmerWZgVhb4cF | reczlut50MXBT7wst | reckubKdrGQJX2cSu | recJxh3UVAMXSNkBI | reccUnmJnr8cV1cQV | recjHB4EV52n9YVzT | recEXFphvy932mX9B | recvviG66qNGwxHoc | recE4dmfCOs9GNUkY | reciyiPkMXt4gQIcd | rec42N94R4sYQLiP1 | recoQeItBV3vlmHZ3 | recbDF2t76aZXksv8 | recU3AzHKlGNNKVYJ | rec0NTGKQLnV24T75 | recZIOPklBcT37pOF | recm8QwFoOei1cjS9 | recCQDQvnu3DSKrTz | recYbq6r2xYXameis | recPNqfQ1TGBV6eUT | recoiUMRh0yGVBIR5 | rec8H8LlUTYf0wdZj | recDYu4xGzEufh707 | reciSObixuCkuxZiP | reczRfZdkSPi6ki8N | recAJ0CbQgsbxpO6J | recwVT32bZge42uDe | rec0I3C8tPgA4h2Wu | recLqFAjmlv0vwqOj | recStOfjyMQRsYRDb | recndkEpAzmEyoR7b | rec5oiAA4CtcND0rn | rec3B2qPV7aKIunKp | rec7xuUoy1PopwXH2 | reco4B9ynFxi4P6J9 | recFZemu2jp5krEEa | recgR3T7IZLUPeb0h | recTCD1ePxQY9E5f2 | reccwC7YYXcNPrmiJ | recJADeSSjaRBqMJi | rect6rt5co4loN9vA | recARKAHTENrRG7lK | rec1t87aYzhVREHlc]"
+          ]
+        }
+      }
+    },
+    "Novos Trabalhos": {
+      "id": "tblJAP4Av9sWm8SmL",
+      "registros_lidos": 800,
+      "schema_oficial": [
+        {
+          "nome": "ID Trabalho",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Trabalhos",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Link Ensaios",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Link Amostras",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Link Status",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Atualizado Por",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Data de Conclusão do Ensaio",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Data da Última Atualização",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Dias Desde a Última Atualização",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Link Ordem de Serviço",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Nome da Amostra",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Clientes2",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Record ID",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Amostra",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Ensaios",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Data de Envio do Relatório",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Cliente",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Status",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Data de Chegada",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "Link Drive",
+          "tipo": "richText"
+        },
+        {
+          "nome": "Data da Última Atualização Update",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Atualizado Por Link",
+          "tipo": "multipleLookupValues"
+        },
+        {
+          "nome": "URL QR Code",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Dias Desde Finalizado",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Prazo Previsto de Finalização",
+          "tipo": "date"
+        },
+        {
+          "nome": "Data da Preparação",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Data Início Ensaio",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Preparado Por",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Iniciado Por",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Concluído Por",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Lançado Por",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Enviado Por",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Data Lançamento",
+          "tipo": "dateTime"
+        },
+        {
+          "nome": "Nome Trabalho",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Fotos",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "QR ID",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Status Cliente",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Record_id_trabalhos ",
+          "tipo": "formula"
+        },
+        {
+          "nome": "Relatórios",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Aprovação",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Relatórios_Aprovados",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Fichas",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Nome_Completo_Ensaios ",
+          "tipo": "multipleLookupValues"
+        }
+      ],
+      "campos": {
+        "Amostra": {
+          "tipos": {
+            "array<link(rec)>[1]": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[rec1kQFfI2ZsYWnzw]",
+            "[rec1gGYGnh8hfqxeU]",
+            "[recxIpi4p8AacHHNq]",
+            "[rechFnFYqxpiZ0lDa]",
+            "[rec8JP9mLLQvsGIkE]"
+          ]
+        },
+        "Atualizado Por": {
+          "tipos": {
+            "array<link(rec)>[1]": 764,
+            "array<link(rec)>[2]": 1
+          },
+          "preenchidos": 765,
+          "total": 800,
+          "faltando": 35,
+          "exemplos": [
+            "[recam8stHIhyg0xXA]",
+            "[rec2rJJvW2vzAtXW7]",
+            "[recgvzV9xZ77yTOMH]",
+            "[recgvzV9xZ77yTOMH]",
+            "[recKwRiRr1WkDWVk7]"
+          ]
+        },
+        "Atualizado Por Link": {
+          "tipos": {
+            "array<link(rec)>[1]": 672
+          },
+          "preenchidos": 672,
+          "total": 800,
+          "faltando": 128,
+          "exemplos": [
+            "[recam8stHIhyg0xXA]",
+            "[recVZRLFKNpy22SoC]",
+            "[recgvzV9xZ77yTOMH]",
+            "[recVZRLFKNpy22SoC]",
+            "[recVZRLFKNpy22SoC]"
+          ]
+        },
+        "Cliente": {
+          "tipos": {
+            "array<link(rec)>[1]": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rec73Zrrnel1LBMN0]"
+          ]
+        },
+        "Clientes2": {
+          "tipos": {
+            "array<link(rec)>[1]": 797
+          },
+          "preenchidos": 797,
+          "total": 800,
+          "faltando": 3,
+          "exemplos": [
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rectEDZrt5unCtR4Z]",
+            "[rec73Zrrnel1LBMN0]"
+          ]
+        },
+        "Concluído Por": {
+          "tipos": {
+            "texto": 241
+          },
+          "preenchidos": 241,
+          "total": 800,
+          "faltando": 559,
+          "exemplos": [
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Vinícius Levay",
+            "Kássio Fialho"
+          ]
+        },
+        "Data Início Ensaio": {
+          "tipos": {
+            "data(ISO)": 147
+          },
+          "preenchidos": 147,
+          "total": 800,
+          "faltando": 653,
+          "exemplos": [
+            "2026-04-27T16:13:40.185Z",
+            "2025-11-19T12:10:22.764Z",
+            "2025-11-14T18:26:55.166Z",
+            "2025-11-20T19:54:09.133Z",
+            "2025-10-30T21:14:34.413Z"
+          ]
+        },
+        "Data Lançamento": {
+          "tipos": {
+            "data(ISO)": 438
+          },
+          "preenchidos": 438,
+          "total": 800,
+          "faltando": 362,
+          "exemplos": [
+            "2026-05-04T16:14:51.259Z",
+            "2026-01-08T13:55:03.221Z",
+            "2025-08-27T17:33:05.413Z",
+            "2025-12-15T12:54:40.925Z",
+            "2025-11-26T18:06:07.681Z"
+          ]
+        },
+        "Data da Preparação": {
+          "tipos": {
+            "data(ISO)": 207
+          },
+          "preenchidos": 207,
+          "total": 800,
+          "faltando": 593,
+          "exemplos": [
+            "2026-04-22T15:39:35.727Z",
+            "2025-10-29T19:38:50.634Z",
+            "2025-10-23T12:14:38.302Z",
+            "2025-09-17T19:30:40.222Z",
+            "2025-10-29T19:38:25.259Z"
+          ]
+        },
+        "Data da Última Atualização": {
+          "tipos": {
+            "array<data(ISO)>[1]": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[2025-08-07T15:43:28.724Z]",
+            "[2026-04-22T15:38:52.147Z]",
+            "[2025-11-06T17:51:32.695Z]",
+            "[2025-08-07T15:08:31.532Z]",
+            "[2026-04-07T12:54:26.289Z]"
+          ]
+        },
+        "Data da Última Atualização Update": {
+          "tipos": {
+            "data(ISO)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "2025-08-07T15:43:00.000Z",
+            "2026-05-12T14:03:14.671Z",
+            "2026-01-08T19:40:03.982Z",
+            "2025-08-27T17:33:07.686Z",
+            "2026-05-12T14:05:43.667Z"
+          ]
+        },
+        "Data de Chegada": {
+          "tipos": {
+            "array<data(ISO)>[1]": 798
+          },
+          "preenchidos": 798,
+          "total": 800,
+          "faltando": 2,
+          "exemplos": [
+            "[2025-07-05]",
+            "[2026-03-23]",
+            "[2025-11-06]",
+            "[2025-07-05]",
+            "[2026-03-16]"
+          ]
+        },
+        "Data de Conclusão do Ensaio": {
+          "tipos": {
+            "data(ISO)": 413
+          },
+          "preenchidos": 413,
+          "total": 800,
+          "faltando": 387,
+          "exemplos": [
+            "2025-07-31T03:00:00.000Z",
+            "2025-12-15T15:38:43.609Z",
+            "2025-08-13T15:02:00.000Z",
+            "2025-06-14T03:00:00.000Z",
+            "2025-11-19T12:10:56.225Z"
+          ]
+        },
+        "Data de Envio do Relatório": {
+          "tipos": {
+            "data(ISO)": 649
+          },
+          "preenchidos": 649,
+          "total": 800,
+          "faltando": 151,
+          "exemplos": [
+            "2025-07-31T03:00:00.000Z",
+            "2026-05-12T14:03:14.670Z",
+            "2026-01-08T19:40:03.982Z",
+            "2025-08-27T17:33:07.686Z",
+            "2026-05-12T14:05:43.667Z"
+          ]
+        },
+        "Dias Desde Finalizado": {
+          "tipos": {
+            "numero": 649,
+            "objeto": 151
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "333",
+            "48",
+            "172",
+            "306",
+            "48"
+          ]
+        },
+        "Dias Desde a Última Atualização": {
+          "tipos": {
+            "numero": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "326",
+            "48",
+            "172",
+            "306",
+            "48"
+          ]
+        },
+        "Ensaios": {
+          "tipos": {
+            "array<link(rec)>[1]": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[recB5gjLugpKSsMEu]",
+            "[recqrQtxcEEwm0nSi]",
+            "[recqrQtxcEEwm0nSi]",
+            "[rec8Xs6f1nkjg6uTW]",
+            "[recl3jwQNKeowNUQL]"
+          ]
+        },
+        "Enviado Por": {
+          "tipos": {
+            "texto": 490
+          },
+          "preenchidos": 490,
+          "total": 800,
+          "faltando": 310,
+          "exemplos": [
+            "Ires Basso",
+            "Vinícius Levay",
+            "Vinícius Levay",
+            "Pedro",
+            "Vinícius Levay"
+          ]
+        },
+        "Fichas": {
+          "tipos": {
+            "array<anexo>[6]": 2
+          },
+          "preenchidos": 2,
+          "total": 800,
+          "faltando": 798,
+          "exemplos": [
+            "[ANEXO{nome:\"50 kPa - Adensamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"50 kPa - Cisalhamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"100 kPa - Adensamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"100 kPa - Cisalhamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"206 kPa - Adensamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"206 kPa - Cisalhamento - 26-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)}]",
+            "[ANEXO{nome:\"50 kPa - Adensamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"50 kPa - Cisalhamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"100 kPa - Adensamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"100 kPa - Cisalhamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"206 kPa - Adensamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)} | ANEXO{nome:\"206 kPa - Cisalhamento - 25-6.xlsx\", tipo:\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\", url:(omitida)}]"
+          ]
+        },
+        "Fotos": {
+          "tipos": {
+            "array<anexo>[6]": 1,
+            "array<anexo>[8]": 1
+          },
+          "preenchidos": 2,
+          "total": 800,
+          "faltando": 798,
+          "exemplos": [
+            "[ANEXO{nome:\"TimePhoto_20260626_175528.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260626_142602.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260626_114654.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260626_142609.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260626_114700.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260626_175526.jpg\", tipo:\"image/jpeg\", url:(omitida)}]",
+            "[ANEXO{nome:\"TimePhoto_20260625_120443.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_120456.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_171519.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_120432.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_171515.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_144801.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_171521.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"TimePhoto_20260625_144756.jpg\", tipo:\"image/jpeg\", url:(omitida)}]"
+          ]
+        },
+        "ID Trabalho": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "GEODEEP_REG 1681 (ST-TPS-TAC-J31-109) | Limite",
+            "GEODEEP_ST-01-AM-02 | MR-I",
+            "GEODEEP_REG 2184 (ST-TCV-TPS-C21-2027) | MR",
+            "GEODEEP_REG 1632 (CAI-TPS-TAC-G31-017) | DP",
+            "Qualitec_J2-ST-08 - 3% - 28D | MR-M"
+          ]
+        },
+        "Iniciado Por": {
+          "tipos": {
+            "texto": 175
+          },
+          "preenchidos": 175,
+          "total": 800,
+          "faltando": 625,
+          "exemplos": [
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Vinícius Levay",
+            "Ires Basso",
+            "Kássio Fialho"
+          ]
+        },
+        "Lançado Por": {
+          "tipos": {
+            "texto": 433
+          },
+          "preenchidos": 433,
+          "total": 800,
+          "faltando": 367,
+          "exemplos": [
+            "Ires Basso",
+            "Kássio Fialho",
+            "Vinícius Levay",
+            "Kássio Fialho",
+            "Kássio Fialho"
+          ]
+        },
+        "Link Amostras": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "REG 1681 (ST-TPS-TAC-J31-109)",
+            "ST-01-AM-02",
+            "REG 2184 (ST-TCV-TPS-C21-2027)",
+            "REG 1632 (CAI-TPS-TAC-G31-017)",
+            "J2-ST-08 - 3% - 28D"
+          ]
+        },
+        "Link Drive": {
+          "tipos": {
+            "texto": 398
+          },
+          "preenchidos": 395,
+          "total": 800,
+          "faltando": 405,
+          "exemplos": [
+            "<https://1drv.ms/f/c/982785751ca268ed/EiwOBtXP2PlAvmP0OdbvU4UBCsAyaiP54CqYatMpAyhOBw?e=VyYA9X>\n",
+            "https://1drv.ms/f/c/982785751ca268ed/IgAG101\\_ZjyWRqSCqfLNDzc8AcoRB2lwz3V9q9GldPjbLMA?e=876yI7\n",
+            "https://1drv.ms/f/c/982785751ca268ed/IgB9AvlC3MeESq1AkmKDHUXvAS8pz8ECOQfP9aG0kT2h8U0?e=b4hRxD\n\n",
+            "https://1drv.ms/b/c/982785751ca268ed/EZHVobZ83KRLoujaPLraftkBq-CbJDWoFDb-HO13gWDn9A?e=yO0hDa\n\n",
+            "https://1drv.ms/b/c/982785751ca268ed/IQDHTbGxzLKuSLuqsMp3ED8hASsujRYsBnkUGFU7eDyTrEU?e=gA8pAg\n"
+          ]
+        },
+        "Link Ensaios": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "Limite",
+            "MR-I",
+            "MR",
+            "DP",
+            "MR-M"
+          ]
+        },
+        "Link Ordem de Serviço": {
+          "tipos": {
+            "array<link(rec)>[1]": 797
+          },
+          "preenchidos": 797,
+          "total": 800,
+          "faltando": 3,
+          "exemplos": [
+            "[rec74ep6YWArvX5Iw]",
+            "[recoOOvk0IpeYnW3q]",
+            "[rec48ZG31Z3OQ4xGM]",
+            "[recMpU6SzIMJgPipA]",
+            "[recQuN9wlPUxHYvHr]"
+          ]
+        },
+        "Link Status": {
+          "tipos": {
+            "array<texto>[1]": 594
+          },
+          "preenchidos": 594,
+          "total": 800,
+          "faltando": 206,
+          "exemplos": [
+            "[Preparado]",
+            "[Aguardando Preparação]",
+            "[Aguardando Preparação]",
+            "[Aguardando Preparação]",
+            "[Aguardando Preparação]"
+          ]
+        },
+        "Nome Trabalho": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "REG 1681 (ST-TPS-TAC-J31-109) | Limite",
+            "ST-01-AM-02 | MR-I",
+            "REG 2184 (ST-TCV-TPS-C21-2027) | MR-I",
+            "REG 1632 (CAI-TPS-TAC-G31-017) | DP-I",
+            "J2-ST-08 - 3% - 28D | MR-M"
+          ]
+        },
+        "Nome da Amostra": {
+          "tipos": {
+            "array<texto>[1]": 204,
+            "array<texto>[6]": 40,
+            "array<texto>[15]": 14,
+            "array<texto>[27]": 9,
+            "array<texto>[10]": 7,
+            "array<texto>[7]": 25,
+            "array<texto>[12]": 9,
+            "array<texto>[2]": 34,
+            "array<texto>[14]": 22,
+            "array<texto>[18]": 18,
+            "array<texto>[25]": 10,
+            "array<texto>[3]": 11,
+            "array<texto>[22]": 9,
+            "array<texto>[5]": 9,
+            "array<texto>[4]": 3
+          },
+          "preenchidos": 424,
+          "total": 800,
+          "faltando": 376,
+          "exemplos": [
+            "[ST-TPS-TAC-J31-109]",
+            "[ST-06 | ST-05-AM-02 | ST-04-AM-02 | ST-03-AM-02 | ST-02-AM-02 | ST-01-AM-02]",
+            "[J1-ST-18 | J1-ST-18 - 3% - 28D | J1-ST-18 - 4% - 28D | J1-ST-14 - 2% - 28D | J1-ST-14 - 3% - 28D | J1-ST-14 - 4% - 28D | J2-ST-12 | J2-ST-08 | J2-ST-16 | J2-ST-08 - 3% - 28D | J2-ST-08 - 4% - 28D | J2-ST-12 - 3% - 28D | J2-ST-12 - 4% - 28D | J2-ST-16 - 3% - 28D | J2-ST-16 - 4% - 28D]",
+            "[SPT 12-B (1 a 2m)]",
+            "[SPT 4-A (1 m)]"
+          ]
+        },
+        "Nome_Completo_Ensaios ": {
+          "tipos": {
+            "array<texto>[1]": 785
+          },
+          "preenchidos": 785,
+          "total": 800,
+          "faltando": 15,
+          "exemplos": [
+            "[Limites de Atterberg]",
+            "[Módulo de Resiliência - Próctor Intermediário]",
+            "[Módulo de Resiliência - Próctor Intermediário]",
+            "[Deformação Permanente - Intermediário]",
+            "[Módulo de Resiliência - Próctor Modificado]"
+          ]
+        },
+        "Ordem de Serviço": {
+          "tipos": {
+            "array<link(rec)>[1]": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[rec74ep6YWArvX5Iw]",
+            "[recoOOvk0IpeYnW3q]",
+            "[rec48ZG31Z3OQ4xGM]",
+            "[recMpU6SzIMJgPipA]",
+            "[recQuN9wlPUxHYvHr]"
+          ]
+        },
+        "Prazo Previsto de Finalização": {
+          "tipos": {
+            "data(ISO)": 103
+          },
+          "preenchidos": 103,
+          "total": 800,
+          "faltando": 697,
+          "exemplos": [
+            "2025-11-21",
+            "2026-01-05",
+            "2025-11-21",
+            "2025-11-04",
+            "2025-12-19"
+          ]
+        },
+        "Preparado Por": {
+          "tipos": {
+            "texto": 189
+          },
+          "preenchidos": 189,
+          "total": 800,
+          "faltando": 611,
+          "exemplos": [
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Kássio Fialho",
+            "Vinícius Levay"
+          ]
+        },
+        "QR ID": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "REG 1681 (ST-TPS-TAC-J31-109)\nLimite",
+            "ST-01-AM-02\nMR-I",
+            "REG 2184 (ST-TCV-TPS-C21-2027)\nMR-I",
+            "REG 1632 (CAI-TPS-TAC-G31-017)\nDP-I",
+            "J2-ST-08 - 3% - 28D\nMR-M"
+          ]
+        },
+        "Record ID": {
+          "tipos": {
+            "link(rec)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "rec002N3ZSU6YPxjO",
+            "rec01qXAQZaDLgruk",
+            "rec01zzI7mcSouaPj",
+            "rec02EHqh4fWoS59m",
+            "rec05I5SmieRNehac"
+          ]
+        },
+        "Record_id_trabalhos ": {
+          "tipos": {
+            "link(rec)": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "rec002N3ZSU6YPxjO",
+            "rec01qXAQZaDLgruk",
+            "rec01zzI7mcSouaPj",
+            "rec02EHqh4fWoS59m",
+            "rec05I5SmieRNehac"
+          ]
+        },
+        "Relatórios": {
+          "tipos": {
+            "array<anexo>[3]": 36,
+            "array<anexo>[1]": 118,
+            "array<anexo>[2]": 19,
+            "array<anexo>[4]": 10,
+            "array<anexo>[9]": 4,
+            "array<anexo>[5]": 4,
+            "array<anexo>[22]": 1,
+            "array<anexo>[12]": 1,
+            "array<anexo>[15]": 1,
+            "array<anexo>[6]": 3,
+            "array<anexo>[7]": 3,
+            "array<anexo>[14]": 3,
+            "array<anexo>[36]": 1,
+            "array<anexo>[17]": 1,
+            "array<anexo>[11]": 2,
+            "array<anexo>[13]": 1
+          },
+          "preenchidos": 208,
+          "total": 800,
+          "faltando": 592,
+          "exemplos": [
+            "[ANEXO{nome:\"TimePhoto_20260427_131236.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"1777661494393_5199209908125458145.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"RELATÓRIO_TÉCNICO_MR-TBR-070_ST-01-AM-02_3CPS_GEODEEP__Rev00.pdf\", tipo:\"application/pdf\", url:(omitida)}]",
+            "[ANEXO{nome:\"1765813122337_5763286427402704249.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"1765813142160_9053050157372519601.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"RELATÓRIO_TÉCNICO_MR-REG 2184_ST-TCV-TPS-C21-2027_GEODEEP__Rev00.pdf\", tipo:\"application/pdf\", url:(omitida)}]",
+            "[ANEXO{nome:\"1763554225345_5511930744031742756.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"1763554236722_7251641016866786056.jpg\", tipo:\"image/jpeg\", url:(omitida)} | ANEXO{nome:\"RELATÓRIO_TÉCNICO_MR-REG 2016_ST-TPS-TAC-C31-091_50% de Bica__Rev00.pdf\", tipo:\"application/pdf\", url:(omitida)}]",
+            "[ANEXO{nome:\"RELATÓRIO_TÉCNICO_DP_REG 2032_50% DE BICA_ST-TPS-TAC-C31-096__GEODEEP.pdf\", tipo:\"application/pdf\", url:(omitida)}]",
+            "[ANEXO{nome:\"RELATÓRIO_TÉCNICO_MR-ESTACA.7-SUBLEITO__HYTEC__Rev00.pdf\", tipo:\"application/pdf\", url:(omitida)}]"
+          ]
+        },
+        "Relatórios_Aprovados": {
+          "tipos": {
+            "array<anexo>[1]": 1
+          },
+          "preenchidos": 1,
+          "total": 800,
+          "faltando": 799,
+          "exemplos": [
+            "[ANEXO{nome:\"RELATÓRIO_TÉCNICO_CD-_PI-001_MASTERSOLO_Rev00.pdf\", tipo:\"application/pdf\", url:(omitida)}]"
+          ]
+        },
+        "Status": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "Enviado ao Cliente",
+            "Enviado ao Cliente",
+            "Enviado ao Cliente",
+            "Enviado ao Cliente",
+            "Enviado ao Cliente"
+          ]
+        },
+        "Status Cliente": {
+          "tipos": {
+            "texto": 677
+          },
+          "preenchidos": 677,
+          "total": 800,
+          "faltando": 123,
+          "exemplos": [
+            "Relatório Disponível",
+            "Relatório Disponível",
+            "Relatório Disponível",
+            "Relatório Disponível",
+            "Relatório Disponível"
+          ]
+        },
+        "Trabalhos": {
+          "tipos": {
+            "array<link(rec)>[1]": 771,
+            "array<link(rec)>[2]": 27,
+            "array<link(rec)>[3]": 2
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "[rec8r4YneZ7ePw9qM]",
+            "[recIUIAOAGLOOsiPC]",
+            "[recCkHJFh12QlSo08]",
+            "[recyfhyp2OL1YhULs]",
+            "[recCQ5e6I41PvaJGz]"
+          ]
+        },
+        "URL QR Code": {
+          "tipos": {
+            "texto": 800
+          },
+          "preenchidos": 800,
+          "total": 800,
+          "faltando": 0,
+          "exemplos": [
+            "https://airtable.com/app9VVQi45UmZ8feM/pagbAKsBK8tpBteuF/rec002N3ZSU6YPxjO?home=pag4RiPB9AgEDLx3D",
+            "https://airtable.com/app9VVQi45UmZ8feM/pagbAKsBK8tpBteuF/rec01qXAQZaDLgruk?home=pag4RiPB9AgEDLx3D",
+            "https://airtable.com/app9VVQi45UmZ8feM/pagbAKsBK8tpBteuF/rec01zzI7mcSouaPj?home=pag4RiPB9AgEDLx3D",
+            "https://airtable.com/app9VVQi45UmZ8feM/pagbAKsBK8tpBteuF/rec02EHqh4fWoS59m?home=pag4RiPB9AgEDLx3D",
+            "https://airtable.com/app9VVQi45UmZ8feM/pagbAKsBK8tpBteuF/rec05I5SmieRNehac?home=pag4RiPB9AgEDLx3D"
+          ]
+        }
+      }
+    },
+    "Dados Brutos": {
+      "id": "tblYdqVR5FJbT2axT",
+      "registros_lidos": 2,
+      "schema_oficial": [
+        {
+          "nome": "ID Input",
+          "tipo": "autoNumber"
+        },
+        {
+          "nome": "Amostra",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Ensaios",
+          "tipo": "multipleRecordLinks"
+        },
+        {
+          "nome": "Umidade Cápsula 1",
+          "tipo": "number"
+        },
+        {
+          "nome": "Solo Seco 1",
+          "tipo": "number"
+        },
+        {
+          "nome": "Solo Úmido 1",
+          "tipo": "number"
+        },
+        {
+          "nome": "Umidade Cápsula 2",
+          "tipo": "number"
+        },
+        {
+          "nome": "Solo Seco 2",
+          "tipo": "number"
+        },
+        {
+          "nome": "Solo Úmida 2",
+          "tipo": "number"
+        }
+      ],
+      "campos": {
+        "ID Input": {
+          "tipos": {
+            "numero": 2
+          },
+          "preenchidos": 2,
+          "total": 2,
+          "faltando": 0,
+          "exemplos": [
+            "2",
+            "1"
+          ]
+        }
+      }
+    },
+    "Contratos": {
+      "id": "tblAStDcHb3UIdyme",
+      "registros_lidos": 3,
+      "schema_oficial": [
+        {
+          "nome": "Name",
+          "tipo": "singleLineText"
+        },
+        {
+          "nome": "Notes",
+          "tipo": "multilineText"
+        },
+        {
+          "nome": "Assignee",
+          "tipo": "singleCollaborator"
+        },
+        {
+          "nome": "Status",
+          "tipo": "singleSelect"
+        },
+        {
+          "nome": "Attachments",
+          "tipo": "multipleAttachments"
+        },
+        {
+          "nome": "Attachment Summary",
+          "tipo": "aiText"
+        }
+      ],
+      "campos": {
+        "Attachment Summary": {
+          "tipos": {
+            "objeto": 3
+          },
+          "preenchidos": 3,
+          "total": 3,
+          "faltando": 0,
+          "exemplos": [
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}",
+            "{\"state\":\"error\",\"errorType\":\"emptyDependency\",\"value\":null,\"isStale\":false}"
+          ]
+        }
+      }
+    }
+  },
+  "auditoria_isolamento_geodeep": {
+    "daGeodeepPorCliente": 559,
+    "comPrefixoOk": 559,
+    "semIdTrabalho": 0,
+    "prefixoForaDoPadrao": 0,
+    "exemplosForaDoPadrao": []
+  }
+}

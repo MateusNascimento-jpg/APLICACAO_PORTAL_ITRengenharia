@@ -1,0 +1,32 @@
+{
+  "name": "bd_relacional_itrengenharia",
+  "version": "1.0.0",
+  "description": "Camada de persistência e modelagem relacional em MySQL desenvolvida para o **Sistema de Gestão de Amostras Laboratoriais** da ITR Engenharia. Este repositório concentra a inteligência de dados, tabelas estruturadas e restrições de integridade que servem de fundação para a futura API (Node.js/Express) e integração com o Airtable.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia/issues"
+  },
+  "homepage": "https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.22.5",
+    "nodemailer": "^9.0.3"
+  }
+}

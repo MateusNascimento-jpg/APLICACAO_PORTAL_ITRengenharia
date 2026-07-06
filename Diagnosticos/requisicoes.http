@@ -1,0 +1,42 @@
+### 1. Testar se o servidor está vivo
+GET http://localhost:3000/status
+
+###
+
+### 2. Cadastrar usuário de teste
+POST http://localhost:3000/cadastro
+Content-Type: application/json
+
+{
+  "documento": "25504664405",
+  "tipo_documento": "CPF",
+  "email": "suporte@itrengenharia.com.br",
+  "senha": "Teste@123",
+  "nome_empresa": "ITR Engenharia Testes",
+  "perfil": "Cliente",
+  "airtable_client_id": "recXXXXXXXXXXXXXX",
+  "operador": "SISTEMA_NODE"
+}
+
+###
+
+### 3. Fazer login (use o MESMO documento e senha do cadastro)
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "documento": "255.046.644-05",
+  "senha": "Teste@123"
+}
+
+###
+
+### 4. Testar rota protegida (cole o token recebido no login)
+GET http://localhost:3000/perfil
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicGVyZmlsIjoiQ2xpZW50ZSIsImFpcnRhYmxlX2NsaWVudF9pZCI6InJlY1hYWFhYWFhYWFhYWFhYIiwiaWF0IjoxNzgyMTQwOTIxLCJleHAiOjE3ODIxNjk3MjF9.2uzSDh8z_MNKeDBE73ohmC3aDP50yWeS4Pffwxza6dU
+
+###
+
+### 5. Buscar meus dados do Airtable (cole o token do login)
+GET http://localhost:3000/api/meus-dados
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwicGVyZmlsIjoiQ2xpZW50ZSIsImFpcnRhYmxlX2NsaWVudF9pZCI6InJlY3RFRFpydDV1bkN0UjRaIiwiaWF0IjoxNzgyMTUzMjM1LCJleHAiOjE3ODIxODIwMzV9.9u8A2m14FpFC-lqUOvbjq8ZX7G-LNlfqCFjw5O5z-bE
