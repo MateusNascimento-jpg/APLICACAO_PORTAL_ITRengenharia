@@ -1,0 +1,12 @@
+# Arquivos de variáveis de ambiente (onde ficam suas senhas/chaves)
+.env
+
+# Pastas de dependências (nunca suba isso para o GitHub)
+node_modules/
+
+# Logs de erro e debug
+*.log
+npm-debug.log*
+
+# Pastas do VS Code (opcional, mas recomendado)
+.vscode/ 
