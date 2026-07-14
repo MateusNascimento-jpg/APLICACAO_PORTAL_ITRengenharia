@@ -72,7 +72,7 @@ async function enviarEmailReset(destino, link, nome) {
         </div>
         <div style="background:#0d1220;padding:16px 28px;border-top:1px solid #263149;">
           <span style="font-size:12px;color:#5f6b83;">
-            SAAN Quadra 1, Lote 680 — Brasília/DF · Este é um e-mail automático, não responda.
+            SCIA Quadra 14 Conjunto 6 Lote 05 – Parte A - Zona Industrial, Brasília - DF, 71250-130 · Este é um e-mail automático, não responda.
           </span>
         </div>
       </div>
