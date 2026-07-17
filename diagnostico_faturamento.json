@@ -1,0 +1,151 @@
+{
+  "gerado_em": "2026-07-15T18:31:33.964Z",
+  "base": "appI163NTfZrDtw22",
+  "tabelas_meta": [
+    {
+      "nome": "Clientes",
+      "id": "tbl8Sw1hYuEvgot8O"
+    },
+    {
+      "nome": "Proposta",
+      "id": "tblTzY3Iggkhydke2"
+    },
+    {
+      "nome": "Contratos",
+      "id": "tblxokBaJhPpLuljO"
+    },
+    {
+      "nome": "Notas Fiscais",
+      "id": "tblWJzUP0YzY4bO5l"
+    },
+    {
+      "nome": "Faturamento",
+      "id": "tblvUnZNEkp6jKCFr"
+    },
+    {
+      "nome": "Ordem de Serviço",
+      "id": "tblL9hanqMLUfwGnJ"
+    },
+    {
+      "nome": "Categorias de Fluxo de Caixa",
+      "id": "tblvUVOgnV2jrVWre"
+    },
+    {
+      "nome": "Fornecedores",
+      "id": "tblsoPpkjmRqTwozo"
+    },
+    {
+      "nome": "Colaboradores",
+      "id": "tblptgjWp8PmtSg5H"
+    },
+    {
+      "nome": "Despesas",
+      "id": "tblEOJfhSPSSYe1AO"
+    },
+    {
+      "nome": "Despesas Recorrentes",
+      "id": "tblyLRI548aC0ihvM"
+    },
+    {
+      "nome": "Fluxo de Caixa",
+      "id": "tbltrXJ8aNPthdSiW"
+    },
+    {
+      "nome": "Fluxo de Caixa Mensal",
+      "id": "tblFUMt0xvRtbp6fH"
+    }
+  ],
+  "faturamento": {
+    "campos": [
+      "Número da Parcela",
+      "Setor Responsável (from NFSe)",
+      "Proposta",
+      "Contrato",
+      "Parcela",
+      "Forma de Pagamento",
+      "NFSe",
+      "Valor da Parcela",
+      "Valor Pago",
+      "Data do Pagamento",
+      "Categoria de Fluxo de Caixa",
+      "Fluxo de Caixa"
+    ],
+    "amostras": [
+      {
+        "id": "recDHAIocfRH9Igtn",
+        "fields": {
+          "Número da Parcela": [
+            "2"
+          ],
+          "Setor Responsável (from NFSe)": [
+            "Laboratório"
+          ],
+          "Proposta": [
+            "recAR2dHYvgsPi4cI"
+          ],
+          "Contrato": [
+            "recv1Ce0Lx1vNHjSD"
+          ],
+          "Parcela": "C1-2026 - Parcela 2",
+          "Forma de Pagamento": [
+            "2"
+          ],
+          "NFSe": [
+            "recGEPrfePBCPHTK6"
+          ],
+          "Valor da Parcela": [
+            3358.7999999999997
+          ],
+          "Valor Pago": [
+            3358.8
+          ],
+          "Data do Pagamento": [
+            "2026-07-14"
+          ],
+          "Categoria de Fluxo de Caixa": [
+            "recAlqbTsLeTKIBCT"
+          ]
+        }
+      },
+      {
+        "id": "recp9NrysOlfYwtW4",
+        "fields": {
+          "Número da Parcela": [
+            "Entrada"
+          ],
+          "Setor Responsável (from NFSe)": [
+            "Laboratório"
+          ],
+          "Proposta": [
+            "recAR2dHYvgsPi4cI"
+          ],
+          "Contrato": [
+            "recv1Ce0Lx1vNHjSD"
+          ],
+          "Parcela": "C1-2026 - Parcela Entrada",
+          "Forma de Pagamento": [
+            "Entrada"
+          ],
+          "NFSe": [
+            "recWkojNm4Xtic2bk"
+          ],
+          "Valor da Parcela": [
+            4478.400000000001
+          ],
+          "Valor Pago": [
+            4478.4
+          ],
+          "Data do Pagamento": [
+            "2026-07-15"
+          ],
+          "Fluxo de Caixa": [
+            "recqGoW9PXXYhdbyK"
+          ],
+          "Categoria de Fluxo de Caixa": [
+            "recAlqbTsLeTKIBCT"
+          ]
+        }
+      }
+    ]
+  }
+}

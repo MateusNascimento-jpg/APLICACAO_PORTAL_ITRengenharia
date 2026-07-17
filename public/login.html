@@ -351,39 +351,35 @@
     <section class="form-painel">
       <div class="form-cabeca">
         <h2>Entrar</h2>
-        <p>Use o CNPJ ou CPF cadastrado para acessar seus ensaios.</p>
+        <p>Acesse com o CNPJ e o e-mail cadastrados na ITR. Não é necessário criar conta.</p>
       </div>
 
       <div class="alerta-form" id="alertaForm" role="alert">
         <i class="ti ti-alert-circle"></i>
-        <span id="alertaFormTexto">Documento ou senha inválidos.</span>
+        <span id="alertaFormTexto">CNPJ ou e-mail de acesso incorretos.</span>
       </div>
 
       <form id="formLogin" novalidate>
         <div class="campo-grupo" id="grupoDocumento">
-          <label for="documento">CNPJ ou CPF</label>
+          <label for="documento">CNPJ de cadastro</label>
           <div class="campo-caixa">
             <i class="ti ti-id"></i>
             <input type="text" id="documento" name="documento" placeholder="Somente números" inputmode="numeric" autocomplete="username" maxlength="18">
           </div>
-          <div class="campo-erro" id="erroDocumento"><i class="ti ti-alert-circle"></i><span>Digite um CNPJ (14 dígitos) ou CPF (11 dígitos).</span></div>
+          <div class="campo-erro" id="erroDocumento"><i class="ti ti-alert-circle"></i><span>Digite os 14 números do CNPJ de cadastro.</span></div>
         </div>
 
         <div class="campo-grupo" id="grupoSenha">
-          <label for="senha">Senha</label>
-          <div class="campo-caixa com-acao">
-            <i class="ti ti-lock"></i>
-            <input type="password" id="senha" name="senha" placeholder="Sua senha" autocomplete="current-password">
-            <button type="button" class="btn-olho" id="btnOlho" aria-label="Mostrar senha" title="Mostrar senha">
-              <span id="iconeOlho"></span>
-            </button>
+          <label for="senha">E-mail de acesso</label>
+          <div class="campo-caixa">
+            <i class="ti ti-mail"></i>
+            <input type="email" id="senha" name="email" placeholder="E-mail cadastrado na ITR" autocomplete="email" inputmode="email">
           </div>
-          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span>Digite sua senha.</span></div>
+          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span>Digite o e-mail cadastrado.</span></div>
         </div>
 
         <div class="linha-aux">
           <label class="lembrar"><input type="checkbox" id="lembrar"> Manter conectado</label>
-         <a href="esqueci-senha.html" class="link-esqueci">Esqueci minha senha</a>
         </div>
 
         <button type="submit" class="btn-entrar" id="btnEntrar">
@@ -486,35 +482,18 @@ document.getElementById('btnTema').addEventListener('click', function(){
 document.getElementById('logoLink').addEventListener('click', function(e){ e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
 
 /* ---- Botão de mostrar/ocultar senha ---- */
+// Campo de acesso: agora e o E-MAIL do cliente (nao ha mais senha/olho).
 var campoSenha = document.getElementById('senha');
-var iconeOlho = document.getElementById('iconeOlho');
-var btnOlho = document.getElementById('btnOlho');
-iconeOlho.innerHTML = svgIcone('eye');
-btnOlho.addEventListener('click', function(){
-  var mostrando = campoSenha.type === 'text';
-  campoSenha.type = mostrando ? 'password' : 'text';
-  iconeOlho.innerHTML = svgIcone(mostrando ? 'eye' : 'eye-off');
-  btnOlho.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
-  btnOlho.title = mostrando ? 'Mostrar senha' : 'Ocultar senha';
-});
 
-/* ---- Máscara leve de documento (só visual; o servidor já limpa não-dígitos) ---- */
+/* ---- Máscara leve de CNPJ (só visual; o servidor já limpa não-dígitos) ---- */
 var campoDocumento = document.getElementById('documento');
 campoDocumento.addEventListener('input', function(){
   var digitos = campoDocumento.value.replace(/\D/g,'').slice(0,14);
-  var formatado = digitos;
-  if(digitos.length > 11){
-    // CNPJ: 00.000.000/0000-00
-    formatado = digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, function(_,a,b,c,d,e){
-      return a+'.'+b+'.'+c+'/'+d+(e?'-'+e:'');
-    });
-  } else if(digitos.length > 0){
-    // CPF: 000.000.000-00
-    formatado = digitos.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, function(_,a,b,c,d){
-      return a+(b?'.'+b:'')+(c?'.'+c:'')+(d?'-'+d:'');
-    });
-  }
-  campoDocumento.value = formatado;
+  // CNPJ: 00.000.000/0000-00
+  var formatado = digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, function(_,a,b,c,d,e){
+    return a+'.'+b+'.'+c+'/'+d+(e?'-'+e:'');
+  });
+  campoDocumento.value = formatado || digitos;
 });
 
 /* ---- Validação e envio do formulário ---- */
@@ -569,26 +548,27 @@ formLogin.addEventListener('submit', function(e){
   esconderAlertaForm();
 
   var documento = limparDocumento(campoDocumento.value);
-  var senha = campoSenha.value;
+  var email = String(campoSenha.value || '').trim();
 
-  var docInvalido = (documento.length !== 11 && documento.length !== 14);
-  var senhaInvalida = senha.length === 0;
+  // Login novo: CNPJ (14 dígitos) + e-mail de acesso.
+  var docInvalido = (documento.length !== 14);
+  var emailInvalido = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   mostrarErroCampo(grupoDocumento, erroDocumento, docInvalido);
-  mostrarErroCampo(grupoSenha, erroSenha, senhaInvalida);
-  if(docInvalido || senhaInvalida) return;
+  mostrarErroCampo(grupoSenha, erroSenha, emailInvalido);
+  if(docInvalido || emailInvalido) return;
 
   setCarregando(true);
 
   fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ documento: documento, senha: senha })
+    body: JSON.stringify({ documento: documento, email: email })
   })
   .then(function(resp){ return resp.json().then(function(dados){ return { status: resp.status, dados: dados }; }); })
   .then(function(res){
     setCarregando(false);
     if(!res.dados || !res.dados.sucesso){
-      mostrarAlertaForm((res.dados && res.dados.erro) || 'Documento ou senha inválidos.');
+      mostrarAlertaForm((res.dados && res.dados.erro) || 'CNPJ ou e-mail de acesso incorretos.');
       return;
     }
     try {

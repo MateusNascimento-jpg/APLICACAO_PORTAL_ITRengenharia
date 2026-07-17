@@ -1,0 +1,469 @@
+{
+  "gerado_em": "2026-07-15T18:33:28.837Z",
+  "base": "appI163NTfZrDtw22",
+  "tabelas": [
+    {
+      "nome": "Clientes",
+      "id": "tbl8Sw1hYuEvgot8O",
+      "campos": [
+        {
+          "nome": "ID Cliente",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Nome Cliente",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Sigla Cliente",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "CNPJ",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Info Contato",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Email Cliente",
+          "tipo": "multilineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Propostas",
+          "tipo": "multilineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Proposta",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblTzY3Iggkhydke2"
+        },
+        {
+          "nome": "Contratos",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        }
+      ],
+      "amostras": [
+        {
+          "id": "rec0hhIv9tAP5D7hS",
+          "fields": {
+            "ID Cliente": "Grupo Aterpa",
+            "Info Contato": "5548991416746",
+            "CNPJ": "17162983000165",
+            "Sigla Cliente": "ATE",
+            "Nome Cliente": "Ensaios de Solo-Cimento "
+          }
+        },
+        {
+          "id": "rec23Ofxya6TRaDqf",
+          "fields": {
+            "ID Cliente": "JDS",
+            "CNPJ": "51810142000155",
+            "Sigla Cliente": "JDS",
+            "Nome Cliente": "JDS"
+          }
+        },
+        {
+          "id": "rec4og35NGBSP8z76",
+          "fields": {
+            "ID Cliente": "GeoBrasília",
+            "CNPJ": "05807196000144",
+            "Sigla Cliente": "GBR",
+            "Nome Cliente": "GeoBrasília - Cartografia e Geoprocessamento"
+          }
+        },
+        {
+          "id": "rec6fWPfzAx1W17xr",
+          "fields": {
+            "ID Cliente": "Finatec",
+            "CNPJ": "37116704000134",
+            "Sigla Cliente": "FIN",
+            "Nome Cliente": "Fundação de Empreendimentos Científicos e Tecnológicos"
+          }
+        }
+      ]
+    },
+    {
+      "nome": "Proposta",
+      "id": "tblTzY3Iggkhydke2",
+      "campos": [
+        {
+          "nome": "Número da Proposta",
+          "tipo": "singleLineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Sequencial",
+          "tipo": "number",
+          "ligaCom": null
+        },
+        {
+          "nome": "Ano da Proposta",
+          "tipo": "formula",
+          "ligaCom": null
+        },
+        {
+          "nome": "Data de Envio",
+          "tipo": "date",
+          "ligaCom": null
+        },
+        {
+          "nome": "Status",
+          "tipo": "singleSelect",
+          "ligaCom": null
+        },
+        {
+          "nome": "Descrição do Serviço",
+          "tipo": "aiText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Responsável Comercial",
+          "tipo": "singleSelect",
+          "ligaCom": null
+        },
+        {
+          "nome": "Proposta",
+          "tipo": "multipleAttachments",
+          "ligaCom": null
+        },
+        {
+          "nome": "Dias para Follow-up",
+          "tipo": "number",
+          "ligaCom": null
+        },
+        {
+          "nome": "Dias Desde Envio",
+          "tipo": "formula",
+          "ligaCom": null
+        },
+        {
+          "nome": "Cliente",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tbl8Sw1hYuEvgot8O"
+        },
+        {
+          "nome": "Follow-up Necessário",
+          "tipo": "formula",
+          "ligaCom": null
+        },
+        {
+          "nome": "Contratos",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblxokBaJhPpLuljO"
+        },
+        {
+          "nome": "Observações",
+          "tipo": "multilineText",
+          "ligaCom": null
+        },
+        {
+          "nome": "Valor da Proposta",
+          "tipo": "currency",
+          "ligaCom": null
+        },
+        {
+          "nome": "Forma de Pagamento",
+          "tipo": "singleSelect",
+          "ligaCom": null
+        },
+        {
+          "nome": "Prazo para Pagamento (Dias Após NF)",
+          "tipo": "number",
+          "ligaCom": null
+        },
+        {
+          "nome": "Setor Responsável",
+          "tipo": "singleSelect",
+          "ligaCom": null
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblL9hanqMLUfwGnJ"
+        },
+        {
+          "nome": "Porcentagem Entrada",
+          "tipo": "percent",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 2",
+          "tipo": "percent",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 3",
+          "tipo": "percent",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 4",
+          "tipo": "percent",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 5",
+          "tipo": "percent",
+          "ligaCom": null
+        },
+        {
+          "nome": "Categoria",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblvUVOgnV2jrVWre"
+        }
+      ],
+      "amostras": [
+        {
+          "id": "recAR2dHYvgsPi4cI",
+          "fields": {
+            "Dias para Follow-up": 20,
+            "Follow-up Necessário": 0,
+            "Proposta": [
+              "[anexo: 1-2026.pdf]"
+            ],
+            "Valor da Proposta": 11196,
+            "Porcentagem Parcela 3": 0.3,
+            "Data de Envio": "2026-06-24",
+            "Porcentagem Parcela 2": 0.3,
+            "Forma de Pagamento": "Entrada + 2 Parcelas",
+            "Categoria": [
+              "recAlqbTsLeTKIBCT"
+            ],
+            "Status": "Aceita",
+            "Descrição do Serviço": "[obj]",
+            "Cliente": [
+              "recCEbwAMoKJlLJJL"
+            ],
+            "Ano da Proposta": "2026",
+            "Contratos": [
+              "recv1Ce0Lx1vNHjSD",
+              "reccFMvgWDYYB3dBA"
+            ],
+            "Setor Responsável": "Laboratório",
+            "Porcentagem Entrada": 0.4,
+            "Número da Proposta": "1-2026",
+            "Prazo para Pagamento (Dias Após NF)": 10,
+            "Dias Desde Envio": 21,
+            "Responsável Comercial": "Vinícius Levay",
+            "Sequencial": 1
+          }
+        }
+      ]
+    },
+    {
+      "nome": "Contratos",
+      "id": "tblxokBaJhPpLuljO",
+      "campos": [
+        {
+          "nome": "Contrato",
+          "tipo": "formula",
+          "ligaCom": null
+        },
+        {
+          "nome": "Proposta",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblTzY3Iggkhydke2"
+        },
+        {
+          "nome": "Cliente",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Data de Assinatura",
+          "tipo": "date",
+          "ligaCom": null
+        },
+        {
+          "nome": "Status do Contrato",
+          "tipo": "singleSelect",
+          "ligaCom": null
+        },
+        {
+          "nome": "Contrato PDF",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Valor do Contrato",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Número de Parcelas",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Setor Responsável",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Parcelas",
+          "tipo": "multipleRecordLinks",
+          "ligaCom": "tblWJzUP0YzY4bO5l"
+        },
+        {
+          "nome": "Ordem de Serviço",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Prazo para Pagamento (Dias Após NF)",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Total Recebido",
+          "tipo": "rollup",
+          "ligaCom": null
+        },
+        {
+          "nome": "Total a Receber",
+          "tipo": "formula",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Entrada",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 2",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 3",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 4",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Porcentagem Parcela 5",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        },
+        {
+          "nome": "Categoria",
+          "tipo": "multipleLookupValues",
+          "ligaCom": null
+        }
+      ],
+      "amostras": [
+        {
+          "id": "reccFMvgWDYYB3dBA",
+          "fields": {
+            "Proposta": [
+              "recAR2dHYvgsPi4cI"
+            ],
+            "Porcentagem Entrada": [
+              0.4
+            ],
+            "Total Recebido": 0,
+            "Parcelas": [
+              "recUM4k6fx0FDF8BL",
+              "recGrZkH8Sr6VVu3E",
+              "recxvWBZaAmlVqWos"
+            ],
+            "Data de Assinatura": "2026-07-15",
+            "Cliente": [
+              "recCEbwAMoKJlLJJL"
+            ],
+            "Porcentagem Parcela 3": [
+              0.3
+            ],
+            "Porcentagem Parcela 2": [
+              0.3
+            ],
+            "Total a Receber": 11196,
+            "Valor do Contrato": [
+              11196
+            ],
+            "Setor Responsável": [
+              "Laboratório"
+            ],
+            "Prazo para Pagamento (Dias Após NF)": [
+              10
+            ],
+            "Número de Parcelas": [
+              "Entrada + 2 Parcelas"
+            ],
+            "Contrato PDF": [
+              "[anexo: 1-2026.pdf]"
+            ],
+            "Categoria": [
+              "recAlqbTsLeTKIBCT"
+            ],
+            "Contrato": "C1-2026",
+            "Status do Contrato": "Ativo"
+          }
+        },
+        {
+          "id": "recv1Ce0Lx1vNHjSD",
+          "fields": {
+            "Proposta": [
+              "recAR2dHYvgsPi4cI"
+            ],
+            "Porcentagem Entrada": [
+              0.4
+            ],
+            "Total Recebido": 7837.2,
+            "Parcelas": [
+              "recWkojNm4Xtic2bk",
+              "recGEPrfePBCPHTK6",
+              "reckVgPalIu9sI1no",
+              "rec5T1Z5BCgNAndWS"
+            ],
+            "Data de Assinatura": "2026-07-14",
+            "Cliente": [
+              "recCEbwAMoKJlLJJL"
+            ],
+            "Porcentagem Parcela 3": [
+              0.3
+            ],
+            "Porcentagem Parcela 2": [
+              0.3
+            ],
+            "Total a Receber": 3358.8,
+            "Valor do Contrato": [
+              11196
+            ],
+            "Setor Responsável": [
+              "Laboratório"
+            ],
+            "Prazo para Pagamento (Dias Após NF)": [
+              10
+            ],
+            "Número de Parcelas": [
+              "Entrada + 2 Parcelas"
+            ],
+            "Contrato PDF": [
+              "[anexo: 1-2026.pdf]"
+            ],
+            "Categoria": [
+              "recAlqbTsLeTKIBCT"
+            ],
+            "Contrato": "C1-2026",
+            "Status do Contrato": "Ativo"
+          }
+        }
+      ]
+    }
+  ]
+}

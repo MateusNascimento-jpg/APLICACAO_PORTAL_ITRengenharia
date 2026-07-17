@@ -1,9 +1,9 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config();
+// bcrypt, crypto e email(reset) foram removidos junto com o login antigo:
+// o modelo novo autentica por CNPJ + e-mail no Airtable (sem senha/hash/reset).
 
 const pool = require('./db');
 const {
@@ -14,7 +14,6 @@ const {
     definirAprovacao,
     APROVACAO_VALIDAS
 } = require('./airtable');
-const { enviarEmailReset } = require('./email');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_padrao';
@@ -48,7 +47,8 @@ function usuarioPublico(usuario) {
         tipoDocumento: usuario.tipo_documento || (String(usuario.documento || '').length === 11 ? 'CPF' : 'CNPJ'),
         perfil: usuario.perfil,
         airtableId: usuario.airtable_client_id || null,
-        email: usuario.email || null
+        email: usuario.email || null,
+        nomeEmpresa: usuario.nome_empresa || null
     };
 }
 
@@ -64,12 +64,15 @@ async function registrarHistoricoLogin(req, usuarioId, sucesso, motivoFalha = nu
     }
 }
 
-async function registrarDownload(usuarioId, recordIdTrabalho) {
+// Registra o download por CNPJ (login novo nao tem usuario_id do MySQL).
+// Mantem o "baixou ou nao": INSERT IGNORE + UNIQUE(cnpj, record) evita duplicar.
+async function registrarDownload(cnpj, recordIdTrabalho) {
+    if (!cnpj) return; // sem CNPJ nao ha o que rastrear
     try {
         await pool.query(
-            `INSERT IGNORE INTO relatorios_baixados (usuario_id, record_id_trabalho)
+            `INSERT IGNORE INTO relatorios_baixados (cnpj, record_id_trabalho)
              VALUES (?, ?)`,
-            [usuarioId, recordIdTrabalho]
+            [cnpj, recordIdTrabalho]
         );
     } catch (err) {
         console.warn('[DOWNLOAD] Não foi possível registrar download:', err.message);
@@ -78,7 +81,12 @@ async function registrarDownload(usuarioId, recordIdTrabalho) {
 
 function criarToken(usuario) {
     return jwt.sign(
-        { id: usuario.id, perfil: usuario.perfil, airtableId: usuario.airtable_client_id || null },
+        {
+            id: usuario.id, // null no login novo (nao ha MySQL de usuarios)
+            perfil: usuario.perfil,
+            airtableId: usuario.airtable_client_id || null,
+            documento: usuario.documento || null // CNPJ: identifica o cliente no tracking
+        },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
     );
@@ -94,118 +102,115 @@ app.get('/status', (req, res) => {
     res.json({ status: 'Online', projeto: 'Portal do Cliente ITR Engenharia' });
 });
 
-// ==================== CADASTRO PÚBLICO ====================
-// Apenas CNPJ pré-autorizado no Airtable pode criar conta de Cliente.
-app.post(['/api/cadastro', '/cadastro'], async (req, res) => {
-    try {
-        const documento = limparDocumento(req.body.documento);
-        const email = normalizarEmail(req.body.email);
-        const senha = String(req.body.senha || '');
+// ==================== CADASTRO: REMOVIDO ====================
+// O cadastro publico foi descontinuado. No modelo novo o cliente NAO cria
+// conta: ele ja existe no Airtable e entra com CNPJ + e-mail cadastrado.
+// As rotas /api/cadastro e /cadastro respondem 410 (Gone) para deixar claro.
+app.post(['/api/cadastro', '/cadastro'], (req, res) =>
+    erro(res, 410, 'O cadastro não é mais necessário. Acesse com seu CNPJ e o e-mail cadastrado na ITR.')
+);
 
-        if (documento.length !== 14) {
-            return erro(res, 400, 'O cadastro público só é permitido para CNPJ com 14 dígitos.');
-        }
-        if (!emailValido(email)) {
-            return erro(res, 400, 'Informe um e-mail válido.');
-        }
-        if (senha.length < 8) {
-            return erro(res, 400, 'A senha deve ter no mínimo 8 caracteres.');
-        }
+// ==================== LOGIN (CNPJ + E-MAIL do Airtable) ====================
+// Modelo novo: NAO ha senha/bcrypt/MySQL para autenticar. O cliente entra com
+//   LOGIN = CNPJ  e  SENHA = primeiro e-mail cadastrado no campo "Email Cliente"
+//   da tabela Clientes do Airtable (base 1).
+// Regra: o CNPJ precisa existir no Airtable E o e-mail digitado precisa bater
+// (normalizado: minusculas, sem espaco) com o PRIMEIRO e-mail do cliente.
+// Se OK -> gera JWT com o airtableId -> acesso aos relatorios (isolamento por
+// CNPJ como ja e). Rate limiting por IP evita varredura de CNPJs publicos.
 
-        const clienteAirtable = await buscarClientePorCnpj(documento);
-        if (!clienteAirtable) {
-            return erro(res, 403, 'Este CNPJ não foi pré-autorizado pela ITR Engenharia no Airtable. Entre em contato com o suporte.');
-        }
+// Rate limiting simples em memoria (por IP). Sem dependencia externa.
+const tentativasPorIp = new Map(); // ip -> { count, primeiraEm }
+const RL_JANELA_MS = 15 * 60 * 1000;         // janela de 15 min
+const RL_MAX = Number(process.env.LOGIN_MAX_TENTATIVAS_IP || 20); // tentativas/janela
 
-        const [existente] = await pool.query(
-            `SELECT id, status_conta FROM usuarios_cnpj
-             WHERE documento = ? OR email = ?
-             LIMIT 1`,
-            [documento, email]
-        );
-        if (existente.length > 0) {
-            return erro(res, 409, 'Este CNPJ ou e-mail já possui uma conta criada.');
-        }
-
-        const senhaHash = await bcrypt.hash(senha, 10);
-        await pool.query(
-            `INSERT INTO usuarios_cnpj
-                (documento, tipo_documento, email, senha_hash, nome_empresa, perfil, airtable_client_id, status_conta)
-             VALUES
-                (?, 'CNPJ', ?, ?, ?, 'Cliente', ?, 'Ativo')`,
-            [documento, email, senhaHash, clienteAirtable.nome || clienteAirtable.idCliente || null, clienteAirtable.id]
-        );
-
-        return res.json({ sucesso: true, mensagem: 'Conta criada com sucesso! Você já pode fazer login.' });
-    } catch (error) {
-        if (error && error.code === 'ER_DUP_ENTRY') {
-            return erro(res, 409, 'Este CNPJ ou e-mail já possui uma conta criada.');
-        }
-        console.error('[CADASTRO]', error);
-        return erro(res, 500, error.message || 'Erro interno ao criar conta.');
+function checarRateLimit(ip) {
+    const agora = Date.now();
+    const reg = tentativasPorIp.get(ip);
+    if (!reg || (agora - reg.primeiraEm) > RL_JANELA_MS) {
+        tentativasPorIp.set(ip, { count: 1, primeiraEm: agora });
+        return { ok: true };
     }
-});
-// ==================== LOGIN ====================
+    reg.count += 1;
+    if (reg.count > RL_MAX) {
+        return { ok: false, esperaMin: Math.ceil((RL_JANELA_MS - (agora - reg.primeiraEm)) / 60000) };
+    }
+    return { ok: true };
+}
+
+// Limpa registros antigos do rate limit de tempos em tempos (evita crescer sem fim).
+setInterval(() => {
+    const agora = Date.now();
+    for (const [ip, reg] of tentativasPorIp.entries()) {
+        if ((agora - reg.primeiraEm) > RL_JANELA_MS) tentativasPorIp.delete(ip);
+    }
+}, RL_JANELA_MS).unref?.();
+
 app.post('/api/login', async (req, res) => {
     const documento = limparDocumento(req.body.documento);
-    const senha = String(req.body.senha || '');
+    // aceita tanto "email" quanto "senha" no corpo (a tela envia o e-mail no
+    // campo de acesso; mantemos compatibilidade com o nome antigo "senha").
+    const emailDigitado = normalizarEmail(req.body.email || req.body.senha);
+    const ip = getIp(req) || 'desconhecido';
 
     try {
-        if (!documento || !senha) {
-            return erro(res, 400, 'Documento e senha são obrigatórios.');
+        // 1) Rate limit por IP
+        const rl = checarRateLimit(ip);
+        if (!rl.ok) {
+            await registrarHistoricoLogin(req, null, false, 'RATE_LIMIT_IP');
+            return erro(res, 429, `Muitas tentativas. Aguarde ${rl.esperaMin} minuto(s) e tente novamente.`);
         }
 
-        const [usuarios] = await pool.query(
-            `SELECT id, documento, tipo_documento, email, senha_hash, perfil, airtable_client_id,
-                    status_conta, tentativas_login, bloqueado_ate
-             FROM usuarios_cnpj
-             WHERE documento = ? AND data_exclusao IS NULL
-             LIMIT 1`,
-            [documento]
-        );
-
-        if (usuarios.length === 0) {
-            await registrarHistoricoLogin(req, null, false, 'USUARIO_NAO_ENCONTRADO');
-            return erro(res, 401, 'Documento ou senha inválidos.');
+        // 2) Validacao de entrada
+        if (!documento || !emailDigitado) {
+            return erro(res, 400, 'Informe o CNPJ e o e-mail de acesso.');
+        }
+        if (documento.length !== 14) {
+            return erro(res, 400, 'CNPJ inválido. Digite os 14 números do CNPJ de cadastro.');
         }
 
-        const usuario = usuarios[0];
-        const bloqueadoAte = usuario.bloqueado_ate ? new Date(usuario.bloqueado_ate) : null;
-        if (usuario.status_conta !== 'Ativo') {
-            await registrarHistoricoLogin(req, usuario.id, false, 'CONTA_INATIVA_OU_BLOQUEADA');
-            return erro(res, 403, 'Esta conta está inativa ou bloqueada. Entre em contato com a ITR Engenharia.');
-        }
-        if (bloqueadoAte && bloqueadoAte > new Date()) {
-            await registrarHistoricoLogin(req, usuario.id, false, 'BLOQUEIO_TEMPORARIO');
-            return erro(res, 423, `Muitas tentativas incorretas. Tente novamente após ${bloqueadoAte.toLocaleString('pt-BR')}.`);
+        // 3) Busca o cliente no Airtable pelo CNPJ
+        const cliente = await buscarClientePorCnpj(documento);
+        if (!cliente) {
+            await registrarHistoricoLogin(req, null, false, 'CNPJ_NAO_ENCONTRADO');
+            return erro(res, 401, 'CNPJ não encontrado. Verifique o número ou entre em contato com a ITR.');
         }
 
-        const senhaCorreta = await bcrypt.compare(senha, usuario.senha_hash);
-        if (!senhaCorreta) {
-            const tentativas = Number(usuario.tentativas_login || 0) + 1;
-            if (tentativas >= MAX_TENTATIVAS_LOGIN) {
-                await pool.query(
-                    `UPDATE usuarios_cnpj
-                     SET tentativas_login = ?, bloqueado_ate = DATE_ADD(NOW(), INTERVAL ? MINUTE)
-                     WHERE id = ?`,
-                    [tentativas, MINUTOS_BLOQUEIO_LOGIN, usuario.id]
-                );
-                await registrarHistoricoLogin(req, usuario.id, false, 'SENHA_INVALIDA_BLOQUEIO');
-                return erro(res, 423, `Muitas tentativas incorretas. A conta foi bloqueada temporariamente por ${MINUTOS_BLOQUEIO_LOGIN} minutos.`);
-            }
-
-            await pool.query(`UPDATE usuarios_cnpj SET tentativas_login = ? WHERE id = ?`, [tentativas, usuario.id]);
-            await registrarHistoricoLogin(req, usuario.id, false, 'SENHA_INVALIDA');
-            return erro(res, 401, 'Documento ou senha inválidos.');
+        // 4) O cliente precisa ter e-mail cadastrado no Airtable
+        if (!cliente.emailLogin) {
+            await registrarHistoricoLogin(req, null, false, 'CLIENTE_SEM_EMAIL');
+            return erro(res, 403, 'Seu acesso ainda não está liberado. Entre em contato com a ITR para cadastrar seu e-mail.');
         }
 
-        await pool.query(
-            `UPDATE usuarios_cnpj
-             SET ultimo_login = NOW(), tentativas_login = 0, bloqueado_ate = NULL
-             WHERE id = ?`,
-            [usuario.id]
-        );
-        await registrarHistoricoLogin(req, usuario.id, true, null);
+        // 5) O e-mail digitado precisa bater com o primeiro e-mail do cliente
+        if (emailDigitado !== cliente.emailLogin) {
+            await registrarHistoricoLogin(req, null, false, 'EMAIL_INCORRETO');
+            return erro(res, 401, 'E-mail de acesso incorreto para este CNPJ.');
+        }
+
+        // 6) Tudo certo -> monta um "usuario" so com o necessario para o token.
+        //    NAO ha registro no MySQL; o token carrega o airtableId (record do
+        //    cliente no Airtable), que e o que o isolamento de relatorios usa.
+        const usuario = {
+            id: null,                       // sem id do MySQL neste modelo
+            documento: cliente.cnpj,
+            tipo_documento: 'CNPJ',
+            email: cliente.emailLogin,
+            perfil: 'Cliente',
+            airtable_client_id: cliente.id, // record id do Airtable
+            nome_empresa: cliente.idCliente || cliente.nome || null
+        };
+
+        await registrarHistoricoLogin(req, null, true, null);
+
+        // Grava "ultimo acesso" no MySQL (so timestamp + CNPJ), sem travar o login
+        // caso a tabela nao exista ainda. Mantem o MySQL util para tracking.
+        pool.query(
+            `INSERT INTO ultimo_acesso_cliente (cnpj, airtable_client_id, ultimo_acesso)
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE ultimo_acesso = NOW(), airtable_client_id = VALUES(airtable_client_id)`,
+            [cliente.cnpj, cliente.id]
+        ).catch(err => console.warn('[ULTIMO_ACESSO] ignorado:', err.message));
 
         const token = criarToken(usuario);
         return res.json({
@@ -290,7 +295,7 @@ async function obterPdfAprovado(req, res) {
         return { erroStatus: 404, erroMensagem: 'O arquivo PDF deste relatório não está disponível ou o trabalho ainda não foi aprovado.' };
     }
 
-    await registrarDownload(req.usuario.id, recordIdTrabalho);
+    await registrarDownload(req.usuario.documento, recordIdTrabalho);
     return pdf;
 }
 
@@ -372,81 +377,16 @@ app.patch('/api/trabalho/:id/aprovacao', autenticado, somenteDiretor, async (req
 });
 
 // ==================== RECUPERAÇÃO DE SENHA ====================
-app.post('/api/esqueci-senha', async (req, res) => {
-    try {
-        const email = normalizarEmail(req.body.email);
-        if (!emailValido(email)) {
-            return erro(res, 400, 'Por favor, informe um e-mail válido.');
-        }
-
-        const [usuarios] = await pool.query(
-            `SELECT id, email, perfil FROM usuarios_cnpj
-             WHERE email = ? AND status_conta = 'Ativo' AND data_exclusao IS NULL
-             LIMIT 1`,
-            [email]
-        );
-
-        if (usuarios.length > 0) {
-            const usuario = usuarios[0];
-            const token = crypto.randomBytes(32).toString('hex');
-            await pool.query(
-                `UPDATE usuarios_cnpj
-                 SET reset_token = ?, reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR)
-                 WHERE id = ?`,
-                [token, usuario.id]
-            );
-
-            const urlBase = process.env.APP_URL || 'http://localhost:3000';
-            const linkReset = `${urlBase}/redefinir-senha.html?token=${encodeURIComponent(token)}`;
-            const destino = process.env.RESET_EMAIL_OVERRIDE || usuario.email;
-            enviarEmailReset(destino, linkReset, usuario.perfil || 'Cliente')
-                .catch(err => console.error('[RESET_EMAIL]', err.message));
-        }
-
-        return res.json({
-            sucesso: true,
-            mensagem: 'Se o e-mail informado estiver cadastrado, você receberá um link para redefinir sua senha em instantes.'
-        });
-    } catch (error) {
-        console.error('[ESQUECI_SENHA]', error);
-        return erro(res, 500, 'Erro interno ao processar o pedido de recuperação.');
-    }
-});
-
-app.post('/api/redefinir-senha', async (req, res) => {
-    try {
-        const token = String(req.body.token || '').trim();
-        const senha = String(req.body.senha || '');
-
-        if (!token) return erro(res, 400, 'Token de recuperação ausente ou inválido.');
-        if (senha.length < 8) return erro(res, 400, 'A nova senha deve ter no mínimo 8 caracteres.');
-
-        const [usuarios] = await pool.query(
-            `SELECT id FROM usuarios_cnpj
-             WHERE reset_token = ? AND reset_expires > NOW()
-             AND status_conta = 'Ativo' AND data_exclusao IS NULL
-             LIMIT 1`,
-            [token]
-        );
-
-        if (usuarios.length === 0) {
-            return erro(res, 400, 'O link de recuperação é inválido ou já expirou. Solicite um novo.');
-        }
-
-        const novaSenhaHash = await bcrypt.hash(senha, 10);
-        await pool.query(
-            `UPDATE usuarios_cnpj
-             SET senha_hash = ?, reset_token = NULL, reset_expires = NULL, tentativas_login = 0, bloqueado_ate = NULL
-             WHERE id = ?`,
-            [novaSenhaHash, usuarios[0].id]
-        );
-
-        return res.json({ sucesso: true, mensagem: 'Senha redefinida com sucesso. Você já pode fazer login.' });
-    } catch (error) {
-        console.error('[REDEFINIR_SENHA]', error);
-        return erro(res, 500, 'Erro interno ao processar a redefinição de senha.');
-    }
-});
+// ==================== RECUPERAÇÃO DE SENHA: REMOVIDA ====================
+// Nao ha mais senha no modelo novo (a credencial e o e-mail cadastrado no
+// Airtable, que o cliente sempre sabe). As rotas respondem 410 (Gone).
+// Se o cliente nao lembra qual e-mail esta cadastrado, deve falar com a ITR.
+app.post('/api/esqueci-senha', (req, res) =>
+    erro(res, 410, 'A recuperação de senha não é mais necessária. Acesse com seu CNPJ e o e-mail cadastrado. Em caso de dúvida, fale com a ITR.')
+);
+app.post('/api/redefinir-senha', (req, res) =>
+    erro(res, 410, 'A recuperação de senha foi descontinuada. Acesse com seu CNPJ e o e-mail cadastrado.')
+);
 
 app.use('/api', (req, res) => erro(res, 404, 'Rota da API não encontrada.'));
 
