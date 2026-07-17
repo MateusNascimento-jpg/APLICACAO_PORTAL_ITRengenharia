@@ -18,8 +18,7 @@ const {
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_padrao';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
-const MAX_TENTATIVAS_LOGIN = Number(process.env.MAX_TENTATIVAS_LOGIN || 5);
-const MINUTOS_BLOQUEIO_LOGIN = Number(process.env.MINUTOS_BLOQUEIO_LOGIN || 15);
+// Bloqueio por tentativas agora e feito por rate limit de IP (ver /api/login).
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -52,12 +51,12 @@ function usuarioPublico(usuario) {
     };
 }
 
-async function registrarHistoricoLogin(req, usuarioId, sucesso, motivoFalha = null) {
+async function registrarHistoricoLogin(req, cnpjTentado, sucesso, motivoFalha = null) {
     try {
         await pool.query(
-            `INSERT INTO historico_logins (usuario_id, sucesso, ip_origem, navegador, motivo_falha)
+            `INSERT INTO historico_logins (cnpj_tentado, sucesso, ip_origem, navegador, motivo_falha)
              VALUES (?, ?, ?, ?, ?)`,
-            [usuarioId || null, !!sucesso, getIp(req), String(req.headers['user-agent'] || '').slice(0, 255), motivoFalha]
+            [cnpjTentado || null, !!sucesso, getIp(req), String(req.headers['user-agent'] || '').slice(0, 255), motivoFalha]
         );
     } catch (err) {
         console.warn('[HISTORICO_LOGIN] Não foi possível registrar tentativa:', err.message);
@@ -157,7 +156,7 @@ app.post('/api/login', async (req, res) => {
         // 1) Rate limit por IP
         const rl = checarRateLimit(ip);
         if (!rl.ok) {
-            await registrarHistoricoLogin(req, null, false, 'RATE_LIMIT_IP');
+            await registrarHistoricoLogin(req, documento || null, false, 'RATE_LIMIT_IP');
             return erro(res, 429, `Muitas tentativas. Aguarde ${rl.esperaMin} minuto(s) e tente novamente.`);
         }
 
@@ -172,19 +171,19 @@ app.post('/api/login', async (req, res) => {
         // 3) Busca o cliente no Airtable pelo CNPJ
         const cliente = await buscarClientePorCnpj(documento);
         if (!cliente) {
-            await registrarHistoricoLogin(req, null, false, 'CNPJ_NAO_ENCONTRADO');
+            await registrarHistoricoLogin(req, documento, false, 'CNPJ_NAO_ENCONTRADO');
             return erro(res, 401, 'CNPJ não encontrado. Verifique o número ou entre em contato com a ITR.');
         }
 
         // 4) O cliente precisa ter e-mail cadastrado no Airtable
         if (!cliente.emailLogin) {
-            await registrarHistoricoLogin(req, null, false, 'CLIENTE_SEM_EMAIL');
+            await registrarHistoricoLogin(req, documento, false, 'CLIENTE_SEM_EMAIL');
             return erro(res, 403, 'Seu acesso ainda não está liberado. Entre em contato com a ITR para cadastrar seu e-mail.');
         }
 
         // 5) O e-mail digitado precisa bater com o primeiro e-mail do cliente
         if (emailDigitado !== cliente.emailLogin) {
-            await registrarHistoricoLogin(req, null, false, 'EMAIL_INCORRETO');
+            await registrarHistoricoLogin(req, documento, false, 'EMAIL_INCORRETO');
             return erro(res, 401, 'E-mail de acesso incorreto para este CNPJ.');
         }
 
@@ -201,7 +200,7 @@ app.post('/api/login', async (req, res) => {
             nome_empresa: cliente.idCliente || cliente.nome || null
         };
 
-        await registrarHistoricoLogin(req, null, true, null);
+        await registrarHistoricoLogin(req, documento, true, null);
 
         // Grava "ultimo acesso" no MySQL (so timestamp + CNPJ), sem travar o login
         // caso a tabela nao exista ainda. Mantem o MySQL util para tracking.
