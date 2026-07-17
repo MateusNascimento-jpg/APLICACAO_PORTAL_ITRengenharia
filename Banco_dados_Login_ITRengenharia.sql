@@ -254,6 +254,125 @@ CREATE EVENT evento_limpar_auditoria ON SCHEDULE EVERY 1 DAY STARTS (TIMESTAMP(C
 DROP EVENT IF EXISTS evento_limpar_tokens;
 CREATE EVENT evento_limpar_tokens ON SCHEDULE EVERY 30 MINUTE DO CALL procedure_limpar_tokens_reset();
 
+
+
+USE ITRengenhariaLOGIN;
+
+-- Tabela de ultimo acesso por cliente (chave = CNPJ limpo, 14 digitos).
+-- Gravada a cada login bem-sucedido. Usada para exibir "ultimo acesso" no
+-- portal (aba Minha conta) sem depender do cadastro antigo de usuarios.
+CREATE TABLE IF NOT EXISTS ultimo_acesso_cliente (
+    cnpj               VARCHAR(14)  NOT NULL,
+    airtable_client_id VARCHAR(32)  DEFAULT NULL,
+    ultimo_acesso      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    primeiro_acesso    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (cnpj)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Observacao: o INSERT do login usa
+--   ON DUPLICATE KEY UPDATE ultimo_acesso = NOW()
+-- entao "primeiro_acesso" fica com a data da 1a vez e "ultimo_acesso" atualiza
+-- a cada entrada. Se a tabela nao existir, o login ignora o erro e segue
+-- normalmente (o registro de ultimo acesso e best-effort, nao bloqueia login).
+
+
+-- ----------------------------------------------------------------------------
+-- TRACKING DE DOWNLOAD por CNPJ (antes era por usuario_id do MySQL)
+-- ----------------------------------------------------------------------------
+-- No login novo nao existe mais usuario no MySQL, entao o tracking de download
+-- (tabela relatorios_baixados) nao pode mais usar usuario_id + FK. Passamos a
+-- rastrear por CNPJ. Esta secao adiciona a coluna cnpj de forma idempotente e
+-- cria a UNIQUE por (cnpj, record_id_trabalho) para manter o "baixou ou nao".
+-- A coluna usuario_id antiga fica (nullable) para nao perder o historico.
+
+-- 1) Torna usuario_id opcional (para novos registros sem MySQL) e remove a FK
+--    que exigia usuario existente. (Se a FK ja nao existir, ignore o erro.)
+DELIMITER $$
+DROP PROCEDURE IF EXISTS _ajustar_baixados $$
+CREATE PROCEDURE _ajustar_baixados()
+BEGIN
+    -- adiciona coluna cnpj se faltar
+    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'relatorios_baixados'
+                   AND COLUMN_NAME = 'cnpj') THEN
+        ALTER TABLE relatorios_baixados ADD COLUMN cnpj VARCHAR(14) DEFAULT NULL AFTER usuario_id;
+    END IF;
+
+    -- torna usuario_id nullable (novos downloads nao tem usuario no MySQL)
+    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'relatorios_baixados'
+               AND COLUMN_NAME = 'usuario_id' AND IS_NULLABLE = 'NO') THEN
+        ALTER TABLE relatorios_baixados MODIFY usuario_id INT NULL;
+    END IF;
+
+    -- remove a FK antiga (usuario_id -> usuarios_cnpj), se existir, para o
+    -- tracking nao depender mais da tabela de usuarios. Busca o nome real da
+    -- constraint (pode variar) e faz o DROP dinamico.
+    SET @fk := (SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'relatorios_baixados'
+                AND COLUMN_NAME = 'usuario_id' AND REFERENCED_TABLE_NAME IS NOT NULL
+                LIMIT 1);
+    IF @fk IS NOT NULL THEN
+        SET @sql := CONCAT('ALTER TABLE relatorios_baixados DROP FOREIGN KEY `', @fk, '`');
+        PREPARE st FROM @sql; EXECUTE st; DEALLOCATE PREPARE st;
+    END IF;
+
+    -- cria UNIQUE por (cnpj, record) se faltar, garantindo "baixou ou nao"
+    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'relatorios_baixados'
+                   AND INDEX_NAME = 'uk_cnpj_trabalho') THEN
+        ALTER TABLE relatorios_baixados ADD UNIQUE KEY uk_cnpj_trabalho (cnpj, record_id_trabalho);
+    END IF;
+END $$
+CALL _ajustar_baixados() $$
+DROP PROCEDURE IF EXISTS _ajustar_baixados $$
+DELIMITER ;
+
+-- Consulta util para o chefe ver quem baixou (via phpMyAdmin):
+--   SELECT cnpj, record_id_trabalho, baixado_em FROM relatorios_baixados ORDER BY baixado_em DESC;
+
+
+-- ----------------------------------------------------------------------------
+-- HISTORICO DE LOGINS: adicionar coluna cnpj_tentado
+-- ----------------------------------------------------------------------------
+-- O login novo registra o CNPJ tentado (nao ha mais usuario_id do MySQL).
+-- Adiciona a coluna de forma idempotente; a coluna usuario_id antiga (se
+-- existir) fica intacta para nao perder historico.
+DELIMITER $$
+DROP PROCEDURE IF EXISTS _ajustar_historico $$
+CREATE PROCEDURE _ajustar_historico()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'historico_logins'
+                   AND COLUMN_NAME = 'cnpj_tentado') THEN
+        ALTER TABLE historico_logins ADD COLUMN cnpj_tentado VARCHAR(14) NULL AFTER id;
+        ALTER TABLE historico_logins ADD INDEX idx_historico_cnpj (cnpj_tentado);
+    END IF;
+    -- se usuario_id existir e for NOT NULL com FK, torna nullable para nao travar
+    -- inserts do login novo (que nao tem usuario_id).
+    IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'historico_logins'
+               AND COLUMN_NAME = 'usuario_id' AND IS_NULLABLE = 'NO') THEN
+        ALTER TABLE historico_logins MODIFY usuario_id INT NULL;
+    END IF;
+END $$
+CALL _ajustar_historico() $$
+DROP PROCEDURE IF EXISTS _ajustar_historico $$
+DELIMITER ;
+
+
+-- ----------------------------------------------------------------------------
+-- FEEDBACK / REPORTAR PROBLEMA (nova tabela, escopo do portal)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedback_clientes (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    cnpj        VARCHAR(14)  NULL,
+    categoria   ENUM('Bug', 'Sugestao', 'Duvida') NOT NULL DEFAULT 'Duvida',
+    mensagem    TEXT         NOT NULL,
+    url_pagina  VARCHAR(255) NULL,
+    status      ENUM('Novo', 'Lido', 'Resolvido') NOT NULL DEFAULT 'Novo',
+    criado_em   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- =============================================================
 -- COMANDOS DE TESTE REMOVIDOS/COMENTADOS
 -- Os DELETE/UPDATE de usuários específicos que existiam aqui foram removidos

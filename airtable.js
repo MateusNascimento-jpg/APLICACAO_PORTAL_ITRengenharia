@@ -444,7 +444,19 @@ async function urlRelatorioAprovado(recordIdTrabalho) {
     return { nome: pdf.nome, url: pdf.url };
 }
 
-// ==================== BUSCAR CLIENTE POR CNPJ (cadastro) ====================
+// ==================== BUSCAR CLIENTE POR CNPJ ====================
+// Extrai o PRIMEIRO e-mail do campo "Email Cliente" (multilineText: pode
+// conter varios e-mails, um por linha). Decisao de projeto: o login usa
+// sempre a PRIMEIRA linha como credencial. Normaliza (minusculas, sem espaco).
+function primeiroEmailCliente(campo) {
+    if (!campo) return null;
+    const linhas = String(campo)
+        .split(/[\r\n]+/)          // quebra por linha
+        .map(l => l.trim().toLowerCase())
+        .filter(Boolean);          // remove linhas vazias
+    return linhas[0] || null;
+}
+
 async function buscarClientePorCnpj(cnpj) {
     const cnpjLimpo = String(cnpj || '').replace(/\D/g, '');
     if (cnpjLimpo.length !== 14) return null;
@@ -461,7 +473,10 @@ async function buscarClientePorCnpj(cnpj) {
     return {
         id: rec.id,
         nome: rec.fields['Nome Cliente'] || null,
-        idCliente: rec.fields['ID Cliente'] || null
+        idCliente: rec.fields['ID Cliente'] || null,
+        // primeiro e-mail cadastrado (credencial de login); null se vazio
+        emailLogin: primeiroEmailCliente(rec.fields['Email Cliente']),
+        cnpj: cnpjLimpo
     };
 }
 
