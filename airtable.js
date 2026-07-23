@@ -495,7 +495,7 @@ async function urlRelatorioAprovado(recordIdTrabalho) {
 function primeiroEmailCliente(campo) {
     if (!campo) return null;
     const linhas = String(campo)
-        .split(/[\r\n]+/)          // quebra por linha
+        .split(/[\r\n;,]+/)        // quebra por linha OU por ; OU por ,
         .map(l => l.trim().toLowerCase())
         .filter(Boolean);          // remove linhas vazias
     return linhas[0] || null;
