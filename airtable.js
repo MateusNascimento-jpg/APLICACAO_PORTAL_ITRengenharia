@@ -284,7 +284,10 @@ function formatar(rec, mapa, mapaOrdens) {
     const amo = resolverAmostra(f);
 
     // OS: primeira traduzida + "+N" (forma segura, tratando como lista)
-    const ordem = traduzirOS(f['Ordem de Serviço'], mapaOrdens);
+    // Diagnostico (jul/2026) mostrou que 'Ordem de Serviço' (link direto) esta
+    // preenchido em praticamente 100% dos registros, mas mantemos fallback
+    // defensivo para 'Link Ordem de Serviço' (lookup) para casos legados.
+    const ordem = traduzirOS(f['Ordem de Serviço'] ?? f['Link Ordem de Serviço'], mapaOrdens);
 
     // Status REAL do Airtable e o rotulo exibido
     const statusReal = f['Status Cliente'] || '';
