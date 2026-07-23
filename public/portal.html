@@ -947,9 +947,9 @@ function montarChipsOS(){
 function aplicarFiltros(){
   var termos = normalizar(filtroBusca).split(/\s+/).filter(Boolean);
   visiveis = TODOS.filter(function(t){
-    // busca multi-palavra em ensaio + sigla + amostra + OS
+    // busca multi-palavra em ensaio + sigla + amostra + OS + norma
     if(termos.length){
-      var alvo = normalizar(t.ensaio+' '+t.sigla+' '+t.amostra+' '+(t.os||''));
+      var alvo = normalizar(t.ensaio+' '+t.sigla+' '+t.amostra+' '+(t.os||'')+' '+(t.norma||''));
       for(var i=0;i<termos.length;i++){ if(alvo.indexOf(termos[i])<0) return false; }
     }
     // etapa (CUMULATIVO): marcar "Amostra Recebida" mostra todos que JÁ
