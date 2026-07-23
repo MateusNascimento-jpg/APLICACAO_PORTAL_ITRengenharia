@@ -58,11 +58,15 @@ async function carregarMapaEnsaios() {
             (resp.records || []).forEach(rec => {
                 const sigla = rec.fields['ID Ensaio'];
                 const nome = rec.fields['Nome do Ensaio'];
+                const norma = rec.fields['Norma'];
                 if (sigla && nome) {
                     // Guarda a chave original E uma versao normalizada (sem caixa/acento)
                     // para casar "LIMITE" com "Limite", "TRETON" com "Treton", etc.
-                    mapa[String(sigla).trim()] = String(nome).trim();
-                    mapa['__norm__' + normalizar(sigla)] = String(nome).trim();
+                    // Cada entrada carrega { nome, norma } — norma e' singleLineText,
+                    // fica null quando o campo Norma nao esta preenchido no Airtable.
+                    const entrada = { nome: String(nome).trim(), norma: norma ? String(norma).trim() : null };
+                    mapa[String(sigla).trim()] = entrada;
+                    mapa['__norm__' + normalizar(sigla)] = entrada;
                 }
             });
             offset = resp.offset || null;
@@ -123,10 +127,10 @@ function resolverEnsaio(f, mapa) {
     if (sigla) {
         const chave = String(sigla).trim();
         // 2a) traducao exata
-        if (mapa[chave]) return { nome: mapa[chave], ehLixo: false };
+        if (mapa[chave]) return { nome: mapa[chave].nome, ehLixo: false };
         // 2b) traducao tolerante (caixa/acento): "LIMITE" -> "Limites de Atterberg"
         const norm = mapa['__norm__' + normalizar(chave)];
-        if (norm) return { nome: norm, ehLixo: false };
+        if (norm) return { nome: norm.nome, ehLixo: false };
         // 2c) e lixo (ID vazado, numero solto, "a 3")? entao marca como lixo
         if (pareceLixo(chave)) {
             return { nome: chave, ehLixo: true };
@@ -137,6 +141,27 @@ function resolverEnsaio(f, mapa) {
 
     // 3) Nada: rotulo neutro, nao e lixo (so nao tem ensaio informado)
     return { nome: 'Ensaio', ehLixo: false };
+}
+
+// ==================== RESOLVER A(S) NORMA(S) ====================
+// Junta a Norma de cada ensaio vinculado em 'Link Ensaios' (normalmente 1 so,
+// mas trata como lista pela mesma razao de resolverAmostra/traduzirOS: seguro
+// mesmo se um dia vier mais de um). Remove duplicatas e vazios, preserva ordem.
+// Retorna string ("NBR 6459, NBR 7180") ou null se nenhum ensaio tiver norma.
+function resolverNormas(f, mapa) {
+    const bruto = f['Link Ensaios'];
+    const lista = Array.isArray(bruto) ? bruto : (bruto != null ? [bruto] : []);
+
+    const normas = [];
+    lista.forEach(sigla => {
+        const chave = String(sigla || '').trim();
+        if (!chave) return;
+        const entrada = mapa[chave] || mapa['__norm__' + normalizar(chave)];
+        const norma = entrada && entrada.norma ? String(entrada.norma).trim() : null;
+        if (norma && !normas.includes(norma)) normas.push(norma);
+    });
+
+    return normas.length ? normas.join(', ') : null;
 }
 
 // ==================== TRADUCAO DE ORDEM DE SERVICO (com cache) ====================
@@ -280,6 +305,9 @@ function formatar(rec, mapa, mapaOrdens) {
     // ENSAIO: nome completo limpo (com fallback e deteccao de lixo)
     const ens = resolverEnsaio(f, mapa);
 
+    // NORMA(S): da tabela Ensaios, casando pela(s) sigla(s) de Link Ensaios
+    const norma = resolverNormas(f, mapa);
+
     // AMOSTRA: primeira + "+N"
     const amo = resolverAmostra(f);
 
@@ -330,6 +358,9 @@ function formatar(rec, mapa, mapaOrdens) {
         // ORDEM DE SERVICO
         os: ordem.os,
         os_extra: ordem.os_extra,
+
+        // NORMA(S) do(s) ensaio(s) vinculado(s), separadas por virgula (ou null)
+        norma: norma,
 
         // Para a timeline: valor REAL (para casar a etapa) + rotulo (so exibicao)
         status_cliente: statusReal,        // ex: "Relatório em Andamento"
