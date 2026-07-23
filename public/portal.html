@@ -1114,9 +1114,11 @@ function montarCard(t){
     : '';
 
   // OS / NORMA: etiqueta na linha de apoio (junto do ensaio). "+N" se houver mais de uma OS.
-  // Com OS e norma -> "OS / Norma(s)"; só OS -> só a OS; só norma -> só a norma; nenhum -> nada.
+  // Com OS e norma -> "OS | Norma(s)"; só OS -> só a OS; só norma -> só a norma; nenhum -> nada.
+  // Separador "|" (não "/"): muitas normas já têm barra no próprio nome (ex.: "DNIT 134/2018-ME"),
+  // e usar "/" também como separador OS/Norma virava ambíguo (parecia 3 OS em vez de 1 OS + 1 norma).
   var osExtra = (t.os_extra && t.os_extra > 0) ? ' +'+t.os_extra : '';
-  var osNormaTxt = (t.os && t.norma) ? (t.os+' / '+t.norma) : (t.os || t.norma || '');
+  var osNormaTxt = (t.os && t.norma) ? (t.os+' | '+t.norma) : (t.os || t.norma || '');
   var osHtml = osNormaTxt ? '<span class="os-tag"><i class="ti ti-clipboard-text" aria-hidden="true"></i>'+esc(osNormaTxt)+esc(osExtra)+'</span>' : '';
 
   var card = document.createElement('div');
