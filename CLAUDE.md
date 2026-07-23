@@ -1,27 +1,3 @@
-<!--
-═══════════════════════════════════════════════════════════════════════
-COMO CRIAR E USAR ESTE ARQUIVO (passo a passo)
-═══════════════════════════════════════════════════════════════════════
-1. Salve este arquivo com o nome EXATO  CLAUDE.md  (maiúsculas + .md)
-   na RAIZ do repositório — mesma pasta do package.json e do server.js.
-2. Commite normalmente:
-       git add CLAUDE.md
-       git commit -m "docs: adiciona CLAUDE.md com contexto do projeto"
-   (fica versionado no GitHub; NÃO faça push se não quiser, ele funciona local igual.)
-3. Abra o projeto no VS Code e abra o painel do Claude Code. Ele lê este
-   arquivo automaticamente como contexto inicial — não precisa configurar nada.
-4. IMPORTANTE: antes de rodar os comandos, DESLIGUE o "Auto mode" do Claude Code
-   (canto inferior do painel). Assim ele mostra cada diff e espera sua aprovação —
-   essencial porque o portal está em produção.
-5. Documento vivo: edite conforme surgirem decisões novas. NUNCA coloque
-   segredos aqui (senhas, JWT_SECRET, tokens, credenciais de banco).
-6. Se algo der errado ao aplicar mudanças, o Git te salva:
-       git checkout .              (desfaz o que não foi commitado)
-       git reset --hard origin/main (volta ao que está no GitHub)
-   Como o Claude Code trabalha numa BRANCH, a main em produção fica intacta.
-═══════════════════════════════════════════════════════════════════════
--->
-
 # CLAUDE.md — Portal do Cliente ITR Engenharia
 
 Contexto para o Claude Code continuar o projeto. Você está assumindo um projeto em
@@ -82,19 +58,24 @@ andamento dos seus ensaios..."). WhatsApp flutuante já existe no `login.html`, 
 
 ---
 
-## ETAPA 1 — Ajustes pontuais (baixo risco) — FAZER PRIMEIRO
+## ETAPA 1 — FUNCIONALIDADES (fazer agora) — 9 tarefas
 
-Três tarefas pequenas e isoladas. Não aplicar o redesign aqui.
+Decisão do Mateus (jul/2026): **só funcionalidades por enquanto; visual depois, sob pedido
+explícito.** Ordem sugerida (as duas primeiras exigem diagnóstico read-only antes de codar):
 
-1. **Corrigir bug do e-mail com `;`/`,`.** Em `airtable.js`, `primeiroEmailCliente()` hoje
-   quebra o campo só por linha (`.split(/[\r\n]+/)`). Se o cliente tem dois e-mails na mesma
-   linha com `;` (ex.: `a@x.com; b@x.com`), a função devolve a string inteira e o login
-   falha. Corrigir para `.split(/[\r\n;,]+/)` (quebra por linha, `;` e `,`). Login continua
-   usando o PRIMEIRO e-mail — só fica robusto. (Testado: 10/10 casos de borda passam.)
-2. **Trocar o texto do hero** no `login.html` (~linha 325) — ver "Texto oficial do hero".
-3. **WhatsApp flutuante no `portal.html`** — copiar o botão `.wa-flutuante` que já existe
-   no `login.html` (CSS + `<a>` com SVG). Cuidado com o conflito com o botão "voltar ao
-   topo" no mesmo canto (empilhar via `bottom`).
+1. **Ordem de Serviço não aparece** — campo lido é `Ordem de Serviço`, o correto é
+   `Link Ordem de Serviço`. Ver "Armadilha: Ordem de Serviço não aparece".
+2. **Trazer a(s) Norma(s)** da tabela Ensaios para o JSON do trabalho (múltiplas separadas
+   por vírgula). Ver "Funcionalidade: exibir Norma ao lado da Ordem de Serviço".
+3. **Exibir `OS / Norma(s)`** no badge do card (só o texto; sem mexer em CSS).
+4. **Norma entra na busca livre** (junto de ensaio, amostra, código e OS).
+5. **Relatório antigo continua aparecendo** — anti-cache + download com URL fresca + flag
+   `relatorio_desatualizado`. Ver "Armadilha: relatório antigo aparece após troca do PDF".
+6. **E-mail com `;` ou `,` quebra o login** — `.split(/[\r\n]+/)` → `.split(/[\r\n;,]+/)`.
+7. **Trocar o texto do hero** no `login.html` — ver "Texto oficial do hero".
+8. **WhatsApp flutuante no `portal.html`** — copiar o `.wa-flutuante` que já existe no login.
+9. **Link "Como funciona o portal?"** abaixo do botão Entrar → `/como-funciona.html`.
+   Ver "Funcionalidade: guia Como funciona o portal".
 
 ### Texto oficial do hero
 Substituir:
@@ -105,7 +86,14 @@ Por:
 
 ---
 
-## ETAPA 2 — Redesign visual Midnight/LTEC (estrutural) — FAZER DEPOIS
+## ETAPA 2 — Redesign visual Midnight/LTEC — ⛔ CONGELADO
+
+> **NÃO EXECUTAR NADA DESTA SEÇÃO.** Decisão do Mateus (jul/2026): trabalhar **apenas
+> funcionalidades** por enquanto. O visual só entra quando ele pedir explicitamente.
+> Se uma tarefa de funcionalidade tocar num arquivo desta seção, mexer SÓ no que a
+> funcionalidade exige — não aproveitar a visita para aplicar estilo.
+
+### (referência para quando for liberado)
 
 Transformar `portal.html` e `login.html` no visual Midnight/LTEC, por fases, preservando
 toda a lógica. (Comandos detalhados serão passados quando a Etapa 1 estiver no ar.)
@@ -258,3 +246,102 @@ Base 1 por **CNPJ** (14 díg., limpo, casa nos dois lados). Aba Financeiro futur
 (Brasília) por OS por cliente, lê a view "Resumo Diário". Suporta múltiplos e-mails via
 `separarEmails()` (`;`/`,`). Env `MODO_TESTE` redireciona tudo para endereço de teste.
 Separado do portal, compartilha o Airtable.
+
+---
+
+## Armadilha: relatório antigo aparece após troca do PDF (diagnosticado jul/2026)
+
+**Sintoma:** cliente exclui o relatório antigo e anexa um novo, mas o portal continua
+mostrando/baixando o PDF ANTIGO.
+
+**Raiz:** o portal lê o PDF SÓ do campo `Relatórios_Aprovados` (função `montarTrabalho` +
+`primeiroPdf` em `airtable.js`). Esse campo é preenchido por uma AUTOMAÇÃO do Airtable que
+copia o PDF quando o diretor aprova. Se o anexo é trocado DEPOIS de já aprovado, a automação
+não re-dispara → `Relatórios_Aprovados` fica com o PDF velho enquanto `Relatórios` já tem o
+novo. O portal, lendo só o aprovado, mostra o antigo.
+
+**Agravantes no código:** (1) respostas da API não tinham header anti-cache
+(`Cache-Control: no-store`) → navegador/CDN podiam servir lista antiga; (2) links de anexo
+do Airtable expiram — `urlRelatorioAprovado()` já rebusca no clique (bom), mas a lista pode
+carregar URL velha.
+
+**Correção no código (robustez):** header `Cache-Control: no-store` nas rotas de dados;
+garantir que o download sempre passe pela rota que rebusca a URL fresca; flag
+`relatorio_desatualizado` quando `Relatórios` for mais novo que `Relatórios_Aprovados`.
+
+**Correção operacional (Airtable — resolve o caso na hora):** abrir o registro, limpar o
+campo `Relatórios_Aprovados` e recolocar o PDF novo, OU re-disparar a aprovação (desmarcar/
+remarcar `Aprovação`). Avaliar mudar o gatilho da automação para rodar também quando o campo
+`Relatórios` muda, não só na aprovação.
+
+---
+
+## Armadilha: Ordem de Serviço não aparece (diagnosticado jul/2026)
+
+**Sintoma:** ao abrir um cliente, a Ordem de Serviço não é exibida no card do trabalho.
+
+**Raiz:** em `airtable.js` (~linha 287, dentro de `montarTrabalho`) o código lê
+`f['Ordem de Serviço']`, mas o campo real na tabela **Novos Trabalhos** chama-se
+**`Link Ordem de Serviço`** (com o prefixo `Link`, igual a `Link Ensaios` e `Link Amostras`).
+Como o campo lido não existe, `traduzirOS()` recebe `undefined`, retorna `{os:null}` e a OS
+some silenciosamente. Confirmado pelo Mateus: o nome exato do campo é `Link Ordem de Serviço`.
+
+**Lição (repetida neste projeto):** os campos de vínculo em Novos Trabalhos usam o prefixo
+`Link`. Nunca presumir o nome do campo — conferir no Airtable antes.
+
+---
+
+## Funcionalidade: exibir Norma ao lado da Ordem de Serviço
+
+**Objetivo:** no card do trabalho, onde hoje aparece só a OS (ex.: `54-2026`), passar a
+exibir `OS / Norma` (ex.: `54-2026 / NBR 6459`).
+
+**Origem do dado:** campo **`Norma`** da tabela **Ensaios** (`tblYtVM2crMxpxHgG`). Hoje o
+`mapaEnsaios` (em `carregarMapaEnsaios`, ~linha 59-60) só guarda `ID Ensaio` → `Nome do
+Ensaio`; a `Norma` NÃO é lida. Precisa passar a guardar também a norma por sigla e expor no
+JSON do trabalho (campo `norma`), casando pela sigla de `Link Ensaios` — mesma lógica de
+fallback já usada para o nome do ensaio (chave exata + chave normalizada).
+
+**Múltiplas normas:** se o trabalho tiver mais de um ensaio vinculado (ou o campo `Norma`
+trouxer mais de um valor), juntar TODAS separadas por vírgula (ex.: `NBR 6459, NBR 7180`),
+sem repetir valores iguais e ignorando vazios. Vale tanto para a exibição quanto para o filtro.
+
+**Filtro:** adicionar a Norma como critério no filtro/busca do portal (junto de ensaio,
+amostra, código e OS).
+
+---
+
+## Funcionalidade: guia "Como funciona o portal?" (página estática)
+
+**O que é:** página HTML explicativa para o cliente (título "Portal do Cliente | ITR
+Engenharia"), com 5 seções: acesso com dados já cadastrados; as cinco etapas de
+acompanhamento; como encontrar o que precisa; relatórios aprovados no portal; CTA final.
+
+**Características do arquivo:** 100% autocontido — CSS inline, **zero JavaScript**, sem
+CDN nem dependências externas. As imagens estão embutidas em base64 (11 ocorrências).
+Tamanho ~295 KB. Basta servir como arquivo estático.
+
+**Onde colocar:** `public/como-funciona.html` (o Express já serve a pasta `public/`, então
+a página fica acessível em `/como-funciona.html` sem precisar de rota nova).
+
+**Onde linkar:** em `public/login.html`, **abaixo do botão "Entrar"**, um link com o texto
+**"Como funciona o portal?"** apontando para `/como-funciona.html`.
+
+**⚠️ Correções JÁ APLICADAS no arquivo entregue (não refazer):**
+1. WhatsApp corrigido de `wa.me/5561995648480` (errado, termina em 80) para
+   `wa.me/5561995648450` (correto, termina em 50) — 3 ocorrências.
+2. **Legibilidade no celular:** o guia já era responsivo (viewport correto, media queries
+   1000px/760px, `prefers-reduced-motion`), mas as fontes estavam quase todas abaixo de
+   1rem (12-15px), pequenas demais para leitura em tela pequena; a media query de 760px
+   não ajustava fonte. Foi adicionado um bloco CSS ao final do `<style>` com: corpo a 17px
+   e `line-height 1.65`; `p/li/td` em 1rem; títulos redimensionados (h1 1.75rem, h2 1.4rem,
+   h3 1.15rem); alvo de toque mínimo de 44px em links/botões; `img{max-width:100%}`;
+   tabelas com rolagem horizontal; e um segundo breakpoint em 420px para celulares menores.
+3. **Logo com fundo preto corrigida:** a logo do cabeçalho estava em WebP no modo RGB
+   **sem canal alpha** — o "fundo transparente" era na verdade preto sólido `#000000`
+   embutido na imagem, o que criava um retângulo preto visível sobre o fundo da página
+   (`--bg:#171b20`). Foi convertida para **PNG com transparência real**: o fundo escuro
+   virou alpha 0 (via limiar de luminância, com recuperação de cor nas bordas para não
+   acinzentar o contorno). Agora a logo mescla com qualquer fundo, claro ou escuro.
+   As outras 10 imagens do guia (prints de tela em WebP) não têm esse problema e ficaram
+   inalteradas. Arquivo final ~332 KB.
