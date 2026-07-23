@@ -302,6 +302,15 @@ function formatar(rec, mapa, mapaOrdens) {
     const temRelatorioGerado = Array.isArray(f['Relatórios']) && f['Relatórios'].length > 0;
     const relatorioEmAndamento = temRelatorioGerado && !pdf;
 
+    // RELATORIO DESATUALIZADO: o PDF ja foi aprovado, mas o anexo em
+    // "Relatórios" foi trocado DEPOIS da aprovação e a automação do Airtable
+    // nao re-disparou (ver "Armadilha: relatório antigo aparece após troca
+    // do PDF" no CLAUDE.md). Detecta comparando o nome do arquivo mais
+    // recente em "Relatórios" com o que esta em "Relatórios_Aprovados".
+    // NAO muda qual PDF o cliente recebe — so sinaliza para a UI.
+    const pdfGerado = primeiroPdf(f['Relatórios']);
+    const relatorioDesatualizado = !!(pdf && pdfGerado && pdfGerado.nome !== pdf.nome);
+
     // ENSAIO: nome completo limpo (com fallback e deteccao de lixo)
     const ens = resolverEnsaio(f, mapa);
 
@@ -374,6 +383,7 @@ function formatar(rec, mapa, mapaOrdens) {
         pdf: !!pdf,
         relatorio_nome: pdf ? pdf.nome : null,
         relatorio_em_andamento: relatorioEmAndamento, // tem relatorio mas nao aprovado
+        relatorio_desatualizado: relatorioDesatualizado, // PDF trocado apos aprovacao; automacao nao re-disparou
 
         preparando: false, // (futuro) marcar quando aprovado mas PDF ainda gerando
         cancelado: (statusReal === 'Cancelado')

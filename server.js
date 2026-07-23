@@ -95,6 +95,15 @@ function erro(res, status, mensagem) {
     return res.status(status).json({ sucesso: false, erro: mensagem });
 }
 
+// Evita que navegador/CDN sirvam uma lista de trabalhos ou um redirecionamento
+// de PDF antigos em cache (ver "Armadilha: relatório antigo aparece após
+// troca do PDF" no CLAUDE.md).
+function semCache(req, res, next) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    next();
+}
+
 app.get('/', (req, res) => res.redirect('/login.html'));
 
 app.get('/status', (req, res) => {
@@ -270,8 +279,8 @@ async function responderTrabalhosCliente(req, res, mesesPadrao) {
     }
 }
 
-app.get('/api/meus-dados', autenticado, (req, res) => responderTrabalhosCliente(req, res, 3));
-app.get('/api/trabalhos', autenticado, (req, res) => responderTrabalhosCliente(req, res, 3));
+app.get('/api/meus-dados', autenticado, semCache, (req, res) => responderTrabalhosCliente(req, res, 3));
+app.get('/api/trabalhos', autenticado, semCache, (req, res) => responderTrabalhosCliente(req, res, 3));
 
 async function clientePodeAcessarTrabalho(req, recordIdTrabalho) {
     if (req.usuario.perfil === 'Diretor') return true;
@@ -311,7 +320,7 @@ app.get('/api/trabalho/:id/download', autenticado, async (req, res) => {
 });
 
 // Alias usado pelo portal.html: redireciona diretamente para o PDF.
-app.get('/api/relatorio/:id', autenticado, async (req, res) => {
+app.get('/api/relatorio/:id', autenticado, semCache, async (req, res) => {
     try {
         const pdf = await obterPdfAprovado(req, res);
         if (pdf.erroStatus) return erro(res, pdf.erroStatus, pdf.erroMensagem);
