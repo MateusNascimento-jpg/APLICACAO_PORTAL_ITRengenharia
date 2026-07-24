@@ -345,3 +345,32 @@ a página fica acessível em `/como-funciona.html` sem precisar de rota nova).
    acinzentar o contorno). Agora a logo mescla com qualquer fundo, claro ou escuro.
    As outras 10 imagens do guia (prints de tela em WebP) não têm esse problema e ficaram
    inalteradas. Arquivo final ~332 KB.
+
+---
+
+## Armadilha CRÍTICA: cache eterno de dicionários (OS e Ensaios) — jul/2026
+
+**Sintomas relatados:** ao criar amostras/ensaios novos no Airtable, a Ordem de Serviço
+não aparece no portal, ou várias amostras parecem cair "na mesma OS". Comportamento
+aparentemente aleatório.
+
+**Raiz:** em `airtable.js`, `carregarMapaOS()` (~linha 149) e `carregarMapaEnsaios()`
+(~linha 49) usam cache de módulo SEM expiração:
+```js
+let mapaOS = null;
+async function carregarMapaOS(){ if (mapaOS) return mapaOS; /* ... */ mapaOS = mapa; }
+```
+O mapa é montado UMA vez, na primeira requisição após o servidor subir, e nunca mais é
+atualizado. Não há TTL, invalidação nem rota de limpeza. Quando uma OS (ou ensaio) é criada
+no Airtable DEPOIS disso, `traduzirOS()` faz `mapa[cod] || null`, não encontra o recordId
+novo e devolve `null` → a OS some do card.
+
+**Por que parece intermitente:** o Render free tier hiberna por inatividade; ao acordar, o
+processo reinicia e o cache é reconstruído já com os registros novos. Depois de criar mais
+uma OS, quebra de novo. É determinístico, não aleatório.
+
+**Correção:** dar TTL ao cache (ex.: 5 min) e, principalmente, **refazer a busca quando um
+recordId não for encontrado no mapa** (cache miss → recarrega uma vez e tenta de novo).
+Assim OS/ensaio recém-criados aparecem sem precisar reiniciar o serviço. Aplicar o mesmo
+padrão aos dois mapas (`mapaOS` e `mapaEnsaios`), com trava para não recarregar em
+paralelo/repetidamente.
