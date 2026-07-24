@@ -16,6 +16,8 @@ const TAMANHO_PAGINA = 100; // Airtable permite ate 100/pagina. 100 = 5x menos
                             // chamadas de rede que os 20 antigos => bem mais rapido.
 const MESES_RECENTE = 3;
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min: tempo max que mapaOS/mapaEnsaios ficam sem recarregar
+
 const CAMPO_ORDENACAO = 'createdTime'; // meta-dado do proprio registro Airtable (ordem real de cadastro);
                                         // NAO e um campo de coluna, entao nao entra em sort da API —
                                         // ordenacao feita em memoria (ver bloco 3 abaixo).
@@ -45,9 +47,10 @@ async function airtablePatch(url, fields) {
 // Usado APENAS como fallback: quando o trabalho nao tem 'Nome_Completo_Ensaios'
 // preenchido, tentamos traduzir a sigla crua de 'Link Ensaios' por aqui.
 let mapaEnsaios = null;
+let mapaEnsaiosCarregadoEm = 0;
 
 async function carregarMapaEnsaios() {
-    if (mapaEnsaios) return mapaEnsaios;
+    if (mapaEnsaios && (Date.now() - mapaEnsaiosCarregadoEm) < CACHE_TTL_MS) return mapaEnsaios;
     const mapa = {};
     let offset = null;
     try {
@@ -72,7 +75,10 @@ async function carregarMapaEnsaios() {
             offset = resp.offset || null;
         } while (offset);
         mapaEnsaios = mapa;
+        mapaEnsaiosCarregadoEm = Date.now();
     } catch (e) {
+        // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
+        if (mapaEnsaios) return mapaEnsaios;
         return {};
     }
     return mapaEnsaios;
@@ -170,9 +176,10 @@ function resolverNormas(f, mapa) {
 // e NAO em 'Name' (que estava vazio em quase toda a tabela).
 const TBL_ORDEM_SERVICO = 'Ordem de Serviço';
 let mapaOS = null;
+let mapaOSCarregadoEm = 0;
 
 async function carregarMapaOS() {
-    if (mapaOS) return mapaOS;
+    if (mapaOS && (Date.now() - mapaOSCarregadoEm) < CACHE_TTL_MS) return mapaOS;
     const mapa = {};
     let offset = null;
     try {
@@ -188,8 +195,11 @@ async function carregarMapaOS() {
             offset = resp.offset || null;
         } while (offset);
         mapaOS = mapa;
+        mapaOSCarregadoEm = Date.now();
     } catch (e) {
-        return {}; // se falhar, nao cacheia; cai no fallback (nao mostra OS)
+        // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
+        if (mapaOS) return mapaOS;
+        return {}; // sem cache anterior; cai no fallback (nao mostra OS)
     }
     return mapaOS;
 }
