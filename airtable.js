@@ -16,6 +16,8 @@ const TAMANHO_PAGINA = 100; // Airtable permite ate 100/pagina. 100 = 5x menos
                             // chamadas de rede que os 20 antigos => bem mais rapido.
 const MESES_RECENTE = 3;
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min: tempo max que mapaOS/mapaEnsaios ficam sem recarregar
+
 const CAMPO_ORDENACAO = 'createdTime'; // meta-dado do proprio registro Airtable (ordem real de cadastro);
                                         // NAO e um campo de coluna, entao nao entra em sort da API —
                                         // ordenacao feita em memoria (ver bloco 3 abaixo).
@@ -45,9 +47,10 @@ async function airtablePatch(url, fields) {
 // Usado APENAS como fallback: quando o trabalho nao tem 'Nome_Completo_Ensaios'
 // preenchido, tentamos traduzir a sigla crua de 'Link Ensaios' por aqui.
 let mapaEnsaios = null;
+let mapaEnsaiosCarregadoEm = 0;
 
 async function carregarMapaEnsaios() {
-    if (mapaEnsaios) return mapaEnsaios;
+    if (mapaEnsaios && (Date.now() - mapaEnsaiosCarregadoEm) < CACHE_TTL_MS) return mapaEnsaios;
     const mapa = {};
     let offset = null;
     try {
@@ -72,7 +75,10 @@ async function carregarMapaEnsaios() {
             offset = resp.offset || null;
         } while (offset);
         mapaEnsaios = mapa;
+        mapaEnsaiosCarregadoEm = Date.now();
     } catch (e) {
+        // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
+        if (mapaEnsaios) return mapaEnsaios;
         return {};
     }
     return mapaEnsaios;
@@ -170,9 +176,10 @@ function resolverNormas(f, mapa) {
 // e NAO em 'Name' (que estava vazio em quase toda a tabela).
 const TBL_ORDEM_SERVICO = 'Ordem de Serviço';
 let mapaOS = null;
+let mapaOSCarregadoEm = 0;
 
 async function carregarMapaOS() {
-    if (mapaOS) return mapaOS;
+    if (mapaOS && (Date.now() - mapaOSCarregadoEm) < CACHE_TTL_MS) return mapaOS;
     const mapa = {};
     let offset = null;
     try {
@@ -188,19 +195,88 @@ async function carregarMapaOS() {
             offset = resp.offset || null;
         } while (offset);
         mapaOS = mapa;
+        mapaOSCarregadoEm = Date.now();
     } catch (e) {
-        return {}; // se falhar, nao cacheia; cai no fallback (nao mostra OS)
+        // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
+        if (mapaOS) return mapaOS;
+        return {}; // sem cache anterior; cai no fallback (nao mostra OS)
     }
     return mapaOS;
+}
+
+// ==================== RECARGA SOB DEMANDA (cache miss) ====================
+// Quando um recordId/sigla nao e encontrado no mapa cacheado, pode ser que
+// tenha sido criado no Airtable DEPOIS da ultima carga (ver "Armadilha
+// CRÍTICA: cache eterno de dicionários" no CLAUDE.md). Forcamos uma recarga
+// e tentamos resolver de novo, com duas travas:
+//   1) nunca duas recargas em paralelo — reaproveita a Promise ja em voo;
+//   2) no maximo uma recarga por miss a cada RECARGA_MISS_JANELA_MS, para
+//      nao martelar a API quando o valor realmente nao existe (sigla/OS
+//      invalida, lixo).
+const RECARGA_MISS_JANELA_MS = 30 * 1000;
+
+let mapaEnsaiosRecargaEmVoo = null;
+let mapaEnsaiosUltimaRecargaMiss = 0;
+
+async function recarregarMapaEnsaiosPorMiss() {
+    if (mapaEnsaiosRecargaEmVoo) return mapaEnsaiosRecargaEmVoo;
+    if (Date.now() - mapaEnsaiosUltimaRecargaMiss < RECARGA_MISS_JANELA_MS) {
+        return mapaEnsaios || {};
+    }
+    mapaEnsaiosUltimaRecargaMiss = Date.now();
+    mapaEnsaiosCarregadoEm = 0; // forca carregarMapaEnsaios a ignorar o TTL e buscar de novo
+    mapaEnsaiosRecargaEmVoo = carregarMapaEnsaios().finally(() => { mapaEnsaiosRecargaEmVoo = null; });
+    return mapaEnsaiosRecargaEmVoo;
+}
+
+let mapaOSRecargaEmVoo = null;
+let mapaOSUltimaRecargaMiss = 0;
+
+async function recarregarMapaOSPorMiss() {
+    if (mapaOSRecargaEmVoo) return mapaOSRecargaEmVoo;
+    if (Date.now() - mapaOSUltimaRecargaMiss < RECARGA_MISS_JANELA_MS) {
+        return mapaOS || {};
+    }
+    mapaOSUltimaRecargaMiss = Date.now();
+    mapaOSCarregadoEm = 0; // forca carregarMapaOS a ignorar o TTL e buscar de novo
+    mapaOSRecargaEmVoo = carregarMapaOS().finally(() => { mapaOSRecargaEmVoo = null; });
+    return mapaOSRecargaEmVoo;
+}
+
+// Recebe a lista bruta de siglas de 'Link Ensaios' e devolve o mapa a usar:
+// se alguma sigla nao-lixo nao foi encontrada no mapa atual, recarrega antes
+// de resolver (cobre tanto o nome do ensaio quanto a Norma, que usam o mesmo
+// mapa). Chamado UMA vez por trabalho, antes de resolverEnsaio/resolverNormas.
+async function mapaEnsaiosComRecarga(f, mapa) {
+    const bruto = f['Link Ensaios'];
+    const lista = Array.isArray(bruto) ? bruto : (bruto != null ? [bruto] : []);
+    const temMiss = lista.some(sigla => {
+        const chave = String(sigla || '').trim();
+        if (!chave) return false;
+        const entrada = mapa[chave] || mapa['__norm__' + normalizar(chave)];
+        return !entrada && !pareceLixo(chave);
+    });
+    if (!temMiss) return mapa;
+    return recarregarMapaEnsaiosPorMiss();
 }
 
 // Recebe o campo "Ordem de Serviço" do trabalho (array com codigos rec...) e
 // devolve { os, os_extra } — primeira OS traduzida + quantas a mais existem.
 // Forma mais segura: trata como lista mesmo que normalmente tenha 1 so.
-function traduzirOS(campo, mapa) {
+// Assincrona: se algum recordId nao for encontrado no mapa, recarrega o
+// dicionario (cache miss) e tenta resolver de novo antes de desistir.
+async function traduzirOS(campo, mapa) {
     const lista = Array.isArray(campo) ? campo : (campo != null ? [campo] : []);
+    if (lista.length === 0) return { os: null, os_extra: 0 };
+
+    let mapaAtual = mapa;
+    const temMiss = lista.some(cod => !mapaAtual[cod]);
+    if (temMiss) {
+        mapaAtual = await recarregarMapaOSPorMiss();
+    }
+
     const nomes = lista
-        .map(cod => mapa[cod] || null)
+        .map(cod => mapaAtual[cod] || null)
         .filter(Boolean);
     if (nomes.length === 0) return { os: null, os_extra: 0 };
     return { os: nomes[0], os_extra: nomes.length - 1 };
@@ -290,7 +366,9 @@ function resolverAmostra(f) {
 // 'ensaio', 'amostra', 'os', 'status_cliente', 'status_rotulo', 'datas', 'data',
 // 'pdf', 'cancelado' continuam existindo. Novos campos: 'amostra_extra',
 // 'os_extra', 'ensaio_lixo' (para o front esconder do filtro se quiser).
-function formatar(rec, mapa, mapaOrdens) {
+// Assincrona: traduzirOS() e a resolucao de ensaio/norma podem recarregar o
+// dicionario cacheado em caso de cache miss (ver "Armadilha CRÍTICA" no CLAUDE.md).
+async function formatar(rec, mapa, mapaOrdens) {
     const f = rec.fields;
 
     // PDF: SO de "Relatórios_Aprovados" (regra: cliente so ve o que o diretor aprovou).
@@ -311,11 +389,15 @@ function formatar(rec, mapa, mapaOrdens) {
     const pdfGerado = primeiroPdf(f['Relatórios']);
     const relatorioDesatualizado = !!(pdf && pdfGerado && pdfGerado.nome !== pdf.nome);
 
+    // ENSAIO + NORMA(S): garante o mapa atualizado ANTES de resolver os dois
+    // (evita recarregar duas vezes para o mesmo trabalho).
+    const mapaFinal = await mapaEnsaiosComRecarga(f, mapa);
+
     // ENSAIO: nome completo limpo (com fallback e deteccao de lixo)
-    const ens = resolverEnsaio(f, mapa);
+    const ens = resolverEnsaio(f, mapaFinal);
 
     // NORMA(S): da tabela Ensaios, casando pela(s) sigla(s) de Link Ensaios
-    const norma = resolverNormas(f, mapa);
+    const norma = resolverNormas(f, mapaFinal);
 
     // AMOSTRA: primeira + "+N"
     const amo = resolverAmostra(f);
@@ -324,7 +406,7 @@ function formatar(rec, mapa, mapaOrdens) {
     // Diagnostico (jul/2026) mostrou que 'Ordem de Serviço' (link direto) esta
     // preenchido em praticamente 100% dos registros, mas mantemos fallback
     // defensivo para 'Link Ordem de Serviço' (lookup) para casos legados.
-    const ordem = traduzirOS(f['Ordem de Serviço'] ?? f['Link Ordem de Serviço'], mapaOrdens);
+    const ordem = await traduzirOS(f['Ordem de Serviço'] ?? f['Link Ordem de Serviço'], mapaOrdens);
 
     // Status REAL do Airtable e o rotulo exibido
     const statusReal = f['Status Cliente'] || '';
@@ -465,8 +547,7 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
         offsetAt = resp.offset || null;
     } while (offsetAt);
 
-    const trabalhos = todosRecords
-        .map(rec => formatar(rec, mapa, mapaOrdens))
+    const trabalhos = (await Promise.all(todosRecords.map(rec => formatar(rec, mapa, mapaOrdens))))
         .sort((a, b) => new Date(b.data_ordenacao) - new Date(a.data_ordenacao));
 
     return {
