@@ -12,7 +12,8 @@ const {
     urlRelatorioAprovado,
     listarClientes,
     definirAprovacao,
-    APROVACAO_VALIDAS
+    APROVACAO_VALIDAS,
+    detalheTrabalhoPorId
 } = require('./airtable');
 
 const app = express();
@@ -209,6 +210,12 @@ app.post('/api/login', async (req, res) => {
             nome_empresa: cliente.idCliente || cliente.nome || null
         };
 
+        // Diretor: mesmo fluxo de validação acima (CNPJ + e-mail no Airtable),
+        // só troca o perfil quando o CNPJ é o do diretor (env, nunca hardcoded).
+        if (process.env.DIRETOR_CNPJ && cliente.cnpj === limparDocumento(process.env.DIRETOR_CNPJ)) {
+            usuario.perfil = 'Diretor';
+        }
+
         await registrarHistoricoLogin(req, documento, true, null);
 
         // Grava "ultimo acesso" no MySQL (so timestamp + CNPJ), sem travar o login
@@ -381,6 +388,54 @@ app.patch('/api/trabalho/:id/aprovacao', autenticado, somenteDiretor, async (req
     } catch (error) {
         console.error('[APROVACAO]', error);
         return erro(res, 500, error.message || 'Erro ao atualizar aprovação.');
+    }
+});
+
+// Historico de "quem baixou o que" (MySQL relatorios_baixados), enriquecido
+// com Airtable (empresa por CNPJ, OS/ID Trabalho por record). NAO toca em
+// registrarDownload nem nas rotas de download em si — so' LE o que ja existe.
+app.get('/api/diretor/downloads', autenticado, somenteDiretor, async (req, res) => {
+    try {
+        const limite = Math.max(1, Math.min(Number(req.query.limit) || 500, 5000));
+        const [linhas] = await pool.query(
+            `SELECT cnpj, record_id_trabalho, baixado_em FROM relatorios_baixados
+             ORDER BY baixado_em DESC LIMIT ?`,
+            [limite]
+        );
+
+        // Mapa cnpj -> nome da empresa (uma chamada so' ao Airtable para todo o lote).
+        let mapaEmpresaPorCnpj = {};
+        try {
+            const clientes = await listarClientes();
+            clientes.forEach(c => { if (c.cnpj) mapaEmpresaPorCnpj[c.cnpj] = c.nome; });
+        } catch (e) {
+            console.warn('[DIRETOR_DOWNLOADS] listarClientes falhou, empresa ficara nula:', e.message);
+        }
+
+        const downloads = await Promise.all(linhas.map(async (linha) => {
+            let os = null, id_trabalho = null;
+            try {
+                const detalhe = await detalheTrabalhoPorId(linha.record_id_trabalho);
+                os = detalhe.os;
+                id_trabalho = detalhe.id_trabalho;
+            } catch (e) {
+                // fallback: mantem os/id_trabalho nulos, mas nao derruba a rota
+                console.warn('[DIRETOR_DOWNLOADS] falha ao enriquecer trabalho', linha.record_id_trabalho, e.message);
+            }
+            return {
+                cnpj: linha.cnpj,
+                empresa: mapaEmpresaPorCnpj[linha.cnpj] || null,
+                record_id: linha.record_id_trabalho,
+                os,
+                id_trabalho,
+                baixado_em: linha.baixado_em
+            };
+        }));
+
+        return res.json({ sucesso: true, downloads });
+    } catch (error) {
+        console.error('[DIRETOR_DOWNLOADS]', error);
+        return erro(res, 500, error.message || 'Erro ao carregar histórico de downloads.');
     }
 });
 

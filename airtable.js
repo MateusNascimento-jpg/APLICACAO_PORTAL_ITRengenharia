@@ -468,7 +468,12 @@ async function formatar(rec, mapa, mapaOrdens) {
         relatorio_desatualizado: relatorioDesatualizado, // PDF trocado apos aprovacao; automacao nao re-disparou
 
         preparando: false, // (futuro) marcar quando aprovado mas PDF ainda gerando
-        cancelado: (statusReal === 'Cancelado')
+        cancelado: (statusReal === 'Cancelado'),
+
+        // Valor cru do campo "Aprovação" (singleSelect) — usado só no painel do
+        // diretor para mostrar o status atual. Leitura adicional; nao afeta o
+        // portal do cliente, que nao referencia esta chave.
+        aprovacao: f['Aprovação'] || null
     };
 }
 
@@ -615,7 +620,8 @@ async function listarClientes() {
     do {
         let url = `${API}/${TBL_CLIENTES}?pageSize=${TAMANHO_PAGINA}`
             + `&fields%5B%5D=${encodeURIComponent('Nome Cliente')}`
-            + `&fields%5B%5D=${encodeURIComponent('ID Cliente')}`;
+            + `&fields%5B%5D=${encodeURIComponent('ID Cliente')}`
+            + `&fields%5B%5D=${encodeURIComponent('CNPJ')}`;
         if (offset) url += `&offset=${encodeURIComponent(offset)}`;
         const resp = await airtableGet(url);
         todos = todos.concat(resp.records || []);
@@ -625,14 +631,33 @@ async function listarClientes() {
     // O rótulo exibido é "ID Cliente" (decisão: é onde está o nome real da
     // empresa — ex: "Grupo Aterpa"). "Nome Cliente" fica como fallback e é o
     // que o isolamento de trabalhos usa internamente (não mudar aquilo).
+    // 'cnpj' (limpo, 14 digitos) e' um campo adicional so-leitura, usado pelo
+    // painel do diretor para casar downloads (MySQL, chave = cnpj) com o nome
+    // da empresa; nao afeta quem ja consome so id/nome/idCliente.
     return todos
         .map(rec => ({
             id: rec.id,
            nome: (rec.fields['ID Cliente'] || '(sem nome)').trim(),
-            idCliente: rec.fields['ID Cliente'] || null
+            idCliente: rec.fields['ID Cliente'] || null,
+            cnpj: rec.fields['CNPJ'] ? String(rec.fields['CNPJ']).replace(/\D/g, '') : null
         }))
         .filter(c => c.nome && c.nome !== '(sem nome)')
         .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+// Busca UM registro de Novos Trabalhos pelo record id e devolve so o essencial
+// para o historico de downloads do diretor: ID Trabalho + OS traduzida. Nao usa
+// formatar() (que tambem resolveria ensaio/amostra/datas/pdf, desnecessario
+// aqui) mas reusa o MESMO dicionario de OS (carregarMapaOS/traduzirOS) que o
+// portal do cliente ja usa, garantindo o mesmo texto ("OS 28", etc.).
+async function detalheTrabalhoPorId(recordId) {
+    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${recordId}`);
+    const mapaOrdens = await carregarMapaOS();
+    const ordem = await traduzirOS(rec.fields['Ordem de Serviço'] ?? rec.fields['Link Ordem de Serviço'], mapaOrdens);
+    return {
+        id_trabalho: rec.fields['ID Trabalho'] || null,
+        os: ordem.os
+    };
 }
 
 // Define o campo "Aprovação" de um trabalho. A automacao do Airtable cuida do
@@ -655,5 +680,6 @@ module.exports = {
     urlRelatorioAprovado,
     listarClientes,
     definirAprovacao,
-    APROVACAO_VALIDAS
+    APROVACAO_VALIDAS,
+    detalheTrabalhoPorId
 };
