@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -74,6 +74,7 @@
   }
   *{ margin:0; padding:0; box-sizing:border-box; }
   html,body{ min-height:100%; }
+  img{ max-width:100%; height:auto; }
   body{
     font-family:'Segoe UI', Arial, Helvetica, sans-serif;
     background:var(--bg);
@@ -554,12 +555,12 @@
 
   .sidebar{
     position:sticky; top:0; align-self:flex-start;
-    width:224px; flex-shrink:0; height:100vh; overflow-y:auto;
+    width:224px; flex-shrink:0; height:100vh; overflow-y:auto; overflow-x:hidden;
     padding:1.6rem 1rem; display:flex; flex-direction:column; gap:3px;
     border-right:0.5px solid var(--line-soft);
     background:var(--card);
     backdrop-filter:blur(11px) saturate(115%); -webkit-backdrop-filter:blur(11px) saturate(115%);
-    transition:background .4s ease, border-color .4s ease, transform .3s ease;
+    transition:width .3s ease, background .4s ease, border-color .4s ease, transform .3s ease;
   }
   .sidebar-item{
     display:flex; align-items:center; gap:11px;
@@ -571,6 +572,24 @@
   .sidebar-item i{ font-size:19px; color:var(--azul-claro); flex-shrink:0; }
   .sidebar-item:hover{ background:var(--field); color:var(--txt); }
   .sidebar-item.ativo{ background:rgba(61,123,224,0.16); color:var(--txt); border-color:rgba(123,162,230,0.30); }
+
+  /* botão de colapso da sidebar (ETAPA 2.1 — aditivo, só desktop) */
+  .sidebar-toggle{
+    display:flex; align-items:center; gap:11px; align-self:stretch;
+    padding:9px 13px; margin-bottom:9px; border-radius:10px;
+    background:transparent; border:0.5px solid transparent; color:var(--txt-3);
+    cursor:pointer; font-family:inherit;
+    transition:background .2s, color .2s, border-color .2s;
+  }
+  .sidebar-toggle:hover{ background:var(--field); color:var(--txt); }
+  .sidebar-toggle i{ font-size:19px; color:var(--azul-claro); flex-shrink:0; }
+
+  @media (min-width:901px){
+    .layout-shell.sidebar-mini .sidebar{ width:64px; padding-left:.6rem; padding-right:.6rem; }
+    .layout-shell.sidebar-mini .sidebar-item{ justify-content:center; padding:11px 0; }
+    .layout-shell.sidebar-mini .sidebar-item span{ display:none; }
+    .layout-shell.sidebar-mini .sidebar-toggle{ justify-content:center; padding:9px 0; }
+  }
 
   /* botão hambúrguer (só mobile) — canto inferior esquerdo, livre de WhatsApp/voltar-ao-topo */
   .btn-menu-mobile{
@@ -587,6 +606,7 @@
 
   @media (max-width:900px){
     .btn-menu-mobile{ display:flex; }
+    .sidebar-toggle{ display:none; }
     .sidebar{
       position:fixed; top:0; left:0; z-index:65;
       transform:translateX(-100%);
@@ -669,18 +689,22 @@
 <div id="vinheta" aria-hidden="true"></div>
 
 <div class="layout-shell">
+  <script>(function(){try{if(localStorage.getItem('sidebar_colapsada')==='1'){document.currentScript.parentElement.classList.add('sidebar-mini');}}catch(e){}})();</script>
   <!-- Sidebar (ETAPA 2 — aditivo, não altera o conteúdo existente) -->
   <aside class="sidebar" id="sidebar" aria-label="Menu de navegação">
-    <button class="sidebar-item ativo" id="navRelatorios" type="button" data-view="relatorios">
+    <button class="sidebar-toggle" id="btnSidebarToggle" type="button" aria-label="Recolher menu" aria-pressed="false" title="Recolher menu">
+      <i class="ti ti-stack-2" aria-hidden="true"></i>
+    </button>
+    <button class="sidebar-item ativo" id="navRelatorios" type="button" data-view="relatorios" title="Relatórios">
       <i class="ti ti-clipboard-text" aria-hidden="true"></i><span>Relatórios</span>
     </button>
-    <button class="sidebar-item" id="navConta" type="button" data-view="conta">
+    <button class="sidebar-item" id="navConta" type="button" data-view="conta" title="Conta">
       <i class="ti ti-user" aria-hidden="true"></i><span>Conta</span>
     </button>
-    <a class="sidebar-item" id="navAjuda" href="como-funciona.html">
+    <a class="sidebar-item" id="navAjuda" href="como-funciona.html" title="Ajuda">
       <i class="ti ti-help" aria-hidden="true"></i><span>Ajuda</span>
     </a>
-    <a class="sidebar-item" id="navSiteItr" href="https://itr.eng.br" target="_blank" rel="noopener">
+    <a class="sidebar-item" id="navSiteItr" href="https://itr.eng.br" target="_blank" rel="noopener" title="Site ITR">
       <i class="ti ti-external-link" aria-hidden="true"></i><span>Site ITR</span>
     </a>
   </aside>
@@ -933,6 +957,7 @@ var TI_SVG = {
   'help':'<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 17l0 .01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/>',
   'external-link':'<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>',
   'menu-2':'<path d="M4 6l16 0"/><path d="M4 12l16 0"/><path d="M4 18l16 0"/>',
+  'stack-2':'<path d="M12 4l-8 4l8 4l8 -4l-8 -4"/><path d="M4 12l8 4l8 -4"/><path d="M4 16l8 4l8 -4"/>',
   'mail':'<path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"/><path d="M3 7l9 6l9 -6"/>',
   'brand-instagram':'<path d="M4 4m0 4a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M16.5 7.5l0 .01"/>',
   'brand-linkedin':'<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 11l0 5"/><path d="M8 8l0 .01"/><path d="M12 16l0 -5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/>'
@@ -1641,6 +1666,25 @@ document.getElementById('btnTema').addEventListener('click', function(){
   });
   var navConta = document.getElementById('navConta');
   if(navConta) navConta.addEventListener('click', function(){ ativarViewConta(); });
+
+  /* ---- Colapso desktop (mini-sidebar) — ETAPA 2.1 ---- */
+  var btnSidebarToggle = document.getElementById('btnSidebarToggle');
+  var layoutShell = document.querySelector('.layout-shell');
+  if(btnSidebarToggle && layoutShell){
+    function aplicarEstadoMini(mini){
+      layoutShell.classList.toggle('sidebar-mini', mini);
+      var rotulo = mini ? 'Expandir menu' : 'Recolher menu';
+      btnSidebarToggle.setAttribute('aria-pressed', mini ? 'true' : 'false');
+      btnSidebarToggle.setAttribute('title', rotulo);
+      btnSidebarToggle.setAttribute('aria-label', rotulo);
+    }
+    aplicarEstadoMini(layoutShell.classList.contains('sidebar-mini'));
+    btnSidebarToggle.addEventListener('click', function(){
+      var mini = !layoutShell.classList.contains('sidebar-mini');
+      aplicarEstadoMini(mini);
+      try{ localStorage.setItem('sidebar_colapsada', mini ? '1' : '0'); }catch(e){}
+    });
+  }
 })();
 
 /* ---- Rodapé institucional (ETAPA 2 — aditivo) ---- */
