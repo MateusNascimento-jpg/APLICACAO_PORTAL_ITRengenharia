@@ -547,12 +547,145 @@
     .ghost .bar{ animation:none; }
     .aguardando-pdf i{ animation:none; }
   }
+
+  /* ===== ETAPA 2 (aditivo): Sidebar de navegação ===== */
+  .layout-shell{ position:relative; z-index:3; display:flex; align-items:flex-start; }
+  .conteudo-wrap{ flex:1; min-width:0; display:flex; justify-content:center; }
+
+  .sidebar{
+    position:sticky; top:0; align-self:flex-start;
+    width:224px; flex-shrink:0; height:100vh; overflow-y:auto;
+    padding:1.6rem 1rem; display:flex; flex-direction:column; gap:3px;
+    border-right:0.5px solid var(--line-soft);
+    background:var(--card);
+    backdrop-filter:blur(11px) saturate(115%); -webkit-backdrop-filter:blur(11px) saturate(115%);
+    transition:background .4s ease, border-color .4s ease, transform .3s ease;
+  }
+  .sidebar-item{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 13px; border-radius:10px;
+    color:var(--txt-2); text-decoration:none; font-size:14px; font-family:inherit;
+    transition:background .2s, color .2s, border-color .2s;
+    border:0.5px solid transparent; background:transparent; cursor:pointer; width:100%; text-align:left;
+  }
+  .sidebar-item i{ font-size:19px; color:var(--azul-claro); flex-shrink:0; }
+  .sidebar-item:hover{ background:var(--field); color:var(--txt); }
+  .sidebar-item.ativo{ background:rgba(61,123,224,0.16); color:var(--txt); border-color:rgba(123,162,230,0.30); }
+
+  /* botão hambúrguer (só mobile) — canto inferior esquerdo, livre de WhatsApp/voltar-ao-topo */
+  .btn-menu-mobile{
+    display:none; position:fixed; left:22px; bottom:22px; z-index:60;
+    width:50px; height:50px; border-radius:50%;
+    align-items:center; justify-content:center;
+    background:var(--azul); color:#fff; border:none; cursor:pointer;
+    box-shadow:0 10px 24px rgba(61,123,224,0.4);
+    transition:background .2s, transform .15s;
+  }
+  .btn-menu-mobile:hover{ background:#356fce; }
+  .btn-menu-mobile i{ font-size:22px; }
+  .sidebar-overlay{ display:none; }
+
+  @media (max-width:900px){
+    .btn-menu-mobile{ display:flex; }
+    .sidebar{
+      position:fixed; top:0; left:0; z-index:65;
+      transform:translateX(-100%);
+      box-shadow:0 0 40px rgba(0,0,0,0.45);
+    }
+    .sidebar.aberta{ transform:translateX(0); }
+    .sidebar-overlay{
+      display:block; position:fixed; inset:0; z-index:55;
+      background:rgba(0,0,0,0.5); opacity:0; pointer-events:none;
+      transition:opacity .25s ease;
+    }
+    .sidebar-overlay.ativo{ opacity:1; pointer-events:auto; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sidebar{ transition:none; }
+    .sidebar-overlay{ transition:none; }
+  }
+
+  /* ===== ETAPA 2 (aditivo): Rodapé institucional ===== */
+  .rodape-instit{
+    margin-top:46px; padding-top:32px; border-top:0.5px solid var(--line-soft);
+    display:grid; grid-template-columns:1.3fr 1fr 1.2fr; gap:28px;
+  }
+  .rodape-col{ min-width:0; }
+  .rodape-logo{ width:120px; height:auto; filter:var(--logo-filtro); transition:filter .4s ease; margin-bottom:12px; }
+  .rodape-desc{ color:var(--txt-3); font-size:13px; line-height:1.6; max-width:320px; }
+  .rodape-redes{ display:flex; gap:10px; margin-top:14px; }
+  .rodape-redes a{
+    width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    background:var(--field); color:var(--azul-claro); border:0.5px solid var(--line-soft);
+    transition:border-color .2s, color .2s, transform .15s;
+  }
+  .rodape-redes a:hover{ color:var(--txt); border-color:rgba(123,162,230,0.55); transform:translateY(-2px); }
+  .rodape-redes i{ font-size:18px; }
+  .rodape-titulo{ color:var(--txt); font-size:12.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-bottom:14px; }
+  .rodape-links{ display:flex; flex-direction:column; gap:10px; }
+  .rodape-links a, .rodape-links button{
+    color:var(--txt-3); text-decoration:none; font-size:13.5px;
+    background:none; border:none; padding:0; text-align:left; cursor:pointer; font-family:inherit;
+    transition:color .2s; width:fit-content;
+  }
+  .rodape-links a:hover, .rodape-links button:hover{ color:var(--azul-claro); }
+  .rodape-contato{ display:flex; flex-direction:column; gap:11px; }
+  .rodape-contato > div{ display:flex; align-items:flex-start; gap:9px; color:var(--txt-3); font-size:13px; line-height:1.5; }
+  .rodape-contato i{ font-size:16px; color:var(--azul-claro); flex-shrink:0; margin-top:1px; }
+  .rodape-contato svg{ width:16px; height:16px; color:var(--azul-claro); flex-shrink:0; margin-top:1px; }
+  .rodape-contato a{ color:var(--txt-3); text-decoration:none; transition:color .2s; }
+  .rodape-contato a:hover{ color:var(--azul-claro); }
+
+  .rodape-linha{
+    margin-top:26px; padding-top:18px; border-top:0.5px solid var(--line-soft);
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px;
+    color:var(--txt-4); font-size:12px;
+  }
+  .rodape-linha a{ color:var(--txt-4); text-decoration:none; transition:color .2s; }
+  .rodape-linha a:hover{ color:var(--azul-claro); }
+  .rodape-sep{ color:var(--txt-4); }
+
+  @media (max-width:760px){
+    .rodape-instit{ grid-template-columns:1fr; gap:26px; }
+  }
+
+  /* ===== ETAPA 2 (aditivo): aba Conta ===== */
+  .conta-painel{ padding:6px 0 10px; }
+  .conta-titulo{ font-size:20px; font-weight:600; color:var(--txt); margin-bottom:18px; }
+  .conta-card{
+    background:var(--card); border:0.5px solid var(--line); border-radius:16px;
+    padding:6px 22px; backdrop-filter:blur(11px) saturate(115%); -webkit-backdrop-filter:blur(11px) saturate(115%);
+    box-shadow:0 12px 30px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .conta-campo{ padding:18px 0; border-bottom:0.5px solid var(--line-soft); }
+  .conta-campo:last-child{ border-bottom:none; }
+  .conta-rotulo{ color:var(--txt-3); font-size:11.5px; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px; }
+  .conta-valor{ color:var(--txt); font-size:15.5px; font-weight:500; letter-spacing:.2px; }
+  body.conta-ativa .rodape-logo{ display:none; }
 </style>
 </head>
 <body>
 <canvas id="campo" aria-hidden="true"></canvas>
 <div id="vinheta" aria-hidden="true"></div>
 
+<div class="layout-shell">
+  <!-- Sidebar (ETAPA 2 — aditivo, não altera o conteúdo existente) -->
+  <aside class="sidebar" id="sidebar" aria-label="Menu de navegação">
+    <button class="sidebar-item ativo" id="navRelatorios" type="button" data-view="relatorios">
+      <i class="ti ti-clipboard-text" aria-hidden="true"></i><span>Relatórios</span>
+    </button>
+    <button class="sidebar-item" id="navConta" type="button" data-view="conta">
+      <i class="ti ti-user" aria-hidden="true"></i><span>Conta</span>
+    </button>
+    <a class="sidebar-item" id="navAjuda" href="como-funciona.html">
+      <i class="ti ti-help" aria-hidden="true"></i><span>Ajuda</span>
+    </a>
+    <a class="sidebar-item" id="navSiteItr" href="https://itr.eng.br" target="_blank" rel="noopener">
+      <i class="ti ti-external-link" aria-hidden="true"></i><span>Site ITR</span>
+    </a>
+  </aside>
+
+  <div class="conteudo-wrap">
 <div class="conteudo">
 
   <!-- Cabeçalho -->
@@ -567,6 +700,9 @@
       <button class="btn-sair" id="btnSair">Sair <i class="ti ti-logout" aria-hidden="true"></i></button>
     </div>
   </header>
+
+  <!-- Tela "Relatórios" (ETAPA 2 — aditivo: envolve o conteúdo existente para permitir alternar com a aba Conta, sem alterar nada por dentro) -->
+  <div id="viewRelatorios">
 
   <!-- Saudação -->
   <div class="saudacao">
@@ -683,9 +819,75 @@
   <!-- Sentinela para scroll infinito -->
   <div id="sentinela" aria-hidden="true"></div>
 
+  </div>
+  <!-- /viewRelatorios -->
+
+  <!-- Aba "Conta" (ETAPA 2 — aditivo, 100% front, dados mascarados) -->
+  <section class="conta-painel" id="painelConta" hidden aria-label="Dados da conta">
+    <h2 class="conta-titulo">Minha conta</h2>
+    <div class="conta-card">
+      <div class="conta-campo">
+        <div class="conta-rotulo">Empresa</div>
+        <div class="conta-valor" id="contaEmpresa">—</div>
+      </div>
+      <div class="conta-campo">
+        <div class="conta-rotulo">CNPJ</div>
+        <div class="conta-valor" id="contaCnpj">—</div>
+      </div>
+      <div class="conta-campo">
+        <div class="conta-rotulo">E-mail de acesso</div>
+        <div class="conta-valor" id="contaEmail">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rodapé institucional (ETAPA 2 — aditivo) -->
+  <footer class="rodape-instit">
+    <div class="rodape-col">
+      <img src="IMG/logo.png" alt="ITR Engenharia" class="rodape-logo">
+      <p class="rodape-desc">Laboratório de ensaios geotécnicos em Brasília/DF. Acompanhe seus ensaios com rastreabilidade e transparência em cada etapa do processo.</p>
+      <div class="rodape-redes">
+        <a href="https://www.instagram.com/itr_engenharia/" target="_blank" rel="noopener" aria-label="Instagram da ITR Engenharia"><i class="ti ti-brand-instagram" aria-hidden="true"></i></a>
+        <a href="https://www.linkedin.com/company/itr-engenharia" target="_blank" rel="noopener" aria-label="LinkedIn da ITR Engenharia"><i class="ti ti-brand-linkedin" aria-hidden="true"></i></a>
+      </div>
+    </div>
+    <div class="rodape-col">
+      <div class="rodape-titulo">Portal</div>
+      <nav class="rodape-links">
+        <a href="#" id="rodapeRelatorios">Relatórios</a>
+        <button type="button" id="rodapeConta">Conta</button>
+        <a href="como-funciona.html">Ajuda</a>
+        <a href="https://itr.eng.br" target="_blank" rel="noopener">Site ITR</a>
+      </nav>
+    </div>
+    <div class="rodape-col">
+      <div class="rodape-titulo">Contato</div>
+      <div class="rodape-contato">
+        <div><svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><span>SCIA Quadra 14 Conjunto 6 Lote 05 – Parte A, Zona Industrial, Brasília-DF, 71250-130</span></div>
+        <div><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><a href="https://wa.me/5561995648450" target="_blank" rel="noopener">+55 61 99564-8450</a></div>
+        <div><i class="ti ti-mail" aria-hidden="true"></i><a href="mailto:comercial@itr.eng.br">comercial@itr.eng.br</a></div>
+        <div><i class="ti ti-clock" aria-hidden="true"></i><span>Segunda a Sexta, 08:00–18:00</span></div>
+      </div>
+    </div>
+  </footer>
+  <div class="rodape-linha">
+    <span>© <span id="rodapeAno">2026</span> ITR Engenharia</span>
+    <span class="rodape-sep">·</span>
+    <a href="#">Sobre</a>
+    <span class="rodape-sep">·</span>
+    <a href="#">Política de Privacidade (LGPD)</a>
+  </div>
+
   <!-- Rodapé -->
   <div class="marca-rodape">ITR Engenharia · Laboratório de Ensaios Geotécnicos</div>
 </div>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+<button class="btn-menu-mobile" id="btnMenuSidebar" aria-label="Abrir menu" title="Menu">
+  <i class="ti ti-menu-2" aria-hidden="true"></i>
+</button>
 
 <button id="aoTopo" aria-label="Voltar ao topo"><i class="ti ti-arrow-up" aria-hidden="true"></i></button>
 
@@ -726,7 +928,14 @@ var TI_SVG = {
   'calendar-clock':'<path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496v1.504l1 1"/>',
   'building':'<path d="M3 21l18 0"/><path d="M9 8l1 0"/><path d="M9 12l1 0"/><path d="M9 16l1 0"/><path d="M14 8l1 0"/><path d="M14 12l1 0"/><path d="M14 16l1 0"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16"/>',
   'arrow-up':'<path d="M12 5l0 14"/><path d="M16 9l-4 -4"/><path d="M8 9l4 -4"/>',
-  'adjustments-horizontal':'<path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 6l8 0"/><path d="M16 6l4 0"/><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 12l2 0"/><path d="M10 12l10 0"/><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 18l11 0"/><path d="M19 18l1 0"/>'
+  'adjustments-horizontal':'<path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 6l8 0"/><path d="M16 6l4 0"/><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 12l2 0"/><path d="M10 12l10 0"/><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M4 18l11 0"/><path d="M19 18l1 0"/>',
+  'user':'<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>',
+  'help':'<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 17l0 .01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/>',
+  'external-link':'<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>',
+  'menu-2':'<path d="M4 6l16 0"/><path d="M4 12l16 0"/><path d="M4 18l16 0"/>',
+  'mail':'<path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"/><path d="M3 7l9 6l9 -6"/>',
+  'brand-instagram':'<path d="M4 4m0 4a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M16.5 7.5l0 .01"/>',
+  'brand-linkedin':'<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 11l0 5"/><path d="M8 8l0 .01"/><path d="M12 16l0 -5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/>'
 };
 function svgIcone(nome){
   var corpo = TI_SVG[nome];
@@ -1396,7 +1605,7 @@ document.getElementById('btnSair').addEventListener('click', function(){
   try { localStorage.removeItem('token'); sessionStorage.removeItem('token'); } catch(e){}
   window.location.href = 'login.html';
 });
-document.getElementById('logoLink').addEventListener('click', function(e){ e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
+document.getElementById('logoLink').addEventListener('click', function(e){ e.preventDefault(); window.location.href = 'login.html'; });
 
 /* ---- Alternar tema claro/escuro (sempre inicia no escuro) ---- */
 var SVG_SOL = '<circle cx="12" cy="12" r="4"/><path d="M3 12h1M20 12h1M12 3v1M12 20v1M5.6 5.6l.7 .7M17.7 17.7l.7 .7M18.4 5.6l-.7 .7M6.3 17.7l-.7 .7"/>';
@@ -1409,6 +1618,98 @@ document.getElementById('btnTema').addEventListener('click', function(){
   else { raiz.setAttribute('data-tema','claro'); icone.innerHTML = SVG_LUA; }
   if(window._redesenharFundo) setTimeout(window._redesenharFundo, 60);
 });
+
+/* ---- Sidebar de navegação (ETAPA 2 — aditivo) ---- */
+(function(){
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var btnMenu = document.getElementById('btnMenuSidebar');
+  if(!sidebar || !overlay || !btnMenu) return;
+  function abrirSidebar(){ sidebar.classList.add('aberta'); overlay.classList.add('ativo'); }
+  function fecharSidebar(){ sidebar.classList.remove('aberta'); overlay.classList.remove('ativo'); }
+  btnMenu.addEventListener('click', function(){
+    if(sidebar.classList.contains('aberta')) fecharSidebar(); else abrirSidebar();
+  });
+  overlay.addEventListener('click', fecharSidebar);
+  sidebar.querySelectorAll('.sidebar-item').forEach(function(item){
+    item.addEventListener('click', fecharSidebar);
+  });
+  var navRelatorios = document.getElementById('navRelatorios');
+  if(navRelatorios) navRelatorios.addEventListener('click', function(){
+    ativarViewRelatorios();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  var navConta = document.getElementById('navConta');
+  if(navConta) navConta.addEventListener('click', function(){ ativarViewConta(); });
+})();
+
+/* ---- Rodapé institucional (ETAPA 2 — aditivo) ---- */
+(function(){
+  var ano = document.getElementById('rodapeAno');
+  if(ano) ano.textContent = new Date().getFullYear();
+  var rodapeRelatorios = document.getElementById('rodapeRelatorios');
+  if(rodapeRelatorios) rodapeRelatorios.addEventListener('click', function(e){
+    e.preventDefault();
+    ativarViewRelatorios();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  var rodapeConta = document.getElementById('rodapeConta');
+  if(rodapeConta) rodapeConta.addEventListener('click', function(){ ativarViewConta(); });
+})();
+
+/* ---- Aba "Conta" (ETAPA 2 — aditivo, 100% front, dados mascarados) ---- */
+function pegarStorageItem(chave){
+  try { return localStorage.getItem(chave) || sessionStorage.getItem(chave); } catch(e){ return null; }
+}
+function mascararCnpj(cnpj){
+  var d = String(cnpj||'').replace(/\D/g,'');
+  if(d.length !== 14) return d || '—';
+  return d.slice(0,2)+'.***.***/**'+d.slice(-2);
+}
+function mascararEmail(email){
+  var s = String(email||'').trim();
+  var arroba = s.indexOf('@');
+  if(arroba < 0) return s || '—';
+  var usuario = s.slice(0, arroba);
+  var resto = s.slice(arroba+1);
+  var ponto = resto.indexOf('.');
+  var dominioNome = ponto >= 0 ? resto.slice(0, ponto) : resto;
+  var tld = ponto >= 0 ? resto.slice(ponto) : '';
+  var uMasc = usuario.slice(0, Math.min(2, usuario.length)) + '****';
+  var dMasc = dominioNome.slice(0, 1) + '*****';
+  return uMasc + '@' + dMasc + tld;
+}
+function preencherConta(){
+  var elEmpresa = document.getElementById('contaEmpresa');
+  var elCnpj = document.getElementById('contaCnpj');
+  var elEmail = document.getElementById('contaEmail');
+  if(elEmpresa) elEmpresa.textContent = NOME_CLIENTE || '—';
+  if(elCnpj) elCnpj.textContent = mascararCnpj(pegarStorageItem('cliente_cnpj'));
+  if(elEmail) elEmail.textContent = mascararEmail(pegarStorageItem('cliente_email'));
+}
+function ativarViewConta(){
+  var viewRel = document.getElementById('viewRelatorios');
+  var painelConta = document.getElementById('painelConta');
+  if(viewRel) viewRel.hidden = true;
+  if(painelConta) painelConta.hidden = false;
+  var navRel = document.getElementById('navRelatorios');
+  var navCta = document.getElementById('navConta');
+  if(navRel) navRel.classList.remove('ativo');
+  if(navCta) navCta.classList.add('ativo');
+  document.body.classList.add('conta-ativa');
+  preencherConta();
+}
+function ativarViewRelatorios(){
+  var viewRel = document.getElementById('viewRelatorios');
+  var painelConta = document.getElementById('painelConta');
+  if(painelConta) painelConta.hidden = true;
+  if(viewRel) viewRel.hidden = false;
+  var navRel = document.getElementById('navRelatorios');
+  var navCta = document.getElementById('navConta');
+  if(navCta) navCta.classList.remove('ativo');
+  if(navRel) navRel.classList.add('ativo');
+  document.body.classList.remove('conta-ativa');
+}
 
 
 //Faça alguma verificação. Rodar algum script js que resolva isso. A base de teste senão eu estou frito. 

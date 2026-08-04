@@ -265,8 +265,7 @@
     position:relative; z-index:3; text-align:center; color:var(--txt-4);
     font-size:11.5px; padding-bottom:1.6rem;
   }
-
-  /* ===== Bolha flutuante de WhatsApp (suporte ITR) ===== */
+ /* ===== Bolha flutuante de WhatsApp (suporte ITR) ===== */
   .wa-flutuante{
     position:fixed; z-index:5; right:22px; bottom:22px;
     width:56px; height:56px; border-radius:50%;
@@ -577,9 +576,15 @@ formLogin.addEventListener('submit', function(e){
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
       if(document.getElementById('lembrar').checked){
+
         localStorage.setItem('token', res.dados.token);
+        localStorage.setItem('cliente_cnpj', documento);
+        localStorage.setItem('cliente_email', email);
+
       } else {
         sessionStorage.setItem('token', res.dados.token);
+        sessionStorage.setItem('cliente_cnpj', documento);
+        sessionStorage.setItem('cliente_email', email);
       }
     } catch(err){}
     var perfil = (res.dados.usuario && res.dados.usuario.perfil) || res.dados.perfil;
