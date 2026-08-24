@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Acesso do Diretor — ITR Engenharia</title>
+<link rel="icon" href="IMG/logo.png">
+<link rel="stylesheet" href="assets/css/original-login.css">
+<link rel="stylesheet" href="assets/css/director-original.css">
+</head>
+<body class="pagina-diretor-original">
+<header class="topo">
+  <a href="/login.html" class="logo-link" aria-label="ITR Engenharia"><img src="IMG/logo.png" alt="ITR Engenharia"></a>
+  <button class="btn-tema" id="btnTema" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema"><span id="iconeTema"></span></button>
+</header>
+<main class="palco">
+  <div class="moldura">
+    <aside class="vitrine">
+      <div class="vitrine-marca">
+        <span class="vitrine-eyebrow">Administração restrita</span>
+        <h1>Painel do Diretor</h1>
+        <p class="lead">Área administrativa separada do Portal do Cliente, protegida por senha forte, sessão segura e auditoria das ações relevantes.</p>
+      </div>
+      <div class="vitrine-etapas diretor-info" aria-hidden="true">
+        <div class="vit-etapa"><span class="vit-bolha">✓</span><div class="vit-etapa-txt"><b>Sessão protegida</b><span>Cookie HttpOnly e expiração automática</span></div></div>
+        <div class="vit-etapa"><span class="vit-bolha">✓</span><div class="vit-etapa-txt"><b>Controle de acesso</b><span>Rate limit e bloqueio progressivo de tentativas</span></div></div>
+        <div class="vit-etapa"><span class="vit-bolha">✓</span><div class="vit-etapa-txt"><b>Auditoria</b><span>Ações administrativas relevantes ficam registradas</span></div></div>
+      </div>
+      <div class="vitrine-rodape">ITR Engenharia · Administração do Portal</div>
+    </aside>
+    <section class="form-painel">
+      <div class="form-cabeca"><h2>Entrar como Diretor</h2><p>Use a credencial administrativa gerada localmente.</p></div>
+      <div class="alerta-form" id="alertaSenha" role="alert" hidden></div>
+      <form id="formDiretor" novalidate>
+        <div class="campo-grupo"><label for="diretorUsuario">Usuário</label><div class="campo-caixa"><input id="diretorUsuario" name="username" autocomplete="username" value="diretor" maxlength="64" required></div></div>
+        <div class="campo-grupo"><label for="diretorSenha">Senha</label><div class="campo-caixa"><input id="diretorSenha" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required></div></div>
+        <button type="submit" class="btn-entrar" id="btnDiretorEntrar">Entrar no painel</button>
+        <p class="form-rodape"><a href="/login.html">Voltar ao Portal do Cliente</a></p>
+      </form>
+    </section>
+  </div>
+</main>
+<p class="rodape-pagina">ITR Engenharia — acesso administrativo</p>
+<script src="assets/js/common.js" defer></script>
+<script src="assets/js/diretor.js" defer></script>
+</body>
+</html>
