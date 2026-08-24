@@ -1,19 +1,28 @@
-# Arquivos de variáveis de ambiente (onde ficam suas senhas/chaves)
+# Segredos e configurações locais
 .env
+.env.*
+!.env.example
 
-# Pastas de dependências (nunca suba isso para o GitHub)
+# Dependências e artefatos
 node_modules/
-
-# Logs de erro e debug
+coverage/
 *.log
 npm-debug.log*
+.DS_Store
 
-# Pastas do VS Code (opcional, mas recomendado)
+# IDE / estação local
 .vscode/
-
-# Scripts de diagnóstico/teste (rascunhos de desenvolvimento, contêm dados internos)
-Diagnosticos/
-
-# Arquivo de workspace do VS Code
 *.code-workspace
-CLAUDE.md
+
+# Diagnósticos e dumps operacionais não pertencem ao release
+Diagnosticos/
+diagnostico_*.json
+mapa_airtable.*
+repomix-output.xml
+
+# Backups locais
+BACKUP_APLICACAO_PORTAL_ITR_*/
+REJEITADO_PORTAL_ITR_*/
+
+# Metadado do pacote local de release
+.itr-release.json

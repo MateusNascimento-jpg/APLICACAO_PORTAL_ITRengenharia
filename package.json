@@ -1,32 +1,41 @@
 {
-  "name": "bd_relacional_itrengenharia",
-  "version": "1.0.0",
-  "description": "Camada de persistência e modelagem relacional em MySQL desenvolvida para o **Sistema de Gestão de Amostras Laboratoriais** da ITR Engenharia. Este repositório concentra a inteligência de dados, tabelas estruturadas e restrições de integridade que servem de fundação para a futura API (Node.js/Express) e integração com o Airtable.",
+  "name": "portal-itr-engenharia",
+  "version": "3.0.1",
+  "description": "Portal do Cliente ITR Engenharia — design original preservado com hardening de segurança e operação.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "migrate": "node scripts/migrate.js",
+    "bootstrap:director": "node scripts/bootstrap-director.js",
+    "preflight": "node scripts/preflight.js",
+    "verify": "node scripts/verify.js",
+    "test": "node --test tests/*.test.js",
+    "check": "npm run verify && npm test",
+    "reset:director-password": "node scripts/reset-director-password.js",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "verify:manifest": "node scripts/verify-release-manifest.js",
+    "verify:release": "node scripts/verify.js --release",
+    "unlock:director": "node scripts/unlock-director.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia.git"
+    "url": "git+https://github.com/MateusNascimento-jpg/APLICACAO_PORTAL_ITRengenharia.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia/issues"
+    "url": "https://github.com/MateusNascimento-jpg/APLICACAO_PORTAL_ITRengenharia/issues"
   },
-  "homepage": "https://github.com/MateusNascimento-jpg/BD_RELACIONAL_ITRengenharia#readme",
+  "homepage": "https://github.com/MateusNascimento-jpg/APLICACAO_PORTAL_ITRengenharia#readme",
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.5",
-    "nodemailer": "^9.0.3"
+    "mysql2": "^3.22.5"
+  },
+  "engines": {
+    "node": ">=20.11.0"
   }
 }

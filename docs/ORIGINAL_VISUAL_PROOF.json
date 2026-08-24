@@ -1,0 +1,26 @@
+[
+  {
+    "page": "login",
+    "same": true,
+    "sha256": "459b4f2a917f7d441e753ad3f83bc97df2a553cf6dff66c0a9f8b9c61a354225",
+    "bytes": 12593
+  },
+  {
+    "page": "portal",
+    "same": true,
+    "sha256": "e72cb2bb54701cb64e355b793b86726229d65d52878e087adf6e14bda81b749c",
+    "bytes": 33226
+  },
+  {
+    "page": "painel",
+    "same": true,
+    "sha256": "ea6f6777a44aa08200d7c4ca17083b2ea4b624238c499a334abf6fa4794331ad",
+    "bytes": 13467
+  },
+  {
+    "page": "como-funciona",
+    "same": true,
+    "sha256": "3af8a7c939abad2188250ffa56020de6f95b5e45e30dce82d0f1e4b3fec27add",
+    "bytes": 9083
+  }
+]

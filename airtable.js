@@ -1,46 +1,79 @@
-// airtable.js
+// airtable.js — acesso ao Airtable com isolamento por Record ID e resiliência.
 
-// Filtro confiavel: o campo "ID Trabalho" comeca com "<ID Cliente>_" (ex: "GEODEEP_...").
+const config = require('./config');
 
-require('dotenv').config();
-
-const TOKEN = process.env.AIRTABLE_TOKEN;
-const BASE = process.env.AIRTABLE_BASE_ID;
+const TOKEN = config.airtable.token;
+const BASE = config.airtable.baseId;
 const API = `https://api.airtable.com/v0/${BASE}`;
 
 const TBL_CLIENTES = 'tblkQxQ6q7cBKXZ3C';
 const TBL_NOVOS_TRABALHOS = 'tblJAP4Av9sWm8SmL';
-const TBL_ENSAIOS = 'tblYtVM2crMxpxHgG'; // tabela Ensaios: "ID Ensaio" (sigla) + "Nome do Ensaio"
+const TBL_ENSAIOS = 'tblYtVM2crMxpxHgG';
 
-const TAMANHO_PAGINA = 100; // Airtable permite ate 100/pagina. 100 = 5x menos
-                            // chamadas de rede que os 20 antigos => bem mais rapido.
+const TAMANHO_PAGINA = 100;
 const MESES_RECENTE = 3;
+const CACHE_TTL_MS = config.airtable.cacheTtlMs;
+const CAMPO_ORDENACAO = 'createdTime';
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min: tempo max que mapaOS/mapaEnsaios ficam sem recarregar
+function recordIdValido(id) {
+    return /^rec[a-zA-Z0-9]{14}$/.test(String(id || ''));
+}
 
-const CAMPO_ORDENACAO = 'createdTime'; // meta-dado do proprio registro Airtable (ordem real de cadastro);
-                                        // NAO e um campo de coluna, entao nao entra em sort da API —
-                                        // ordenacao feita em memoria (ver bloco 3 abaixo).
+function esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function airtableRequest(url, options = {}) {
+    let ultimoErro;
+    for (let tentativa = 0; tentativa <= config.airtable.retries; tentativa += 1) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), config.airtable.timeoutMs);
+        try {
+            const resp = await fetch(url, {
+                ...options,
+                signal: controller.signal,
+                headers: {
+                    Authorization: `Bearer ${TOKEN}`,
+                    ...(options.headers || {})
+                }
+            });
+            const texto = await resp.text();
+            let dados = {};
+            if (texto) {
+                try { dados = JSON.parse(texto); }
+                catch (_) { throw new Error('Resposta inválida recebida do Airtable.'); }
+            }
+            if (resp.ok) return dados;
+
+            const retryable = resp.status === 429 || resp.status >= 500;
+            const erro = new Error(dados.error?.message || `Airtable respondeu HTTP ${resp.status}.`);
+            erro.status = resp.status;
+            if (!retryable || tentativa >= config.airtable.retries) throw erro;
+            ultimoErro = erro;
+        } catch (error) {
+            ultimoErro = error;
+            const retryable = error.name === 'AbortError' || !error.status || error.status === 429 || error.status >= 500;
+            if (!retryable || tentativa >= config.airtable.retries) throw error;
+        } finally {
+            clearTimeout(timer);
+        }
+
+        const atraso = Math.min(4000, 250 * (2 ** tentativa)) + Math.floor(Math.random() * 180);
+        await esperar(atraso);
+    }
+    throw ultimoErro || new Error('Falha ao consultar o Airtable.');
+}
 
 async function airtableGet(url) {
-    const resp = await fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
-    const dados = await resp.json();
-    if (!resp.ok) throw new Error(dados.error?.message || 'Erro ao consultar o Airtable');
-    return dados;
+    return airtableRequest(url);
 }
 
 async function airtablePatch(url, fields) {
-    const resp = await fetch(url, {
+    return airtableRequest(url, {
         method: 'PATCH',
-        headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields })
     });
-    const dados = await resp.json();
-    if (!resp.ok) throw new Error(dados.error?.message || 'Erro ao gravar no Airtable');
-    return dados;
 }
 
 // ==================== TRADUCAO DE SIGLAS (com cache) ====================
@@ -481,65 +514,30 @@ async function formatar(rec, mapa, mapaOrdens) {
 // modo 'recente' (padrao): em andamento OU enviado nos ultimos N meses.
 // modo 'todos': historico completo.
 async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = 'recente', meses = null) {
-    // 0. Dicionarios (ensaios + ordens de servico), ambos cacheados
-    const mapa = await carregarMapaEnsaios();
-    const mapaOrdens = await carregarMapaOS();
-
-    // 1. Pega nome + ID Cliente (prefixo usado em "ID Trabalho")
-    let nomeCliente = null, idCliente = null;
-    try {
-        const cli = await airtableGet(`${API}/${TBL_CLIENTES}/${recordIdCliente}`);
-        nomeCliente = cli.fields['Nome Cliente'] || null;
-        idCliente = cli.fields['ID Cliente'] || null;
-    } catch (e) {
+    if (!recordIdValido(recordIdCliente)) {
         return { nome_cliente: null, trabalhos: [], offset: null, tem_mais: false, modo };
     }
 
-    // 2. Filtro de ISOLAMENTO — robusto e a prova de erro de digitacao.
-    //    Antes usavamos so o prefixo do "ID Trabalho" (LEFT(...) = "GEODEEP_"),
-    //    mas isso PERDIA trabalhos cujo ID Trabalho fugia do padrao (auditoria:
-    //    1538 trabalhos da Geodeep pelo campo Cliente, mas so 1536 pelo prefixo
-    //    -> 2 sumiam). Agora filtramos pelo campo "Cliente" (link), que numa
-    //    formula exibe o NOME do cliente — a ligacao real. Mantemos o prefixo
-    //    como reforco (OR), entao pegamos TUDO do cliente, sem depender de
-    //    ninguem ter digitado o ID Trabalho certinho.
-    const nomeEsc = escaparFormula(nomeCliente || '');
-    const porCliente = nomeCliente
-        ? `{Cliente} = '${nomeEsc}'`
-        : null;
+    const mapa = await carregarMapaEnsaios();
+    const mapaOrdens = await carregarMapaOS();
 
-    let ligacao;
-    if (idCliente && porCliente) {
-        const prefixo = escaparFormula(idCliente) + '_';
-        const tam = prefixo.length;
-        ligacao = `OR(${porCliente}, LEFT({ID Trabalho}, ${tam}) = '${prefixo}')`;
-    } else if (porCliente) {
-        ligacao = porCliente;
-    } else if (idCliente) {
-        const prefixo = escaparFormula(idCliente) + '_';
-        const tam = prefixo.length;
-        ligacao = `LEFT({ID Trabalho}, ${tam}) = '${prefixo}'`;
-    } else {
-        // sem nome nem id: nao da pra isolar com seguranca -> nao retorna nada
-        return { nome_cliente: nomeCliente, trabalhos: [], offset: null, tem_mais: false, modo };
+    // O nome serve somente para reduzir o conjunto retornado pelo Airtable.
+    // A autorização verdadeira acontece logo abaixo, comparando o Record ID
+    // presente no campo link "Cliente" de cada registro.
+    const cli = await airtableGet(`${API}/${TBL_CLIENTES}/${encodeURIComponent(recordIdCliente)}`);
+    const nomeCliente = cli.fields?.['Nome Cliente'] || null;
+    if (!nomeCliente) {
+        return { nome_cliente: null, trabalhos: [], offset: null, tem_mais: false, modo };
     }
 
-    let formula;
+    const porCliente = `{Cliente} = '${escaparFormula(nomeCliente)}'`;
+    let formula = porCliente;
     if (modo === 'recente') {
         const limite = dataLimiteRecente(meses);
-        // "recente" = cadastrado nos ultimos N meses. CREATED_TIME() e funcao
-        // nativa do Airtable (sempre preenchida) — nao precisa de OR com BLANK().
-        formula = `AND(${ligacao}, IS_AFTER(CREATED_TIME(), '${limite}'))`;
-    } else {
-        formula = ligacao;
+        const ativo = `AND({Status Cliente} != 'Relatório Disponível', {Status Cliente} != 'Cancelado')`;
+        formula = `AND(${porCliente}, OR(${ativo}, IS_AFTER(CREATED_TIME(), '${limite}')))`;
     }
 
-    // 3. Filtra e busca TODAS as paginas antes de ordenar. createdTime e
-    //    meta-dado (a API nao ordena por ele), entao a ordem so fica correta
-    //    ordenando o conjunto COMPLETO em memoria — nao basta ordenar por
-    //    pagina, porque dois trabalhos do mesmo cliente podem cair em paginas
-    //    diferentes (foi o bug do REG 638 vs C11-01). O parametro `offset` de
-    //    entrada passa a ser ignorado: a paginacao agora e interna.
     let todosRecords = [];
     let offsetAt = null;
     do {
@@ -552,13 +550,20 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
         offsetAt = resp.offset || null;
     } while (offsetAt);
 
-    const trabalhos = (await Promise.all(todosRecords.map(rec => formatar(rec, mapa, mapaOrdens))))
-        .sort((a, b) => new Date(b.data_ordenacao) - new Date(a.data_ordenacao));
+    // Fail-closed: nomes duplicados, prefixos ou dados textuais nunca concedem
+    // acesso. Só permanece o registro cujo link Cliente contém o Record ID da sessão.
+    const isolados = todosRecords.filter(rec => {
+        const links = rec.fields?.['Cliente'];
+        return Array.isArray(links) && links.includes(recordIdCliente);
+    });
+
+    const trabalhos = (await Promise.all(isolados.map(rec => formatar(rec, mapa, mapaOrdens))))
+        .sort((a, b) => new Date(b.data_ordenacao || 0) - new Date(a.data_ordenacao || 0));
 
     return {
         nome_cliente: nomeCliente,
         trabalhos,
-        offset: null,      // sem paginacao externa: veio tudo de uma vez
+        offset: null,
         tem_mais: false,
         modo
     };
@@ -567,11 +572,31 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
 // ==================== URL FRESCA DO PDF (download na hora) ====================
 // Os links de anexo do Airtable expiram. Esta funcao busca o trabalho de novo
 // no momento do clique e devolve uma URL valida do PDF aprovado.
-async function urlRelatorioAprovado(recordIdTrabalho) {
-    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${recordIdTrabalho}`);
-    const pdf = primeiroPdf(rec.fields['Relatórios_Aprovados']);
+async function urlRelatorioAprovado(recordIdTrabalho, recordIdCliente = null) {
+    if (!recordIdValido(recordIdTrabalho)) return null;
+    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordIdTrabalho)}`);
+
+    if (recordIdCliente) {
+        if (!recordIdValido(recordIdCliente)) return null;
+        const links = rec.fields?.['Cliente'];
+        if (!Array.isArray(links) || !links.includes(recordIdCliente)) return null;
+    }
+
+    // Um anexo antigo não equivale a autorização. O estado atual precisa
+    // continuar aprovado e o PDF aprovado precisa corresponder ao relatório atual.
+    if (rec.fields?.['Aprovação'] !== 'Aprovado') return null;
+    const pdf = primeiroPdf(rec.fields?.['Relatórios_Aprovados']);
     if (!pdf) return null;
+    const atual = primeiroPdf(rec.fields?.['Relatórios']);
+    if (atual && atual.nome && pdf.nome && atual.nome !== pdf.nome) return null;
     return { nome: pdf.nome, url: pdf.url };
+}
+
+async function trabalhoPertenceAoCliente(recordIdTrabalho, recordIdCliente) {
+    if (!recordIdValido(recordIdTrabalho) || !recordIdValido(recordIdCliente)) return false;
+    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordIdTrabalho)}`);
+    const links = rec.fields?.['Cliente'];
+    return Array.isArray(links) && links.includes(recordIdCliente);
 }
 
 // ==================== BUSCAR CLIENTE POR CNPJ ====================
@@ -594,11 +619,13 @@ async function buscarClientePorCnpj(cnpj) {
     const formula = `TRIM({CNPJ}) = '${escaparFormula(cnpjLimpo)}'`;
     const url = `${API}/${TBL_CLIENTES}`
         + `?filterByFormula=${encodeURIComponent(formula)}`
-        + `&maxRecords=1`;
+        + `&maxRecords=2`;
 
     const resp = await airtableGet(url);
-    const rec = (resp.records || [])[0];
-    if (!rec) return null;
+    const registros = resp.records || [];
+    if (registros.length === 0) return null;
+    if (registros.length > 1) throw new Error('CNPJ duplicado na tabela Clientes; acesso bloqueado até correção cadastral.');
+    const rec = registros[0];
 
     return {
         id: rec.id,
@@ -628,9 +655,8 @@ async function listarClientes() {
         offset = resp.offset || null;
     } while (offset);
 
-    // O rótulo exibido é "ID Cliente" (decisão: é onde está o nome real da
-    // empresa — ex: "Grupo Aterpa"). "Nome Cliente" fica como fallback e é o
-    // que o isolamento de trabalhos usa internamente (não mudar aquilo).
+    // O rótulo exibido é "ID Cliente" (onde está o nome usado no painel).
+    // O isolamento nunca depende desse texto: o backend valida o Record ID do link Cliente.
     // 'cnpj' (limpo, 14 digitos) e' um campo adicional so-leitura, usado pelo
     // painel do diretor para casar downloads (MySQL, chave = cnpj) com o nome
     // da empresa; nao afeta quem ja consome so id/nome/idCliente.
@@ -651,7 +677,8 @@ async function listarClientes() {
 // aqui) mas reusa o MESMO dicionario de OS (carregarMapaOS/traduzirOS) que o
 // portal do cliente ja usa, garantindo o mesmo texto ("OS 28", etc.).
 async function detalheTrabalhoPorId(recordId) {
-    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${recordId}`);
+    if (!recordIdValido(recordId)) return { id_trabalho: null, os: null };
+    const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordId)}`);
     const mapaOrdens = await carregarMapaOS();
     const ordem = await traduzirOS(rec.fields['Ordem de Serviço'] ?? rec.fields['Link Ordem de Serviço'], mapaOrdens);
     return {
@@ -660,26 +687,54 @@ async function detalheTrabalhoPorId(recordId) {
     };
 }
 
-// Define o campo "Aprovação" de um trabalho. A automacao do Airtable cuida do
-// resto (quando vira "Aprovado", copia o PDF de Relatorios -> Relatorios_Aprovados).
-// Valores validos = as opcoes do singleSelect na base.
+async function detalhesTrabalhosPorIds(ids, concorrencia = 5) {
+    const unicos = [...new Set((ids || []).filter(recordIdValido))];
+    const resultado = new Map();
+    let cursor = 0;
+
+    async function worker() {
+        while (cursor < unicos.length) {
+            const atual = unicos[cursor++];
+            try { resultado.set(atual, await detalheTrabalhoPorId(atual)); }
+            catch (_) { resultado.set(atual, { id_trabalho: null, os: null }); }
+        }
+    }
+
+    const workers = Array.from({ length: Math.min(Math.max(1, concorrencia), unicos.length || 1) }, () => worker());
+    await Promise.all(workers);
+    return resultado;
+}
+
 const APROVACAO_VALIDAS = ['Aprovado', 'Refazer', 'Em Andamento'];
 
 async function definirAprovacao(recordIdTrabalho, valor) {
-    if (!APROVACAO_VALIDAS.includes(valor)) {
-        throw new Error(`Valor de aprovação inválido: "${valor}".`);
-    }
-    const url = `${API}/${TBL_NOVOS_TRABALHOS}/${recordIdTrabalho}`;
+    if (!recordIdValido(recordIdTrabalho)) throw new Error('Record ID de trabalho inválido.');
+    if (!APROVACAO_VALIDAS.includes(valor)) throw new Error('Valor de aprovação inválido.');
+
+    const url = `${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordIdTrabalho)}`;
+    const anteriorRec = await airtableGet(url);
+    const anterior = anteriorRec.fields?.['Aprovação'] || null;
     const resp = await airtablePatch(url, { 'Aprovação': valor });
-    return { id: resp.id, aprovacao: resp.fields?.['Aprovação'] || valor };
+    return { id: resp.id, aprovacao: resp.fields?.['Aprovação'] || valor, anterior };
+}
+
+
+async function verificarAirtable() {
+    const url = `${API}/${TBL_CLIENTES}?maxRecords=1&fields%5B%5D=${encodeURIComponent('ID Cliente')}`;
+    await airtableGet(url);
+    return true;
 }
 
 module.exports = {
     buscarTrabalhosDoCliente,
     buscarClientePorCnpj,
     urlRelatorioAprovado,
+    trabalhoPertenceAoCliente,
     listarClientes,
     definirAprovacao,
     APROVACAO_VALIDAS,
-    detalheTrabalhoPorId
+    detalheTrabalhoPorId,
+    detalhesTrabalhosPorIds,
+    recordIdValido,
+    verificarAirtable
 };

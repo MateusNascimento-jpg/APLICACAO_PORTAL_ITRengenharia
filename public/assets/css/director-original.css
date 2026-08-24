@@ -1,0 +1,6 @@
+
+.pagina-diretor-original .diretor-info{margin-top:2rem}
+.pagina-diretor-original .diretor-info .vit-bolha{font-size:11px;font-weight:700}
+.pagina-diretor-original .alerta-form[hidden]{display:none!important}
+.pagina-diretor-original .alerta-form.ver{display:flex!important}
+@media(max-width:760px){.pagina-diretor-original .vitrine{display:none}.pagina-diretor-original .moldura{grid-template-columns:1fr}}

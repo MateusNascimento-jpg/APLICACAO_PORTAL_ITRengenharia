@@ -1,11 +1,10 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const path = require('path');
-require('dotenv').config();
-// bcrypt, crypto e email(reset) foram removidos junto com o login antigo:
-// o modelo novo autentica por CNPJ + e-mail no Airtable (sem senha/hash/reset).
+const { Readable, Transform } = require('stream');
 
+const config = require('./config');
 const pool = require('./db');
+const { verificarBanco, encerrarBanco } = require('./db');
 const {
     buscarTrabalhosDoCliente,
     buscarClientePorCnpj,
@@ -13,16 +12,44 @@ const {
     listarClientes,
     definirAprovacao,
     APROVACAO_VALIDAS,
-    detalheTrabalhoPorId
+    detalhesTrabalhosPorIds,
+    recordIdValido,
+    verificarAirtable
 } = require('./airtable');
+const { applySecurityHeaders, sameOriginOnly } = require('./lib/http-security');
+const { cleanupSecurityState, scheduleMaintenance } = require('./lib/maintenance');
+const { consume, reset, defensiveDelay } = require('./lib/rate-limit');
+const { audit } = require('./lib/audit');
+const {
+    createSession,
+    loadSession,
+    destroySession,
+    rotateSession,
+    issueFreshCsrf,
+    verifyCsrf,
+    cleanupSessions
+} = require('./lib/sessions');
+const { scryptVerify, hmac } = require('./lib/security-crypto');
 
 const app = express();
-const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_padrao';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
-// Bloqueio por tentativas agora e feito por rate limit de IP (ver /api/login).
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+if (config.security.trustProxyHops > 0) app.set('trust proxy', config.security.trustProxyHops);
+app.disable('x-powered-by');
+app.set('query parser', 'simple');
+
+app.use((req, res, next) => {
+    req.requestId = require('crypto').randomUUID();
+    res.setHeader('X-Request-ID', req.requestId);
+    next();
+});
+app.use(applySecurityHeaders);
+app.use(express.json({ limit: '64kb', strict: true }));
+app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+});
 
 function limparDocumento(doc) {
     return String(doc || '').replace(/\D/g, '');
@@ -33,430 +60,618 @@ function normalizarEmail(email) {
 }
 
 function emailValido(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+    const valor = String(email || '').trim();
+    return valor.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }
 
-function getIp(req) {
-    return (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').toString().split(',')[0].trim();
+function erro(res, status, mensagem, codigo = null) {
+    return res.status(status).json({
+        sucesso: false,
+        erro: mensagem,
+        ...(codigo ? { codigo } : {}),
+        requestId: res.req?.requestId
+    });
 }
 
-function usuarioPublico(usuario) {
+function usuarioPublico(session) {
     return {
-        id: usuario.id,
-        documento: usuario.documento,
-        tipoDocumento: usuario.tipo_documento || (String(usuario.documento || '').length === 11 ? 'CPF' : 'CNPJ'),
-        perfil: usuario.perfil,
-        airtableId: usuario.airtable_client_id || null,
-        email: usuario.email || null,
-        nomeEmpresa: usuario.nome_empresa || null
+        perfil: session.role,
+        documento: session.documento || null,
+        airtableId: session.airtableId || null,
+        email: session.email || null,
+        nomeEmpresa: session.nomeEmpresa || null
     };
 }
 
-async function registrarHistoricoLogin(req, cnpjTentado, sucesso, motivoFalha = null) {
+async function carregarSessao(req, res, next) {
     try {
-        await pool.query(
-            `INSERT INTO historico_logins (cnpj_tentado, sucesso, ip_origem, navegador, motivo_falha)
-             VALUES (?, ?, ?, ?, ?)`,
-            [cnpjTentado || null, !!sucesso, getIp(req), String(req.headers['user-agent'] || '').slice(0, 255), motivoFalha]
-        );
-    } catch (err) {
-        console.warn('[HISTORICO_LOGIN] Não foi possível registrar tentativa:', err.message);
+        req.session = await loadSession(req);
+        next();
+    } catch (error) {
+        console.error(`[${req.requestId}] [SESSION]`, error.message);
+        return erro(res, 503, 'O serviço de sessão está temporariamente indisponível.', 'SESSION_UNAVAILABLE');
     }
 }
 
-// Registra o download por CNPJ (login novo nao tem usuario_id do MySQL).
-// Mantem o "baixou ou nao": INSERT IGNORE + UNIQUE(cnpj, record) evita duplicar.
-async function registrarDownload(cnpj, recordIdTrabalho) {
-    if (!cnpj) return; // sem CNPJ nao ha o que rastrear
-    try {
-        await pool.query(
-            `INSERT IGNORE INTO relatorios_baixados (cnpj, record_id_trabalho)
-             VALUES (?, ?)`,
-            [cnpj, recordIdTrabalho]
-        );
-    } catch (err) {
-        console.warn('[DOWNLOAD] Não foi possível registrar download:', err.message);
-    }
-}
-
-function criarToken(usuario) {
-    return jwt.sign(
-        {
-            id: usuario.id, // null no login novo (nao ha MySQL de usuarios)
-            perfil: usuario.perfil,
-            airtableId: usuario.airtable_client_id || null,
-            documento: usuario.documento || null // CNPJ: identifica o cliente no tracking
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
-    );
-}
-
-function erro(res, status, mensagem) {
-    return res.status(status).json({ sucesso: false, erro: mensagem });
-}
-
-// Evita que navegador/CDN sirvam uma lista de trabalhos ou um redirecionamento
-// de PDF antigos em cache (ver "Armadilha: relatório antigo aparece após
-// troca do PDF" no CLAUDE.md).
-function semCache(req, res, next) {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.set('Pragma', 'no-cache');
+function sessaoPresente(req, res, next) {
+    if (!req.session) return erro(res, 401, 'Sua sessão expirou. Entre novamente.', 'SESSION_REQUIRED');
     next();
 }
 
-app.get('/', (req, res) => res.redirect('/login.html'));
-
-app.get('/status', (req, res) => {
-    res.json({ status: 'Online', projeto: 'Portal do Cliente ITR Engenharia' });
-});
-
-// ==================== CADASTRO: REMOVIDO ====================
-// O cadastro publico foi descontinuado. No modelo novo o cliente NAO cria
-// conta: ele ja existe no Airtable e entra com CNPJ + e-mail cadastrado.
-// As rotas /api/cadastro e /cadastro respondem 410 (Gone) para deixar claro.
-app.post(['/api/cadastro', '/cadastro'], (req, res) =>
-    erro(res, 410, 'O cadastro não é mais necessário. Acesse com seu CNPJ e o e-mail cadastrado na ITR.')
-);
-
-// ==================== LOGIN (CNPJ + E-MAIL do Airtable) ====================
-// Modelo novo: NAO ha senha/bcrypt/MySQL para autenticar. O cliente entra com
-//   LOGIN = CNPJ  e  SENHA = primeiro e-mail cadastrado no campo "Email Cliente"
-//   da tabela Clientes do Airtable (base 1).
-// Regra: o CNPJ precisa existir no Airtable E o e-mail digitado precisa bater
-// (normalizado: minusculas, sem espaco) com o PRIMEIRO e-mail do cliente.
-// Se OK -> gera JWT com o airtableId -> acesso aos relatorios (isolamento por
-// CNPJ como ja e). Rate limiting por IP evita varredura de CNPJs publicos.
-
-// Rate limiting simples em memoria (por IP). Sem dependencia externa.
-const tentativasPorIp = new Map(); // ip -> { count, primeiraEm }
-const RL_JANELA_MS = 15 * 60 * 1000;         // janela de 15 min
-const RL_MAX = Number(process.env.LOGIN_MAX_TENTATIVAS_IP || 20); // tentativas/janela
-
-function checarRateLimit(ip) {
-    const agora = Date.now();
-    const reg = tentativasPorIp.get(ip);
-    if (!reg || (agora - reg.primeiraEm) > RL_JANELA_MS) {
-        tentativasPorIp.set(ip, { count: 1, primeiraEm: agora });
-        return { ok: true };
+function autenticado(req, res, next) {
+    if (!req.session || !['Cliente', 'Director'].includes(req.session.role)) {
+        return erro(res, 401, 'Sua sessão expirou. Entre novamente.', 'SESSION_REQUIRED');
     }
-    reg.count += 1;
-    if (reg.count > RL_MAX) {
-        return { ok: false, esperaMin: Math.ceil((RL_JANELA_MS - (agora - reg.primeiraEm)) / 60000) };
-    }
-    return { ok: true };
+    next();
 }
 
-// Limpa registros antigos do rate limit de tempos em tempos (evita crescer sem fim).
-setInterval(() => {
-    const agora = Date.now();
-    for (const [ip, reg] of tentativasPorIp.entries()) {
-        if ((agora - reg.primeiraEm) > RL_JANELA_MS) tentativasPorIp.delete(ip);
+function somenteDiretor(req, res, next) {
+    if (!req.session || req.session.role !== 'Director') {
+        return erro(res, 403, 'Acesso não autorizado.', 'DIRECTOR_REQUIRED');
     }
-}, RL_JANELA_MS).unref?.();
+    next();
+}
 
-app.post('/api/login', async (req, res) => {
-    const documento = limparDocumento(req.body.documento);
-    // aceita tanto "email" quanto "senha" no corpo (a tela envia o e-mail no
-    // campo de acesso; mantemos compatibilidade com o nome antigo "senha").
-    const emailDigitado = normalizarEmail(req.body.email || req.body.senha);
-    const ip = getIp(req) || 'desconhecido';
+function roleExata(role) {
+    return (req, res, next) => {
+        if (!req.session || req.session.role !== role) {
+            return erro(res, 403, 'Etapa de autenticação inválida ou expirada.', 'AUTH_STAGE_INVALID');
+        }
+        next();
+    };
+}
 
+function csrfProtegido(req, res, next) {
+    const token = req.get('x-csrf-token');
+    if (!verifyCsrf(req.session, token)) {
+        return erro(res, 403, 'A requisição de segurança expirou. Atualize a página e tente novamente.', 'CSRF_INVALID');
+    }
+    next();
+}
+
+function escritaHabilitada(req, res, next) {
+    if (config.security.safeMode || !config.security.writeEnabled) {
+        return erro(res, 423, 'O portal está em modo seguro de validação. Alterações estão bloqueadas.', 'SAFE_MODE');
+    }
+    next();
+}
+
+function retryAfter(res, rl) {
+    const segundos = Math.max(1, Math.ceil((rl.retryAfterMs || 60000) / 1000));
+    res.setHeader('Retry-After', String(segundos));
+    return segundos;
+}
+
+async function consumirLimitesCliente(req, documento) {
+    const windowMs = 15 * 60 * 1000;
+    const ip = await consume('client-login-ip', req.ip || 'unknown', {
+        limit: config.security.loginIpLimit,
+        windowMs,
+        blockMs: windowMs
+    });
+    if (!ip.ok) return ip;
+    return consume('client-login-account', documento, {
+        limit: config.security.loginAccountLimit,
+        windowMs,
+        blockMs: windowMs
+    });
+}
+
+async function consumirLimiteMfa(req) {
+    const rawKey = req.session?.hash || req.ip || 'unknown';
+    return consume('director-mfa', rawKey, {
+        limit: config.security.directorMfaLimit,
+        windowMs: 10 * 60 * 1000,
+        blockMs: 10 * 60 * 1000
+    });
+}
+
+async function consumirLimiteDiretor(req, username) {
+    const windowMs = 20 * 60 * 1000;
+    const ip = await consume('director-login-ip', req.ip || 'unknown', {
+        limit: config.security.directorLoginLimit,
+        windowMs,
+        blockMs: windowMs
+    });
+    if (!ip.ok) return ip;
+    return consume('director-login-account', username, {
+        limit: config.security.directorLoginLimit,
+        windowMs,
+        blockMs: windowMs
+    });
+}
+
+async function registrarUltimoAcesso(cliente) {
     try {
-        // 1) Rate limit por IP
-        const rl = checarRateLimit(ip);
-        if (!rl.ok) {
-            await registrarHistoricoLogin(req, documento || null, false, 'RATE_LIMIT_IP');
-            return erro(res, 429, `Muitas tentativas. Aguarde ${rl.esperaMin} minuto(s) e tente novamente.`);
-        }
-
-        // 2) Validacao de entrada
-        if (!documento || !emailDigitado) {
-            return erro(res, 400, 'Informe o CNPJ e o e-mail de acesso.');
-        }
-        if (documento.length !== 14) {
-            return erro(res, 400, 'CNPJ inválido. Digite os 14 números do CNPJ de cadastro.');
-        }
-
-        // 3) Busca o cliente no Airtable pelo CNPJ
-        const cliente = await buscarClientePorCnpj(documento);
-        if (!cliente) {
-            await registrarHistoricoLogin(req, documento, false, 'CNPJ_NAO_ENCONTRADO');
-            return erro(res, 401, 'CNPJ não encontrado. Verifique o número ou entre em contato com a ITR.');
-        }
-
-        // 4) O cliente precisa ter e-mail cadastrado no Airtable
-        if (!cliente.emailLogin) {
-            await registrarHistoricoLogin(req, documento, false, 'CLIENTE_SEM_EMAIL');
-            return erro(res, 403, 'Seu acesso ainda não está liberado. Entre em contato com a ITR para cadastrar seu e-mail.');
-        }
-
-        // 5) O e-mail digitado precisa bater com o primeiro e-mail do cliente
-        if (emailDigitado !== cliente.emailLogin) {
-            await registrarHistoricoLogin(req, documento, false, 'EMAIL_INCORRETO');
-            return erro(res, 401, 'E-mail de acesso incorreto para este CNPJ.');
-        }
-
-        // 6) Tudo certo -> monta um "usuario" so com o necessario para o token.
-        //    NAO ha registro no MySQL; o token carrega o airtableId (record do
-        //    cliente no Airtable), que e o que o isolamento de relatorios usa.
-        const usuario = {
-            id: null,                       // sem id do MySQL neste modelo
-            documento: cliente.cnpj,
-            tipo_documento: 'CNPJ',
-            email: cliente.emailLogin,
-            perfil: 'Cliente',
-            airtable_client_id: cliente.id, // record id do Airtable
-            nome_empresa: cliente.idCliente || cliente.nome || null
-        };
-
-        // Diretor: mesmo fluxo de validação acima (CNPJ + e-mail no Airtable),
-        // só troca o perfil quando o CNPJ é o do diretor (env, nunca hardcoded).
-        if (process.env.DIRETOR_CNPJ && cliente.cnpj === limparDocumento(process.env.DIRETOR_CNPJ)) {
-            usuario.perfil = 'Diretor';
-        }
-
-        await registrarHistoricoLogin(req, documento, true, null);
-
-        // Grava "ultimo acesso" no MySQL (so timestamp + CNPJ), sem travar o login
-        // caso a tabela nao exista ainda. Mantem o MySQL util para tracking.
-        pool.query(
+        await pool.query(
             `INSERT INTO ultimo_acesso_cliente (cnpj, airtable_client_id, ultimo_acesso)
              VALUES (?, ?, NOW())
              ON DUPLICATE KEY UPDATE ultimo_acesso = NOW(), airtable_client_id = VALUES(airtable_client_id)`,
             [cliente.cnpj, cliente.id]
-        ).catch(err => console.warn('[ULTIMO_ACESSO] ignorado:', err.message));
-
-        const token = criarToken(usuario);
-        return res.json({
-            sucesso: true,
-            token,
-            perfil: usuario.perfil, // compatibilidade com telas antigas
-            usuario: usuarioPublico(usuario),
-            mensagem: 'Login realizado com sucesso!'
-        });
+        );
     } catch (error) {
-        console.error('[LOGIN]', error);
-        return erro(res, 500, error.message || 'Erro interno ao realizar login.');
+        console.warn('[ULTIMO_ACESSO] Não foi possível atualizar:', error.message);
     }
-});
-
-// ==================== MIDDLEWARES DE PROTEÇÃO ====================
-function autenticado(req, res, next) {
-    const authHeader = req.headers.authorization || req.headers.Authorization;
-    const token = authHeader && String(authHeader).startsWith('Bearer ')
-        ? String(authHeader).slice(7)
-        : null;
-
-    if (!token) return erro(res, 401, 'Token de acesso não fornecido.');
-
-    jwt.verify(token, JWT_SECRET, (err, usuarioDecodificado) => {
-        if (err) return erro(res, 403, 'Token inválido ou expirado.');
-        req.usuario = usuarioDecodificado;
-        next();
-    });
 }
 
-function somenteDiretor(req, res, next) {
-    if (req.usuario.perfil !== 'Diretor') {
-        return erro(res, 403, 'Acesso negado. Rota exclusiva para o Diretor.');
-    }
-    next();
-}
-
-app.get(['/api/perfil', '/perfil'], autenticado, (req, res) => {
-    res.json({ sucesso: true, usuario: req.usuario });
-});
-
-// ==================== PORTAL DO CLIENTE ====================
-async function responderTrabalhosCliente(req, res, mesesPadrao) {
+async function registrarDownload(cnpj, recordIdTrabalho) {
+    if (!cnpj) return;
     try {
-        const recordIdCliente = req.usuario.airtableId;
-        if (!recordIdCliente) {
-            return erro(res, 400, 'O seu usuário não possui vínculo com cliente no Airtable.');
+        await pool.query(
+            `INSERT INTO relatorios_baixados (cnpj, record_id_trabalho)
+             SELECT ?, ? FROM DUAL
+             WHERE NOT EXISTS (
+               SELECT 1 FROM relatorios_baixados
+               WHERE cnpj = ? AND record_id_trabalho = ?
+             )`,
+            [cnpj, recordIdTrabalho, cnpj, recordIdTrabalho]
+        );
+    } catch (error) {
+        console.warn('[DOWNLOAD] Não foi possível registrar:', error.message);
+    }
+}
+
+// ---------- Saúde e arquivos públicos ----------
+app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/status', (req, res) => res.json({ status: 'Online' }));
+app.get('/ready', async (req, res) => {
+    try {
+        await Promise.all([verificarBanco(), verificarAirtable()]);
+        return res.json({ ok: true });
+    } catch (_) {
+        return res.status(503).json({ ok: false });
+    }
+});
+app.get('/', (req, res) => res.redirect(302, '/login.html'));
+app.get(['/cadastro', '/cadastro.html'], (req, res) => res.redirect(308, '/login.html'));
+app.post(['/api/cadastro', '/cadastro'], (req, res) =>
+    erro(res, 410, 'O cadastro público foi descontinuado. Use o CNPJ e o e-mail cadastrados na ITR.')
+);
+
+app.use(express.static(PUBLIC_DIR, {
+    index: false,
+    etag: true,
+    maxAge: 0,
+    setHeaders(res, filePath) {
+        if (/\.html?$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'no-store');
+        } else if (/\.(?:css|js)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'no-cache');
+        } else if (/\.(?:png|svg|webp)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        } else {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
+
+// Todas as rotas abaixo podem usar sessão por cookie.
+app.use('/api', carregarSessao);
+
+// ---------- Login do cliente: CNPJ + e-mail, preservado por compatibilidade ----------
+app.post('/api/login', sameOriginOnly, async (req, res) => {
+    const documento = limparDocumento(req.body?.documento);
+    const email = normalizarEmail(req.body?.email || req.body?.senha);
+    const remember = Boolean(req.body?.remember || req.body?.lembrar);
+
+    if (documento.length !== 14 || !emailValido(email)) {
+        await defensiveDelay();
+        return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
+    }
+
+    try {
+        const rl = await consumirLimitesCliente(req, documento);
+        if (!rl.ok) {
+            retryAfter(res, rl);
+            await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'rate_limited' });
+            return erro(res, 429, 'Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.', 'RATE_LIMITED');
         }
 
-        const offset = req.query.offset || null;
+        const cliente = await buscarClientePorCnpj(documento);
+        const valido = cliente && cliente.emailLogin && normalizarEmail(cliente.emailLogin) === email;
+        if (!valido) {
+            await defensiveDelay();
+            await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
+            return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
+        }
+
+        if (req.session) await destroySession(req, res);
+        const sessao = await createSession(req, res, {
+            role: 'Cliente',
+            airtableId: cliente.id,
+            documento: cliente.cnpj,
+            email: cliente.emailLogin,
+            nomeEmpresa: cliente.idCliente || cliente.nome || null
+        }, { remember });
+
+        await Promise.allSettled([
+            reset('client-login-account', documento),
+            registrarUltimoAcesso(cliente),
+            audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'success' })
+        ]);
+
+        return res.json({
+            sucesso: true,
+            perfil: 'Cliente',
+            usuario: {
+                perfil: 'Cliente',
+                documento: cliente.cnpj,
+                airtableId: cliente.id,
+                email: cliente.emailLogin,
+                nomeEmpresa: cliente.idCliente || cliente.nome || null
+            },
+            csrfToken: sessao.csrfToken
+        });
+    } catch (error) {
+        console.error(`[${req.requestId}] [LOGIN_CLIENTE]`, error.message);
+        return erro(res, 503, 'Não foi possível concluir o acesso agora. Tente novamente em instantes.', 'LOGIN_UNAVAILABLE');
+    }
+});
+
+// ---------- Login separado do único Diretor ----------
+app.post('/api/diretor/login', sameOriginOnly, async (req, res) => {
+    const username = String(req.body?.username || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    if (!/^[a-z0-9._-]{3,64}$/.test(username) || password.length < 12 || password.length > 256) {
+        await defensiveDelay();
+        return erro(res, 401, 'Credenciais administrativas inválidas.', 'INVALID_CREDENTIALS');
+    }
+    try {
+        const rl = await consumirLimiteDiretor(req, username);
+        if (!rl.ok) {
+            retryAfter(res, rl);
+            await audit(req, 'director_login', { actorType: 'Diretor', actorId: username, outcome: 'rate_limited' });
+            return erro(res, 429, 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', 'RATE_LIMITED');
+        }
+        const [rows] = await pool.query('SELECT * FROM portal_director WHERE id = 1 AND username = ? LIMIT 1', [username]);
+        const diretor = rows[0];
+        const senhaOk = diretor ? await scryptVerify(password, diretor.password_salt, diretor.password_hash) : false;
+        if (!diretor || !senhaOk) {
+            await defensiveDelay();
+            await audit(req, 'director_login', { actorType: 'Diretor', actorId: username, outcome: 'denied' });
+            return erro(res, 401, 'Credenciais administrativas inválidas.', 'INVALID_CREDENTIALS');
+        }
+        if (req.session) await destroySession(req, res);
+        const sessao = await createSession(req, res, { role: 'Director', documento: 'diretor', nomeEmpresa: 'ITR Engenharia' });
+        await Promise.allSettled([
+            reset('director-login-account', username),
+            reset('director-login-ip', req.ip || 'unknown'),
+            pool.query('UPDATE portal_director SET last_login_at = NOW(3) WHERE id = 1'),
+            audit(req, 'director_login', { actorType: 'Diretor', actorId: username, outcome: 'success' })
+        ]);
+        return res.json({ sucesso: true, perfil: 'Director', csrfToken: sessao.csrfToken });
+    } catch (error) {
+        console.error(`[${req.requestId}] [LOGIN_DIRETOR]`, error.message);
+        return erro(res, 503, 'Não foi possível concluir o acesso administrativo agora.', 'LOGIN_UNAVAILABLE');
+    }
+});
+
+// ---------- Sessão ----------
+app.get('/api/perfil', autenticado, (req, res) => {
+    return res.json({ sucesso: true, usuario: usuarioPublico(req.session) });
+});
+// Alias legado: carrega a sessão explicitamente porque está fora do prefixo /api.
+app.get('/perfil', carregarSessao, autenticado, (req, res) => {
+    return res.json({ sucesso: true, usuario: usuarioPublico(req.session) });
+});
+
+app.get('/api/csrf', sessaoPresente, async (req, res) => {
+    try {
+        const csrfToken = await issueFreshCsrf(req.session);
+        return res.json({ sucesso: true, csrfToken });
+    } catch (error) {
+        console.error(`[${req.requestId}] [CSRF]`, error.message);
+        return erro(res, 503, 'Não foi possível renovar a sessão de segurança.');
+    }
+});
+
+app.post('/api/logout', sameOriginOnly, csrfProtegido, async (req, res) => {
+    try {
+        const actor = req.session?.role || null;
+        await destroySession(req, res);
+        await audit(req, 'logout', { actorType: actor, outcome: 'success' });
+        return res.json({ sucesso: true });
+    } catch (error) {
+        console.error(`[${req.requestId}] [LOGOUT]`, error.message);
+        return erro(res, 500, 'Não foi possível encerrar a sessão.');
+    }
+});
+
+app.get('/api/runtime', autenticado, (req, res) => {
+    res.json({
+        sucesso: true,
+        safeMode: config.security.safeMode || !config.security.writeEnabled,
+        ambiente: config.nodeEnv
+    });
+});
+
+// ---------- Portal do Cliente ----------
+async function responderTrabalhosCliente(req, res, mesesPadrao) {
+    try {
+        if (!req.session.airtableId) return erro(res, 403, 'Seu acesso não possui vínculo de cliente válido.');
         const modo = req.query.modo === 'todos' ? 'todos' : 'recente';
-        const dados = await buscarTrabalhosDoCliente(recordIdCliente, offset, modo, mesesPadrao);
+        const dados = await buscarTrabalhosDoCliente(req.session.airtableId, null, modo, mesesPadrao);
         return res.json({ sucesso: true, ...dados });
     } catch (error) {
-        console.error('[TRABALHOS_CLIENTE]', error);
-        return erro(res, 500, error.message || 'Erro ao carregar trabalhos do cliente.');
+        console.error(`[${req.requestId}] [TRABALHOS_CLIENTE]`, error.message);
+        return erro(res, 503, 'Os dados operacionais estão temporariamente indisponíveis. Tente novamente em instantes.', 'AIRTABLE_UNAVAILABLE');
     }
 }
 
-app.get('/api/meus-dados', autenticado, semCache, (req, res) => responderTrabalhosCliente(req, res, 3));
-app.get('/api/trabalhos', autenticado, semCache, (req, res) => responderTrabalhosCliente(req, res, 3));
+app.get('/api/meus-dados', autenticado, (req, res) => responderTrabalhosCliente(req, res, 3));
+app.get('/api/trabalhos', autenticado, (req, res) => responderTrabalhosCliente(req, res, 3));
 
-async function clientePodeAcessarTrabalho(req, recordIdTrabalho) {
-    if (req.usuario.perfil === 'Diretor') return true;
-    if (!req.usuario.airtableId) return false;
-
-    const dados = await buscarTrabalhosDoCliente(req.usuario.airtableId, null, 'todos', null);
-    return (dados.trabalhos || []).some(t => t.id === recordIdTrabalho);
+function validarUrlAirtable(url) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:') return false;
+        const host = parsed.hostname.toLowerCase();
+        return host === 'dl.airtable.com'
+            || host.endsWith('.airtable.com')
+            || host === 'airtableusercontent.com'
+            || host.endsWith('.airtableusercontent.com');
+    } catch (_) {
+        return false;
+    }
 }
 
-async function obterPdfAprovado(req, res) {
-    const recordIdTrabalho = req.params.id;
-
-    const permitido = await clientePodeAcessarTrabalho(req, recordIdTrabalho);
-    if (!permitido) {
-        return { erroStatus: 403, erroMensagem: 'Você não tem permissão para acessar este relatório.' };
-    }
-
-    const pdf = await urlRelatorioAprovado(recordIdTrabalho);
-    if (!pdf || !pdf.url) {
-        return { erroStatus: 404, erroMensagem: 'O arquivo PDF deste relatório não está disponível ou o trabalho ainda não foi aprovado.' };
-    }
-
-    await registrarDownload(req.usuario.documento, recordIdTrabalho);
-    return pdf;
+async function obterPdfAutorizado(req) {
+    const id = req.params.id;
+    if (!recordIdValido(id)) return null;
+    const clientId = req.session.role === 'Cliente' ? req.session.airtableId : null;
+    return urlRelatorioAprovado(id, clientId);
 }
 
-// Retorna JSON com URL fresca do Airtable.
 app.get('/api/trabalho/:id/download', autenticado, async (req, res) => {
     try {
-        const pdf = await obterPdfAprovado(req, res);
-        if (pdf.erroStatus) return erro(res, pdf.erroStatus, pdf.erroMensagem);
-        return res.json({ sucesso: true, arquivo: pdf.nome, url: pdf.url });
+        const pdf = await obterPdfAutorizado(req);
+        if (!pdf?.url) return erro(res, 404, 'Este relatório não está disponível para download.');
+        return res.json({
+            sucesso: true,
+            arquivo: pdf.nome,
+            url: `/api/relatorio/${encodeURIComponent(req.params.id)}`
+        });
     } catch (error) {
-        console.error('[DOWNLOAD_JSON]', error);
-        return erro(res, 500, error.message || 'Erro ao abrir relatório.');
+        console.error(`[${req.requestId}] [DOWNLOAD_INFO]`, error.message);
+        return erro(res, 503, 'Não foi possível preparar o relatório agora.');
     }
 });
 
-// Alias usado pelo portal.html: redireciona diretamente para o PDF.
-app.get('/api/relatorio/:id', autenticado, semCache, async (req, res) => {
+app.get('/api/relatorio/:id', autenticado, async (req, res) => {
+    let controller;
     try {
-        const pdf = await obterPdfAprovado(req, res);
-        if (pdf.erroStatus) return erro(res, pdf.erroStatus, pdf.erroMensagem);
-        return res.redirect(pdf.url);
+        const pdf = await obterPdfAutorizado(req);
+        if (!pdf?.url || !validarUrlAirtable(pdf.url)) return erro(res, 404, 'Este relatório não está disponível para download.');
+
+        controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 30000);
+        let atual = pdf.url;
+        let upstream = null;
+        // Segue poucos redirecionamentos e valida cada destino. Isso evita que uma
+        // URL legítima do Airtable seja usada como ponte para outro host (SSRF).
+        for (let salto = 0; salto < 4; salto += 1) {
+            if (!validarUrlAirtable(atual)) throw new Error('Destino de relatório não permitido.');
+            upstream = await fetch(atual, { signal: controller.signal, redirect: 'manual' });
+            if (![301, 302, 303, 307, 308].includes(upstream.status)) break;
+            const location = upstream.headers.get('location');
+            if (!location) throw new Error('Redirecionamento de relatório inválido.');
+            atual = new URL(location, atual).toString();
+            upstream.body?.cancel?.();
+        }
+        clearTimeout(timer);
+        if (!upstream || [301, 302, 303, 307, 308].includes(upstream.status)) {
+            return erro(res, 502, 'O arquivo do relatório não pôde ser validado.');
+        }
+        if (!upstream.ok || !upstream.body) return erro(res, 502, 'O arquivo do relatório está temporariamente indisponível.');
+        const tipoUpstream = String(upstream.headers.get('content-type') || '').toLowerCase();
+        if (tipoUpstream && !tipoUpstream.includes('pdf') && !tipoUpstream.includes('octet-stream')) {
+            upstream.body.cancel?.();
+            return erro(res, 502, 'O arquivo recebido não corresponde a um PDF válido.');
+        }
+
+        const limiteBytes = 50 * 1024 * 1024;
+        const tamanho = Number(upstream.headers.get('content-length') || 0);
+        if (tamanho > limiteBytes) return erro(res, 413, 'O relatório excede o limite permitido para download pelo portal.');
+
+        const filename = String(pdf.nome || 'relatorio.pdf').replace(/[\r\n"]/g, '_');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(filename)}`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        // Também limita respostas sem Content-Length. O contador impede que um
+        // upstream anômalo consuma memória/banda indefinidamente.
+        let recebidos = 0;
+        const limitador = new Transform({
+            transform(chunk, _encoding, callback) {
+                recebidos += chunk.length;
+                if (recebidos > limiteBytes) return callback(new Error('PDF excedeu o limite de 50 MB.'));
+                callback(null, chunk);
+            }
+        });
+
+        let concluido = false;
+        const streamTimer = setTimeout(() => controller.abort(), 120000);
+        res.once('finish', () => {
+            concluido = true;
+            clearTimeout(streamTimer);
+            Promise.allSettled([
+                registrarDownload(req.session.role === 'Cliente' ? req.session.documento : null, req.params.id),
+                audit(req, 'report_download', {
+                    actorType: req.session.role,
+                    actorId: req.session.role === 'Cliente' ? hmac(req.session.documento) : 'diretor',
+                    targetType: 'Trabalho',
+                    targetId: req.params.id,
+                    outcome: 'success'
+                })
+            ]).catch(() => {});
+        });
+        res.once('close', () => { if (!concluido) clearTimeout(streamTimer); });
+
+        Readable.fromWeb(upstream.body)
+            .on('error', error => {
+                console.error(`[${req.requestId}] [PDF_STREAM]`, error.message);
+                if (!res.headersSent) res.status(502).end();
+                else res.destroy(error);
+            })
+            .pipe(limitador)
+            .on('error', error => {
+                console.error(`[${req.requestId}] [PDF_LIMIT]`, error.message);
+                controller.abort();
+                if (!res.headersSent) res.status(413).end();
+                else res.destroy(error);
+            })
+            .pipe(res);
     } catch (error) {
-        console.error('[DOWNLOAD_REDIRECT]', error);
-        return erro(res, 500, error.message || 'Erro ao abrir relatório.');
+        if (error.name !== 'AbortError') console.error(`[${req.requestId}] [DOWNLOAD_PDF]`, error.message);
+        if (!res.headersSent) return erro(res, 503, 'Não foi possível abrir o relatório agora.');
     }
 });
 
-// ==================== PAINEL DO DIRETOR ====================
+// ---------- Painel do Diretor ----------
 async function responderClientesDiretor(req, res) {
     try {
         const clientes = await listarClientes();
         return res.json({ sucesso: true, clientes });
     } catch (error) {
-        console.error('[DIRETOR_CLIENTES]', error);
-        return erro(res, 500, error.message || 'Erro ao listar clientes.');
+        console.error(`[${req.requestId}] [DIRETOR_CLIENTES]`, error.message);
+        return erro(res, 503, 'Não foi possível carregar a lista de clientes agora.');
     }
 }
-
 app.get('/api/diretor/clientes', autenticado, somenteDiretor, responderClientesDiretor);
 app.get('/api/clientes', autenticado, somenteDiretor, responderClientesDiretor);
 
 async function responderTrabalhosDiretor(req, res) {
+    const recordIdCliente = req.params.clienteId || req.params.id;
+    if (!recordIdValido(recordIdCliente)) return erro(res, 400, 'Cliente inválido.');
     try {
-        const recordIdCliente = req.params.clienteId || req.params.id;
-        const offset = req.query.offset || null;
         const modo = req.query.modo === 'todos' ? 'todos' : 'recente';
-        const dados = await buscarTrabalhosDoCliente(recordIdCliente, offset, modo, 6);
+        const dados = await buscarTrabalhosDoCliente(recordIdCliente, null, modo, 6);
         return res.json({ sucesso: true, ...dados });
     } catch (error) {
-        console.error('[DIRETOR_TRABALHOS]', error);
-        return erro(res, 500, error.message || 'Erro ao carregar trabalhos do cliente.');
+        console.error(`[${req.requestId}] [DIRETOR_TRABALHOS]`, error.message);
+        return erro(res, 503, 'Não foi possível carregar os trabalhos deste cliente agora.');
     }
 }
-
 app.get('/api/diretor/trabalhos/:clienteId', autenticado, somenteDiretor, responderTrabalhosDiretor);
 app.get('/api/cliente/:id/trabalhos', autenticado, somenteDiretor, responderTrabalhosDiretor);
 
-app.patch('/api/trabalho/:id/aprovacao', autenticado, somenteDiretor, async (req, res) => {
+app.patch('/api/trabalho/:id/aprovacao', sameOriginOnly, autenticado, somenteDiretor, csrfProtegido, escritaHabilitada, async (req, res) => {
+    const recordIdTrabalho = req.params.id;
+    const valor = String(req.body?.valor || '').trim();
+    if (!recordIdValido(recordIdTrabalho)) return erro(res, 400, 'Trabalho inválido.');
+    if (!APROVACAO_VALIDAS.includes(valor)) return erro(res, 400, 'Valor de aprovação inválido.');
+
     try {
-        const recordIdTrabalho = req.params.id;
-        const valor = String(req.body.valor || '').trim();
-
-        if (!APROVACAO_VALIDAS.includes(valor)) {
-            return erro(res, 400, `Valor inválido. Use um de: ${APROVACAO_VALIDAS.join(', ')}.`);
-        }
-
         const resultado = await definirAprovacao(recordIdTrabalho, valor);
+        await audit(req, 'director_approval_change', {
+            actorType: 'Diretor',
+            actorId: 'diretor',
+            targetType: 'Trabalho',
+            targetId: recordIdTrabalho,
+            outcome: 'success',
+            metadata: { anterior: resultado.anterior, novo: valor }
+        });
         const mensagem = valor === 'Aprovado'
-            ? 'Relatório enviado! O cliente já poderá visualizar no portal.'
+            ? 'Relatório aprovado. O cliente poderá visualizá-lo quando a automação do Airtable concluir a publicação.'
             : valor === 'Refazer'
                 ? 'Relatório marcado para refação.'
                 : 'Relatório marcado como em andamento.';
-
-        return res.json({ sucesso: true, mensagem, ...resultado });
+        return res.json({ sucesso: true, mensagem, id: resultado.id, aprovacao: resultado.aprovacao });
     } catch (error) {
-        console.error('[APROVACAO]', error);
-        return erro(res, 500, error.message || 'Erro ao atualizar aprovação.');
+        console.error(`[${req.requestId}] [APROVACAO]`, error.message);
+        await audit(req, 'director_approval_change', {
+            actorType: 'Diretor', actorId: 'diretor', targetType: 'Trabalho', targetId: recordIdTrabalho, outcome: 'error'
+        });
+        return erro(res, 503, 'Não foi possível atualizar a aprovação agora.');
     }
 });
 
-// Historico de "quem baixou o que" (MySQL relatorios_baixados), enriquecido
-// com Airtable (empresa por CNPJ, OS/ID Trabalho por record). NAO toca em
-// registrarDownload nem nas rotas de download em si — so' LE o que ja existe.
 app.get('/api/diretor/downloads', autenticado, somenteDiretor, async (req, res) => {
     try {
-        const limite = Math.max(1, Math.min(Number(req.query.limit) || 500, 5000));
+        const limite = Math.max(1, Math.min(Number(req.query.limit) || 500, 1000));
         const [linhas] = await pool.query(
             `SELECT cnpj, record_id_trabalho, baixado_em FROM relatorios_baixados
              ORDER BY baixado_em DESC LIMIT ?`,
             [limite]
         );
 
-        // Mapa cnpj -> nome da empresa (uma chamada so' ao Airtable para todo o lote).
         let mapaEmpresaPorCnpj = {};
         try {
             const clientes = await listarClientes();
             clientes.forEach(c => { if (c.cnpj) mapaEmpresaPorCnpj[c.cnpj] = c.nome; });
-        } catch (e) {
-            console.warn('[DIRETOR_DOWNLOADS] listarClientes falhou, empresa ficara nula:', e.message);
-        }
+        } catch (_) {}
 
-        const downloads = await Promise.all(linhas.map(async (linha) => {
-            let os = null, id_trabalho = null;
-            try {
-                const detalhe = await detalheTrabalhoPorId(linha.record_id_trabalho);
-                os = detalhe.os;
-                id_trabalho = detalhe.id_trabalho;
-            } catch (e) {
-                // fallback: mantem os/id_trabalho nulos, mas nao derruba a rota
-                console.warn('[DIRETOR_DOWNLOADS] falha ao enriquecer trabalho', linha.record_id_trabalho, e.message);
-            }
+        const detalhes = await detalhesTrabalhosPorIds(linhas.map(l => l.record_id_trabalho), 5);
+        const downloads = linhas.map(linha => {
+            const detalhe = detalhes.get(linha.record_id_trabalho) || {};
             return {
                 cnpj: linha.cnpj,
                 empresa: mapaEmpresaPorCnpj[linha.cnpj] || null,
                 record_id: linha.record_id_trabalho,
-                os,
-                id_trabalho,
+                os: detalhe.os || null,
+                id_trabalho: detalhe.id_trabalho || null,
                 baixado_em: linha.baixado_em
             };
-        }));
-
+        });
         return res.json({ sucesso: true, downloads });
     } catch (error) {
-        console.error('[DIRETOR_DOWNLOADS]', error);
-        return erro(res, 500, error.message || 'Erro ao carregar histórico de downloads.');
+        console.error(`[${req.requestId}] [DIRETOR_DOWNLOADS]`, error.message);
+        return erro(res, 503, 'Não foi possível carregar o histórico de downloads agora.');
     }
 });
 
-// ==================== RECUPERAÇÃO DE SENHA ====================
-// ==================== RECUPERAÇÃO DE SENHA: REMOVIDA ====================
-// Nao ha mais senha no modelo novo (a credencial e o e-mail cadastrado no
-// Airtable, que o cliente sempre sabe). As rotas respondem 410 (Gone).
-// Se o cliente nao lembra qual e-mail esta cadastrado, deve falar com a ITR.
-app.post('/api/esqueci-senha', (req, res) =>
-    erro(res, 410, 'A recuperação de senha não é mais necessária. Acesse com seu CNPJ e o e-mail cadastrado. Em caso de dúvida, fale com a ITR.')
-);
-app.post('/api/redefinir-senha', (req, res) =>
-    erro(res, 410, 'A recuperação de senha foi descontinuada. Acesse com seu CNPJ e o e-mail cadastrado.')
+// Rotas antigas de recuperação não devem reativar credenciais obsoletas.
+app.post(['/api/esqueci-senha', '/api/redefinir-senha'], (req, res) =>
+    erro(res, 410, 'Este fluxo foi descontinuado.')
 );
 
 app.use('/api', (req, res) => erro(res, 404, 'Rota da API não encontrada.'));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log('===================================================');
-    console.log(` SERVIDOR ONLINE: http://localhost:${PORT}`);
-    console.log(' Projeto: Portal do Cliente ITR Engenharia');
-    console.log('===================================================');
+app.use((error, req, res, next) => {
+    if (res.headersSent) return next(error);
+    if (error?.type === 'entity.too.large') {
+        return erro(res, 413, 'A requisição excede o tamanho permitido.', 'PAYLOAD_TOO_LARGE');
+    }
+    if (error instanceof SyntaxError && Object.prototype.hasOwnProperty.call(error, 'body')) {
+        return erro(res, 400, 'O corpo da requisição não contém JSON válido.', 'INVALID_JSON');
+    }
+    console.error(`[${req.requestId}] [UNHANDLED]`, error?.stack || error?.message || error);
+    return erro(res, 500, 'Ocorreu um erro interno inesperado. Tente novamente.', 'INTERNAL_ERROR');
 });
+
+let server;
+async function iniciar() {
+    await verificarBanco();
+    await cleanupSessions().catch(() => {});
+    await cleanupSecurityState().catch(() => {});
+    scheduleMaintenance();
+    server = app.listen(config.port, () => {
+        console.log('===================================================');
+        console.log(` Portal ITR: http://localhost:${config.port}`);
+        console.log(` Ambiente: ${config.nodeEnv}`);
+        console.log(` Modo seguro: ${config.security.safeMode || !config.security.writeEnabled ? 'ATIVO' : 'desativado'}`);
+        console.log('===================================================');
+    });
+}
+
+async function shutdown(signal) {
+    console.log(`[SHUTDOWN] ${signal}: encerrando conexões...`);
+    if (server) {
+        await new Promise(resolve => server.close(resolve));
+    }
+    await encerrarBanco().catch(() => {});
+    process.exit(0);
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
+
+if (require.main === module) {
+    iniciar().catch(error => {
+        console.error('[BOOT] O servidor não pôde iniciar:', error.message);
+        process.exit(1);
+    });
+}
+
+module.exports = { app, iniciar };
