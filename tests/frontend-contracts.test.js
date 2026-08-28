@@ -12,7 +12,12 @@ const pairs = [
   ['assets/js/login.js', 'login.html', []],
   ['assets/js/portal.js', 'portal.html', ['btnTentarNovamente', 'carregandoMais']],
   ['assets/js/painel.js', 'painel.html', ['avisoModoSeguro']],
-  ['assets/js/diretor.js', 'diretor.html', []]
+  ['assets/js/diretor.js', 'diretor.html', []],
+  ['assets/js/account-security.js', 'portal.html', []],
+  ['assets/js/onboarding.js', 'portal.html', ['tourConviteFundo','tourAgoraNao','tourComecar','tourBloqueio','tourDestaque','tourCaixa','tourPular','tourVoltar','tourProximo']],
+  ['assets/js/criar-senha.js', 'criar-senha.html', []],
+  ['assets/js/recuperar-senha.js', 'recuperar-senha.html', []],
+  ['assets/js/redefinir-senha.js', 'redefinir-senha.html', []]
 ];
 
 for (const [jsRel, htmlRel, dynamic] of pairs) {
@@ -31,4 +36,7 @@ test('links históricos do Portal continuam presentes', () => {
   assert.ok(fs.existsSync(path.join(root, 'portal.html')));
   assert.ok(fs.existsSync(path.join(root, 'painel.html')));
   assert.ok(fs.existsSync(path.join(root, 'como-funciona.html')));
+  assert.ok(fs.existsSync(path.join(root, 'criar-senha.html')));
+  assert.ok(fs.existsSync(path.join(root, 'recuperar-senha.html')));
+  assert.ok(fs.existsSync(path.join(root, 'redefinir-senha.html')));
 });

@@ -38,6 +38,31 @@ function chaveBase64(nome, bytesMinimos = 32) {
     return valor;
 }
 
+function chaveBase64Opcional(nome, bytesMinimos = 32) {
+    const bruto = String(process.env[nome] || '').trim();
+    if (!bruto) return '';
+    const valor = bruto.replace(/\s+/g, '');
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(valor) || valor.length % 4 !== 0) {
+        throw new Error(`${nome} deve estar em Base64 válido.`);
+    }
+    const buffer = Buffer.from(valor, 'base64');
+    if (buffer.length < bytesMinimos || buffer.toString('base64') !== valor) {
+        throw new Error(`${nome} deve ser uma chave Base64 com pelo menos ${bytesMinimos} bytes.`);
+    }
+    return valor;
+}
+
+function urlOpcional(nome) {
+    const bruto = String(process.env[nome] || '').trim().replace(/\/$/, '');
+    if (!bruto) return '';
+    let parsed;
+    try { parsed = new URL(bruto); } catch (_) { throw new Error(`${nome} deve ser uma URL válida.`); }
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) {
+        throw new Error(`${nome} deve ser uma origem HTTP/HTTPS válida, sem credenciais ou parâmetros.`);
+    }
+    return bruto;
+}
+
 const nodeEnv = String(process.env.NODE_ENV || 'development').toLowerCase();
 const production = nodeEnv === 'production';
 const port = inteiro('PORT', 3000, 1, 65535);
@@ -58,7 +83,9 @@ const config = {
         baseId: obrigatoria('AIRTABLE_BASE_ID'),
         timeoutMs: inteiro('AIRTABLE_TIMEOUT_MS', 12000, 1000, 60000),
         retries: inteiro('AIRTABLE_RETRIES', 3, 0, 6),
-        cacheTtlMs: inteiro('AIRTABLE_CACHE_TTL_MS', 300000, 5000, 3600000)
+        cacheTtlMs: inteiro('AIRTABLE_CACHE_TTL_MS', 300000, 5000, 3600000),
+        clientEmailField: String(process.env.AIRTABLE_CLIENT_EMAIL_FIELD || 'Email Cliente').trim(),
+        clientWhatsappField: String(process.env.AIRTABLE_CLIENT_WHATSAPP_FIELD || 'WhatsApp do Cliente').trim()
     },
 
     db: {
@@ -86,6 +113,24 @@ const config = {
         loginAccountLimit: inteiro('LOGIN_MAX_TENTATIVAS_CONTA', 10, 3, 100),
         directorLoginLimit: inteiro('DIRETOR_MAX_TENTATIVAS', 8, 3, 50),
         auditRetentionDays: inteiro('AUDIT_RETENTION_DAYS', 180, 30, 730)
+    },
+
+    clientAuth: {
+        enabled: booleano('CLIENT_PASSWORDS_ENABLED', false),
+        passwordMinLength: inteiro('CLIENT_PASSWORD_MIN_LENGTH', 12, 10, 64),
+        passwordMaxLength: inteiro('CLIENT_PASSWORD_MAX_LENGTH', 128, 32, 256),
+        activationTokenMinutes: inteiro('CLIENT_ACTIVATION_TOKEN_MINUTES', 30, 5, 120),
+        resetTokenMinutes: inteiro('CLIENT_RESET_TOKEN_MINUTES', 20, 5, 120),
+        onboardingVersion: inteiro('CLIENT_ONBOARDING_VERSION', 1, 1, 100),
+        requestIpLimit: inteiro('PASSWORD_REQUEST_IP_LIMIT', 20, 3, 100),
+        requestAccountLimit: inteiro('PASSWORD_REQUEST_ACCOUNT_LIMIT', 5, 2, 30),
+        confirmIpLimit: inteiro('PASSWORD_CONFIRM_IP_LIMIT', 15, 3, 100)
+    },
+
+    notifications: {
+        url: urlOpcional('PORTAL_NOTIFICATIONS_URL'),
+        secret: chaveBase64Opcional('PORTAL_NOTIFICATIONS_HMAC_SECRET', 32),
+        timeoutMs: inteiro('PORTAL_NOTIFICATIONS_TIMEOUT_MS', 10000, 1000, 30000)
     }
 };
 
@@ -103,6 +148,16 @@ if (origin.username || origin.password || origin.pathname !== '/' || origin.sear
 }
 if (production && config.security.safeMode && config.security.writeEnabled) {
     throw new Error('Configuração incoerente: PORTAL_SAFE_MODE=true não pode ser combinada com PORTAL_WRITE_ENABLED=true.');
+}
+
+if (config.clientAuth.enabled) {
+    if (!config.notifications.url || !config.notifications.secret) {
+        throw new Error('CLIENT_PASSWORDS_ENABLED=true exige PORTAL_NOTIFICATIONS_URL e PORTAL_NOTIFICATIONS_HMAC_SECRET.');
+    }
+    const notifyUrl = new URL(config.notifications.url);
+    if (production && notifyUrl.protocol !== 'https:') {
+        throw new Error('Em produção, PORTAL_NOTIFICATIONS_URL deve usar HTTPS.');
+    }
 }
 
 module.exports = config;

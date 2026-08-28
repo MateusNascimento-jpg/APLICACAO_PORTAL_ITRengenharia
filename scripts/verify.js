@@ -84,7 +84,9 @@ const requiredRoutes = [
   '/api/trabalho/:id/download', '/api/relatorio/:id', '/api/diretor/clientes', '/api/clientes',
   '/api/diretor/trabalhos/:clienteId', '/api/cliente/:id/trabalhos', '/api/trabalho/:id/aprovacao',
   '/api/diretor/downloads', '/api/esqueci-senha', '/api/redefinir-senha',
-  '/api/logout', '/api/csrf', '/api/runtime', '/api/diretor/login', '/health', '/ready'
+  '/api/logout', '/api/csrf', '/api/runtime', '/api/diretor/login', '/api/public-config',
+  '/api/auth/password-reset/request', '/api/auth/password/activate', '/api/auth/password/reset',
+  '/api/auth/password/change', '/api/onboarding', '/health', '/ready'
 ];
 for (const route of requiredRoutes) if (!server.includes(route)) fail(`rota esperada ausente: ${route}`);
 if (!/app\.patch\('\/api\/trabalho\/:id\/aprovacao',\s*sameOriginOnly,\s*autenticado,\s*somenteDiretor,\s*csrfProtegido,\s*escritaHabilitada/.test(server)) {
@@ -100,7 +102,12 @@ const pairs = [
   ['public/assets/js/login.js', 'public/login.html', []],
   ['public/assets/js/portal.js', 'public/portal.html', ['btnTentarNovamente', 'carregandoMais']],
   ['public/assets/js/painel.js', 'public/painel.html', ['avisoModoSeguro']],
-  ['public/assets/js/diretor.js', 'public/diretor.html', []]
+  ['public/assets/js/diretor.js', 'public/diretor.html', []],
+  ['public/assets/js/account-security.js', 'public/portal.html', []],
+  ['public/assets/js/onboarding.js', 'public/portal.html', ['tourConviteFundo','tourAgoraNao','tourComecar','tourBloqueio','tourDestaque','tourCaixa','tourPular','tourVoltar','tourProximo']],
+  ['public/assets/js/criar-senha.js', 'public/criar-senha.html', []],
+  ['public/assets/js/recuperar-senha.js', 'public/recuperar-senha.html', []],
+  ['public/assets/js/redefinir-senha.js', 'public/redefinir-senha.html', []]
 ];
 for (const [jsRel, htmlRel, dynamicIds] of pairs) {
   const js = read(jsRel);
@@ -118,6 +125,19 @@ for (const visual of ['public/assets/css/original-login.css','public/assets/css/
   if (!exists(visual)) fail(`CSS visual original ausente: ${visual}`);
 }
 if (/diretor\/mfa|DirectorMfaPending|DirectorSetup|generateTotpSecret|verifyTotp/.test(server)) fail('fluxo MFA/TOTP legado ainda está ativo no servidor.');
+
+
+if (!exists('lib/client-auth.js') || !exists('lib/notifications.js')) fail('módulos de autenticação/notificação de clientes ausentes.');
+for (const pagina of ['public/criar-senha.html','public/recuperar-senha.html','public/redefinir-senha.html']) {
+  if (!exists(pagina)) fail(`fluxo de senha ausente: ${pagina}`);
+}
+const clientAuth = read('lib/client-auth.js');
+if (!/token_hash/.test(clientAuth) || !/sha256\(String\(raw/.test(clientAuth)) fail('tokens de senha não estão claramente armazenados apenas como hash.');
+if (/token_raw|raw_token|password_plain/i.test(clientAuth + read('scripts/migrate.js'))) fail('campo sensível em texto puro encontrado no modelo de autenticação.');
+if (!/#token=/.test(server)) fail('links de ativação/reset não usam fragmento de URL para reduzir vazamento em logs/referer.');
+if (!/CLIENT_PASSWORDS_ENABLED/.test(config)) fail('feature flag de senha dos clientes ausente.');
+if (!/PORTAL_NOTIFICATIONS_HMAC_SECRET/.test(config)) fail('segredo HMAC do serviço de notificações não está validado.');
+if (!/verificarEstruturasCriticas/.test(server)) fail('/ready não verifica estruturas críticas do MySQL.');
 
 if (!exists('.env.example')) fail('.env.example ausente.');
 if (!exists('scripts/windows/backup-current.ps1') || !exists('scripts/windows/rollback.ps1')) fail('scripts de backup/rollback ausentes.');

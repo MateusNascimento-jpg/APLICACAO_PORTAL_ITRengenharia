@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Nova senha — ITR Engenharia</title>
+<link rel="icon" href="IMG/logo.png">
+<link rel="stylesheet" href="assets/css/original-login.css">
+<link rel="stylesheet" href="assets/css/auth-security.css">
+</head>
+<body>
+<canvas id="campo" aria-hidden="true"></canvas>
+<div id="vinheta" aria-hidden="true"></div>
+<header class="topo">
+  <a href="/login.html" class="logo-link" aria-label="ITR Engenharia"><img src="IMG/logo.png" alt="ITR Engenharia"></a>
+  <button class="btn-tema" id="btnTema" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema"><span id="iconeTema"></span></button>
+</header>
+<main class="palco">
+  <div class="moldura">
+    <aside class="vitrine">
+      <div class="vitrine-marca">
+        <span class="vitrine-eyebrow"><i class="ti ti-lock-cog"></i> Nova senha</span>
+        <h1>Escolha uma nova senha para sua empresa.</h1>
+        <p class="lead">Este link é temporário e funciona uma única vez. Depois de salvar, os acessos anteriores são encerrados para proteger sua conta.</p>
+      </div>
+      <div class="auth-passos" aria-label="Proteções da redefinição">
+        <div class="auth-passo"><span class="auth-passo-num">1</span><span>O link recebido por e-mail confirma sua solicitação.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">2</span><span>A nova senha substitui imediatamente a anterior.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">3</span><span>Outras sessões são encerradas automaticamente.</span></div>
+      </div>
+      <div class="vitrine-rodape"><i class="ti ti-shield-check"></i> Segurança do Portal ITR</div>
+    </aside>
+    <section class="form-painel">
+      <div class="form-cabeca">
+        <h2>Definir nova senha</h2>
+        <p>Use uma senha que você não utiliza em outros serviços.</p>
+      </div>
+      <div class="alerta-form" id="alertaAuth" role="alert"></div>
+      <form id="formRedefinirSenha" novalidate>
+        <div class="campo-grupo">
+          <label for="novaSenha">Nova senha</label>
+          <div class="campo-caixa"><i class="ti ti-lock"></i><input type="password" id="novaSenha" autocomplete="new-password" maxlength="128" required><button class="btn-olho" id="mostrarNovaSenha" type="button" aria-label="Mostrar senha">Mostrar</button></div>
+        </div>
+        <div class="campo-grupo">
+          <label for="confirmarSenha">Confirme a nova senha</label>
+          <div class="campo-caixa"><i class="ti ti-lock-check"></i><input type="password" id="confirmarSenha" autocomplete="new-password" maxlength="128" required><button class="btn-olho" id="mostrarConfirmacao" type="button" aria-label="Mostrar senha">Mostrar</button></div>
+        </div>
+        <p class="senha-requisitos" id="requisitosSenha">Use pelo menos 12 caracteres e escolha uma senha diferente da anterior.</p>
+        <button type="submit" class="btn-entrar" id="btnRedefinirSenha">Salvar nova senha</button>
+        <div class="auth-acoes"><a href="/recuperar-senha.html">Solicitar outro link</a><a href="/login.html">Voltar ao login</a></div>
+      </form>
+    </section>
+  </div>
+</main>
+<p class="rodape-pagina">ITR Engenharia — Portal do Cliente</p>
+<script src="assets/js/common.js" defer></script>
+<script src="assets/js/auth-shared.js" defer></script>
+<script src="assets/js/redefinir-senha.js" defer></script>
+</body>
+</html>

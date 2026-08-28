@@ -60,7 +60,7 @@
     <section class="form-painel">
       <div class="form-cabeca">
         <h2>Entrar</h2>
-        <p>Acesse com o CNPJ e o e-mail cadastrados na ITR. Não é necessário criar conta.</p>
+        <p id="textoAjudaLogin">Acesse com o CNPJ e o e-mail cadastrados na ITR. Não é necessário criar conta.</p>
       </div>
 
       <div class="alerta-form" id="alertaForm" role="alert">
@@ -79,16 +79,18 @@
         </div>
 
         <div class="campo-grupo" id="grupoSenha">
-          <label for="senha">E-mail de acesso</label>
-          <div class="campo-caixa">
-            <i class="ti ti-mail"></i>
+          <label for="senha" id="rotuloSenha">E-mail de acesso</label>
+          <div class="campo-caixa" id="caixaSenha">
+            <i class="ti ti-mail" id="iconeSenhaCampo"></i>
             <input type="email" id="senha" name="email" placeholder="E-mail cadastrado na ITR" autocomplete="email" inputmode="email">
+            <button class="btn-olho" id="btnOlhoSenha" type="button" aria-label="Mostrar senha" title="Mostrar senha" hidden><i class="ti ti-eye"></i></button>
           </div>
-          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span>Digite o e-mail cadastrado.</span></div>
+          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span id="erroSenhaTexto">Digite o e-mail cadastrado.</span></div>
         </div>
 
         <div class="linha-aux">
           <label class="lembrar"><input type="checkbox" id="lembrar"> Manter conectado</label>
+          <a class="link-esqueci" id="linkEsqueci" href="/recuperar-senha.html" hidden>Esqueci minha senha</a>
         </div>
 
         <button type="submit" class="btn-entrar" id="btnEntrar">
