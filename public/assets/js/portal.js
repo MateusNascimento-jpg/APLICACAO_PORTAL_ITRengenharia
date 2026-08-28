@@ -839,5 +839,6 @@ ITR.perfil().then(function(perfil){
     return;
   }
   PERFIL_ATUAL = perfil;
+  document.dispatchEvent(new CustomEvent('itr:perfil-carregado', { detail: perfil }));
   iniciar();
 }).catch(function(){ window.location.replace('/login.html'); });

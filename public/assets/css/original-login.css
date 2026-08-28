@@ -292,3 +292,17 @@
     *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
   }
   :focus-visible{ outline:2px solid var(--azul-claro); outline-offset:2px; }
+
+/* 3.1.0 — feedback de ativação/redefinição mantendo a linguagem visual original. */
+.alerta-form.sucesso{
+  display:flex;
+  background:var(--verde-bg);
+  border-color:var(--verde-bd);
+  color:var(--verde-tx);
+}
+.form-nota-seguranca{
+  font-size:12px;
+  line-height:1.5;
+  color:var(--txt-4);
+  margin-top:-.35rem;
+}

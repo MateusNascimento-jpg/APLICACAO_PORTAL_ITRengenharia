@@ -1,12 +1,13 @@
-# Release final — segurança + design original
+# Release 3.1.0 — senhas dos clientes + onboarding
 
-Esta release substitui a experiência visual redesenhada pela interface original fornecida no ZIP atual, mantendo as camadas de segurança implementadas. Nenhuma credencial real é incluída no pacote.
-
-
-## 3.0.1 — correção administrativa
-
-- Corrige limpeza do rate limit do Diretor: conta e IP são zerados após login válido.
-- `npm run reset:director-password` também remove bloqueios administrativos pendentes.
-- Novo `npm run unlock:director` para recuperação local sem alterar a senha.
-- JS/CSS passam a revalidar no navegador para evitar mistura de arquivos de versões diferentes após atualização.
-- Nenhuma alteração visual nas páginas do Portal.
+- Design original preservado.
+- Feature flag `CLIENT_PASSWORDS_ENABLED=false` por padrão; instalar a 3.1 não muda automaticamente o login atual.
+- Primeiro acesso seguro: CNPJ + e-mail confirma o cadastro e envia link; não libera sessão antes da criação da senha.
+- Login definitivo: CNPJ + senha pessoal scrypt.
+- Recuperação anti-enumeração com token hash, TTL e uso único.
+- Alteração de senha dentro de `Minha conta`, invalidando outras sessões.
+- Tutorial guiado opcional, pulável e replayable, com estado por versão no MySQL.
+- Integração com o serviço ITR de e-mail/WhatsApp por HMAC + timestamp + nonce.
+- WhatsApp de segurança opcional não recebe token de recuperação.
+- `/ready` passa a validar também as tabelas críticas.
+- Bootstrap do Diretor torna-se idempotente: senha existente é preservada; rotação só pelo comando explícito `npm run reset:director-password`.

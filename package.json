@@ -1,7 +1,7 @@
 {
   "name": "portal-itr-engenharia",
-  "version": "3.0.1",
-  "description": "Portal do Cliente ITR Engenharia — design original preservado com hardening de segurança e operação.",
+  "version": "3.1.0",
+  "description": "Portal do Cliente ITR Engenharia — segurança, senha pessoal opcional e onboarding guiado, com design original preservado.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,7 +16,8 @@
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "verify:manifest": "node scripts/verify-release-manifest.js",
     "verify:release": "node scripts/verify.js --release",
-    "unlock:director": "node scripts/unlock-director.js"
+    "unlock:director": "node scripts/unlock-director.js",
+    "generate:notification-secret": "node scripts/generate-notification-secret.js"
   },
   "repository": {
     "type": "git",

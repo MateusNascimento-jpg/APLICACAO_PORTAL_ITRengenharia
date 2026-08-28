@@ -126,7 +126,7 @@ try {
     npm run migrate
     if ($LASTEXITCODE -ne 0) { throw 'Migration falhou. Consulte o erro antes de iniciar a aplicação.' }
 
-    Write-Host '[update] Gerando/rotacionando a credencial do único Diretor...' -ForegroundColor Yellow
+    Write-Host '[update] Garantindo a conta do único Diretor (senha existente é preservada)...' -ForegroundColor Yellow
     npm run bootstrap:director
     if ($LASTEXITCODE -ne 0) { throw 'Preparação da credencial do Diretor falhou.' }
 

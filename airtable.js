@@ -599,17 +599,53 @@ async function trabalhoPertenceAoCliente(recordIdTrabalho, recordIdCliente) {
     return Array.isArray(links) && links.includes(recordIdCliente);
 }
 
-// ==================== BUSCAR CLIENTE POR CNPJ ====================
-// Extrai o PRIMEIRO e-mail do campo "Email Cliente" (multilineText: pode
-// conter varios e-mails, um por linha). Decisao de projeto: o login usa
-// sempre a PRIMEIRA linha como credencial. Normaliza (minusculas, sem espaco).
-function primeiroEmailCliente(campo) {
-    if (!campo) return null;
-    const linhas = String(campo)
-        .split(/[\r\n;,]+/)        // quebra por linha OU por ; OU por ,
+// ==================== CLIENTE / IDENTIDADE DE ACESSO ====================
+// O primeiro e-mail continua sendo a credencial inicial de ativação para
+// preservar o fluxo operacional já usado pela ITR. Depois que uma senha
+// pessoal é criada, esse e-mail deixa de autenticar a conta.
+function emailsCliente(campo) {
+    if (!campo) return [];
+    const itens = Array.isArray(campo) ? campo : [campo];
+    return [...new Set(itens.flatMap(item => String(item)
+        .split(/[\r\n;,]+/)
         .map(l => l.trim().toLowerCase())
-        .filter(Boolean);          // remove linhas vazias
-    return linhas[0] || null;
+        .filter(Boolean)))];
+}
+
+function primeiroEmailCliente(campo) {
+    return emailsCliente(campo)[0] || null;
+}
+
+function primeiroTelefoneCliente(fields) {
+    const candidatos = [
+        config.airtable.clientWhatsappField,
+        'WhatsApp do Cliente',
+        'WhatsApp Cliente',
+        'WhatsApp'
+    ];
+    for (const nome of candidatos) {
+        if (!nome || !Object.prototype.hasOwnProperty.call(fields || {}, nome)) continue;
+        const valor = Array.isArray(fields[nome]) ? fields[nome][0] : fields[nome];
+        const texto = String(valor || '').trim();
+        if (texto) return texto;
+    }
+    return null;
+}
+
+function formatarClienteAcesso(rec, cnpjConhecido = null) {
+    if (!rec) return null;
+    const campoEmail = rec.fields?.[config.airtable.clientEmailField] ?? rec.fields?.['Email Cliente'];
+    const listaEmails = emailsCliente(campoEmail);
+    const cnpj = cnpjConhecido || String(rec.fields?.['CNPJ'] || '').replace(/\D/g, '');
+    return {
+        id: rec.id,
+        nome: rec.fields?.['Nome Cliente'] || null,
+        idCliente: rec.fields?.['ID Cliente'] || null,
+        emailLogin: listaEmails[0] || null,
+        emails: listaEmails,
+        whatsapp: primeiroTelefoneCliente(rec.fields),
+        cnpj
+    };
 }
 
 async function buscarClientePorCnpj(cnpj) {
@@ -625,16 +661,13 @@ async function buscarClientePorCnpj(cnpj) {
     const registros = resp.records || [];
     if (registros.length === 0) return null;
     if (registros.length > 1) throw new Error('CNPJ duplicado na tabela Clientes; acesso bloqueado até correção cadastral.');
-    const rec = registros[0];
+    return formatarClienteAcesso(registros[0], cnpjLimpo);
+}
 
-    return {
-        id: rec.id,
-        nome: rec.fields['Nome Cliente'] || null,
-        idCliente: rec.fields['ID Cliente'] || null,
-        // primeiro e-mail cadastrado (credencial de login); null se vazio
-        emailLogin: primeiroEmailCliente(rec.fields['Email Cliente']),
-        cnpj: cnpjLimpo
-    };
+async function buscarClientePorId(recordIdCliente) {
+    if (!recordIdValido(recordIdCliente)) return null;
+    const rec = await airtableGet(`${API}/${TBL_CLIENTES}/${encodeURIComponent(recordIdCliente)}`);
+    return formatarClienteAcesso(rec);
 }
 
 // ==================== PAINEL DO DIRETOR ====================
@@ -728,6 +761,7 @@ async function verificarAirtable() {
 module.exports = {
     buscarTrabalhosDoCliente,
     buscarClientePorCnpj,
+    buscarClientePorId,
     urlRelatorioAprovado,
     trabalhoPertenceAoCliente,
     listarClientes,

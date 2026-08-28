@@ -36,7 +36,7 @@ async function migrate() {
   const conn = await pool.getConnection();
   let lock = false;
   try {
-    const [lockRows] = await conn.query("SELECT GET_LOCK('itr_portal_security_v2', 30) AS acquired");
+    const [lockRows] = await conn.query("SELECT GET_LOCK('itr_portal_security_v31', 30) AS acquired");
     lock = Number(lockRows[0]?.acquired) === 1;
     if (!lock) throw new Error('Não foi possível obter o lock de migration. Tente novamente em instantes.');
 
@@ -115,6 +115,37 @@ async function migrate() {
       KEY idx_portal_audit_actor (actor_type, actor_id, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS portal_client_accounts (
+      airtable_client_id VARCHAR(32) NOT NULL,
+      password_hash CHAR(128) NOT NULL,
+      password_salt CHAR(32) NOT NULL,
+      password_created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      password_changed_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      onboarding_version INT UNSIGNED NOT NULL DEFAULT 0,
+      onboarding_completed_at DATETIME(3) NULL,
+      onboarding_dismissed_at DATETIME(3) NULL,
+      created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+      last_login_at DATETIME(3) NULL,
+      PRIMARY KEY (airtable_client_id),
+      KEY idx_portal_client_accounts_updated (updated_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
+    await conn.query(`CREATE TABLE IF NOT EXISTS portal_password_tokens (
+      token_hash CHAR(64) NOT NULL,
+      airtable_client_id VARCHAR(32) NOT NULL,
+      purpose VARCHAR(16) NOT NULL,
+      expires_at DATETIME(3) NOT NULL,
+      used_at DATETIME(3) NULL,
+      requested_ip_hash CHAR(64) NULL,
+      user_agent VARCHAR(255) NULL,
+      created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      PRIMARY KEY (token_hash),
+      KEY idx_portal_password_tokens_client (airtable_client_id, created_at),
+      KEY idx_portal_password_tokens_expiry (expires_at, used_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
     // Compatibilidade com as tabelas auxiliares já usadas pelo Portal antigo.
     await conn.query(`CREATE TABLE IF NOT EXISTS ultimo_acesso_cliente (
       cnpj VARCHAR(20) NOT NULL,
@@ -167,7 +198,7 @@ async function migrate() {
     console.log('[migration] Portal ITR seguro: banco pronto. Nenhum dado operacional foi removido.');
   } finally {
     if (lock) {
-      try { await conn.query("SELECT RELEASE_LOCK('itr_portal_security_v2')"); } catch (_) {}
+      try { await conn.query("SELECT RELEASE_LOCK('itr_portal_security_v31')"); } catch (_) {}
     }
     conn.release();
   }

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Criar senha — ITR Engenharia</title>
+<link rel="icon" href="IMG/logo.png">
+<link rel="stylesheet" href="assets/css/original-login.css">
+<link rel="stylesheet" href="assets/css/auth-security.css">
+</head>
+<body>
+<canvas id="campo" aria-hidden="true"></canvas>
+<div id="vinheta" aria-hidden="true"></div>
+<header class="topo">
+  <a href="/login.html" class="logo-link" aria-label="ITR Engenharia"><img src="IMG/logo.png" alt="ITR Engenharia"></a>
+  <button class="btn-tema" id="btnTema" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema"><span id="iconeTema"></span></button>
+</header>
+<main class="palco">
+  <div class="moldura">
+    <aside class="vitrine">
+      <div class="vitrine-marca">
+        <span class="vitrine-eyebrow"><i class="ti ti-shield-lock"></i> Primeiro acesso</span>
+        <h1>Vamos proteger seu acesso ao Portal.</h1>
+        <p class="lead">Seu CNPJ e e-mail confirmaram qual cadastro pertence à sua empresa. Agora escolha uma senha pessoal para os próximos acessos.</p>
+      </div>
+      <div class="auth-passos" aria-label="Etapas do primeiro acesso">
+        <div class="auth-passo"><span class="auth-passo-num">1</span><span>Você recebeu este link no e-mail cadastrado na ITR.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">2</span><span>Crie uma senha que só você conheça.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">3</span><span>Da próxima vez, entre com <strong>CNPJ + sua senha</strong>.</span></div>
+      </div>
+      <div class="vitrine-rodape"><i class="ti ti-building"></i> ITR Engenharia · Portal do Cliente</div>
+    </aside>
+    <section class="form-painel">
+      <div class="form-cabeca">
+        <h2>Crie sua senha</h2>
+        <p>Esta senha substitui o e-mail como credencial de entrada.</p>
+      </div>
+      <div class="alerta-form" id="alertaAuth" role="alert"></div>
+      <form id="formCriarSenha" novalidate>
+        <div class="campo-grupo">
+          <label for="novaSenha">Nova senha</label>
+          <div class="campo-caixa">
+            <i class="ti ti-lock"></i>
+            <input type="password" id="novaSenha" autocomplete="new-password" maxlength="128" required>
+            <button class="btn-olho" id="mostrarNovaSenha" type="button" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+        </div>
+        <div class="campo-grupo">
+          <label for="confirmarSenha">Confirme sua senha</label>
+          <div class="campo-caixa">
+            <i class="ti ti-lock-check"></i>
+            <input type="password" id="confirmarSenha" autocomplete="new-password" maxlength="128" required>
+            <button class="btn-olho" id="mostrarConfirmacao" type="button" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+        </div>
+        <p class="senha-requisitos" id="requisitosSenha">Use pelo menos 12 caracteres. Uma frase longa e fácil de lembrar é uma boa opção.</p>
+        <div class="auth-explicacao"><strong>Importante:</strong> a ITR não envia nem armazena sua senha em texto. Se esquecer, você poderá criar outra usando seu e-mail cadastrado.</div>
+        <button type="submit" class="btn-entrar" id="btnCriarSenha">Criar minha senha</button>
+        <div class="auth-acoes"><a href="/login.html">Voltar ao login</a><a href="/recuperar-senha.html">Solicitar outro link</a></div>
+      </form>
+    </section>
+  </div>
+</main>
+<p class="rodape-pagina">ITR Engenharia — Portal do Cliente</p>
+<script src="assets/js/common.js" defer></script>
+<script src="assets/js/auth-shared.js" defer></script>
+<script src="assets/js/criar-senha.js" defer></script>
+</body>
+</html>

@@ -49,15 +49,56 @@ document.getElementById('btnTema').addEventListener('click', function(){ ITR.alt
 
 document.getElementById('logoLink').addEventListener('click', function(e){ e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
 
-/* ---- Botão de mostrar/ocultar senha ---- */
-// Campo de acesso: agora e o E-MAIL do cliente (nao ha mais senha/olho).
+/* ---- Modo de autenticação: compatibilidade ou senha pessoal ---- */
+var PASSWORDS_ENABLED = false;
+var PASSWORD_MIN_LENGTH = 12;
 var campoSenha = document.getElementById('senha');
+var btnOlhoSenha = document.getElementById('btnOlhoSenha');
+var rotuloSenha = document.getElementById('rotuloSenha');
+var textoAjudaLogin = document.getElementById('textoAjudaLogin');
+var erroSenhaTexto = document.getElementById('erroSenhaTexto');
+var linkEsqueci = document.getElementById('linkEsqueci');
+var iconeSenhaCampo = document.getElementById('iconeSenhaCampo');
+
+function aplicarModoAutenticacao(configPublica){
+  PASSWORDS_ENABLED = Boolean(configPublica && configPublica.clientPasswordsEnabled);
+  PASSWORD_MIN_LENGTH = Number(configPublica && configPublica.passwordMinLength) || 12;
+  if(!PASSWORDS_ENABLED) return;
+
+  rotuloSenha.textContent = 'Senha';
+  textoAjudaLogin.textContent = 'Já tem senha? Entre com CNPJ e senha. Primeiro acesso? Use o e-mail cadastrado na ITR para criar sua senha pessoal.';
+  campoSenha.type = 'password';
+  campoSenha.name = 'senha';
+  campoSenha.placeholder = 'Senha ou e-mail';
+  campoSenha.autocomplete = 'current-password';
+  campoSenha.removeAttribute('inputmode');
+  erroSenhaTexto.textContent = 'Digite sua senha. No primeiro acesso, use o e-mail cadastrado na ITR.';
+  linkEsqueci.hidden = false;
+  btnOlhoSenha.hidden = false;
+  iconeSenhaCampo.className = 'ti ti-lock';
+  iconeSenhaCampo.removeAttribute('data-svg-ok');
+  aplicarIcones(document.getElementById('caixaSenha'));
+}
+
+fetch('/api/public-config', { credentials:'same-origin', cache:'no-store' })
+  .then(function(resp){ return resp.ok ? resp.json() : null; })
+  .then(function(dados){ if(dados && dados.sucesso) aplicarModoAutenticacao(dados); })
+  .catch(function(){ /* fallback seguro: mantém o fluxo legado exibido no HTML */ });
+
+btnOlhoSenha.addEventListener('click', function(){
+  if(!PASSWORDS_ENABLED) return;
+  var mostrar = campoSenha.type === 'password';
+  campoSenha.type = mostrar ? 'text' : 'password';
+  this.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  this.setAttribute('title', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  this.innerHTML = '<i class="ti ti-'+(mostrar?'eye-off':'eye')+'"></i>';
+  aplicarIcones(this);
+});
 
 /* ---- Máscara leve de CNPJ (só visual; o servidor já limpa não-dígitos) ---- */
 var campoDocumento = document.getElementById('documento');
 campoDocumento.addEventListener('input', function(){
   var digitos = campoDocumento.value.replace(/\D/g,'').slice(0,14);
-  // CNPJ: 00.000.000/0000-00
   var formatado = digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, function(_,a,b,c,d,e){
     return a+'.'+b+'.'+c+'/'+d+(e?'-'+e:'');
   });
@@ -77,18 +118,16 @@ var erroDocumento = document.getElementById('erroDocumento');
 var erroSenha = document.getElementById('erroSenha');
 
 function limparDocumento(v){ return String(v||'').replace(/\D/g,''); }
-
 function mostrarErroCampo(grupo, erroEl, mostrar){
   grupo.classList.toggle('invalido', !!mostrar);
   erroEl.classList.toggle('ver', !!mostrar);
 }
-
-function mostrarAlertaForm(msg){
+function mostrarAlertaForm(msg, sucesso){
   alertaFormTexto.textContent = msg;
+  alertaForm.classList.toggle('sucesso', Boolean(sucesso));
   alertaForm.classList.add('ver');
 }
-function esconderAlertaForm(){ alertaForm.classList.remove('ver'); }
-
+function esconderAlertaForm(){ alertaForm.classList.remove('ver','sucesso'); }
 function setCarregando(carregando){
   btnEntrar.disabled = carregando;
   if(carregando){
@@ -102,48 +141,51 @@ function setCarregando(carregando){
 }
 
 /* O login desta página é exclusivo para clientes. O Diretor usa /diretor.html. */
-
 formLogin.addEventListener('submit', function(e){
   e.preventDefault();
   esconderAlertaForm();
 
   var documento = limparDocumento(campoDocumento.value);
-  var email = String(campoSenha.value || '').trim();
+  var segredo = String(campoSenha.value || '');
+  var docInvalido = documento.length !== 14;
+  var segredoInvalido = PASSWORDS_ENABLED
+    ? segredo.length < 5
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(segredo.trim());
 
-  // Login novo: CNPJ (14 dígitos) + e-mail de acesso.
-  var docInvalido = (documento.length !== 14);
-  var emailInvalido = !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   mostrarErroCampo(grupoDocumento, erroDocumento, docInvalido);
-  mostrarErroCampo(grupoSenha, erroSenha, emailInvalido);
-  if(docInvalido || emailInvalido) return;
+  mostrarErroCampo(grupoSenha, erroSenha, segredoInvalido);
+  if(docInvalido || segredoInvalido) return;
 
   setCarregando(true);
+  var corpo = { documento: documento, remember: document.getElementById('lembrar').checked };
+  if(PASSWORDS_ENABLED) corpo.senha = segredo;
+  else corpo.email = segredo.trim();
 
   fetch('/api/login', {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      documento: documento,
-      email: email,
-      remember: document.getElementById('lembrar').checked
-    })
+    method:'POST', credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(corpo)
   })
-  .then(function(resp){ return resp.json().then(function(dados){ return { status: resp.status, dados: dados }; }); })
+  .then(function(resp){ return ITR.jsonSeguro(resp).then(function(dados){ return { status:resp.status, dados:dados||{} }; }); })
   .then(function(res){
     setCarregando(false);
-    if(!res.dados || !res.dados.sucesso){
-      mostrarAlertaForm((res.dados && res.dados.erro) || 'Não foi possível validar os dados informados.');
+    if(!res.dados.sucesso){
+      mostrarAlertaForm(res.dados.erro || 'Não foi possível validar os dados informados.', false);
       return;
     }
-    window.location.replace('/portal.html');
+    if(res.dados.primeiroAcesso){
+      campoSenha.value = '';
+      mostrarAlertaForm(res.dados.mensagem || 'Enviamos as instruções de primeiro acesso ao e-mail cadastrado.', true);
+      return;
+    }
+    if(res.dados.csrfToken) ITR.setCsrfToken(res.dados.csrfToken);
+    window.location.replace(res.dados.redirectTo || '/portal.html');
   })
   .catch(function(){
     setCarregando(false);
-    mostrarAlertaForm('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.');
+    mostrarAlertaForm('Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.', false);
   });
 });
 
-/* Limpa erro do campo assim que a pessoa volta a digitar */
 campoDocumento.addEventListener('input', function(){ mostrarErroCampo(grupoDocumento, erroDocumento, false); esconderAlertaForm(); });
 campoSenha.addEventListener('input', function(){ mostrarErroCampo(grupoSenha, erroSenha, false); esconderAlertaForm(); });

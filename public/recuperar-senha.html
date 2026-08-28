@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Recuperar acesso — ITR Engenharia</title>
+<link rel="icon" href="IMG/logo.png">
+<link rel="stylesheet" href="assets/css/original-login.css">
+<link rel="stylesheet" href="assets/css/auth-security.css">
+</head>
+<body>
+<canvas id="campo" aria-hidden="true"></canvas>
+<div id="vinheta" aria-hidden="true"></div>
+<header class="topo">
+  <a href="/login.html" class="logo-link" aria-label="ITR Engenharia"><img src="IMG/logo.png" alt="ITR Engenharia"></a>
+  <button class="btn-tema" id="btnTema" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema"><span id="iconeTema"></span></button>
+</header>
+<main class="palco">
+  <div class="moldura">
+    <aside class="vitrine">
+      <div class="vitrine-marca">
+        <span class="vitrine-eyebrow"><i class="ti ti-key"></i> Recuperação segura</span>
+        <h1>Esqueceu sua senha? É simples recuperar.</h1>
+        <p class="lead">Informe os dados cadastrados na ITR. Se eles corresponderem à sua empresa, enviaremos um link de uso único para o e-mail de acesso.</p>
+      </div>
+      <div class="auth-passos" aria-label="Etapas da recuperação">
+        <div class="auth-passo"><span class="auth-passo-num">1</span><span>Informe CNPJ e e-mail cadastrados.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">2</span><span>Abra o link recebido por e-mail.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">3</span><span>Escolha uma nova senha e continue no Portal.</span></div>
+      </div>
+      <div class="vitrine-rodape"><i class="ti ti-shield-check"></i> Links expiram e só podem ser usados uma vez.</div>
+    </aside>
+    <section class="form-painel">
+      <div class="form-cabeca">
+        <h2>Recuperar acesso</h2>
+        <p>Por segurança, nunca informamos na tela se um cadastro existe ou não.</p>
+      </div>
+      <div class="alerta-form" id="alertaAuth" role="status" aria-live="polite"></div>
+      <form id="formRecuperar" novalidate>
+        <div class="campo-grupo">
+          <label for="documento">CNPJ de cadastro</label>
+          <div class="campo-caixa"><i class="ti ti-id"></i><input type="text" id="documento" inputmode="numeric" autocomplete="username" maxlength="18" placeholder="Somente números" required></div>
+        </div>
+        <div class="campo-grupo">
+          <label for="email">E-mail de acesso cadastrado</label>
+          <div class="campo-caixa"><i class="ti ti-mail"></i><input type="email" id="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="E-mail cadastrado na ITR" required></div>
+        </div>
+        <div class="auth-explicacao">Se você ainda não criou uma senha pessoal, este mesmo caminho envia um novo link para concluir o <strong>primeiro acesso</strong>.</div>
+        <button type="submit" class="btn-entrar" id="btnRecuperar">Enviar instruções</button>
+        <div class="auth-acoes"><a href="/login.html">Voltar ao login</a><a href="/como-funciona.html">Preciso de ajuda</a></div>
+      </form>
+    </section>
+  </div>
+</main>
+<p class="rodape-pagina">ITR Engenharia — Portal do Cliente</p>
+<script src="assets/js/common.js" defer></script>
+<script src="assets/js/auth-shared.js" defer></script>
+<script src="assets/js/recuperar-senha.js" defer></script>
+</body>
+</html>

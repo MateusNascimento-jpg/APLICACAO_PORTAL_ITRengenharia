@@ -675,3 +675,71 @@
   .conta-rotulo{ color:var(--txt-3); font-size:11.5px; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px; }
   .conta-valor{ color:var(--txt); font-size:15.5px; font-weight:500; letter-spacing:.2px; }
   body.conta-ativa .rodape-logo{ display:none; }
+
+/* ===== Segurança da conta + onboarding 3.1 (mantém a linguagem visual original) ===== */
+.conta-seguranca{
+  margin-top:18px; padding:22px; border:0.5px solid var(--line); border-radius:16px;
+  background:var(--card); box-shadow:0 12px 30px rgba(0,0,0,.20);
+}
+.conta-seguranca-cabecalho{ display:flex; justify-content:space-between; gap:24px; align-items:flex-start; }
+.conta-seguranca-kicker{ display:flex; align-items:center; gap:7px; color:var(--azul-claro); font-size:11.5px; font-weight:700; letter-spacing:.45px; text-transform:uppercase; margin-bottom:7px; }
+.conta-seguranca h3{ color:var(--txt); font-size:17px; font-weight:600; margin:0 0 7px; }
+.conta-seguranca p{ color:var(--txt-3); font-size:13px; line-height:1.55; margin:0; max-width:650px; }
+.conta-seguranca-msg{ margin-top:16px; padding:11px 13px; border-radius:9px; border:0.5px solid var(--line); background:var(--field); color:var(--txt-2); font-size:13px; line-height:1.45; }
+.conta-seguranca-msg.sucesso{ color:var(--verde-tx); background:var(--verde-bg); border-color:var(--verde-bd); }
+.conta-seguranca-msg.erro{ color:var(--erro-tx); background:var(--erro-bg); border-color:var(--erro-bd); }
+.conta-senha-form{ margin-top:18px; padding-top:18px; border-top:0.5px solid var(--line-soft); }
+.conta-senha-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.conta-senha-grid label{ color:var(--txt-3); font-size:12px; font-weight:600; }
+.conta-senha-grid input{
+  width:100%; margin-top:7px; min-height:42px; border:0.5px solid var(--line); border-radius:9px;
+  background:var(--field); color:var(--txt); padding:0 12px; font:inherit; outline:none;
+}
+.conta-senha-grid input:focus{ border-color:var(--azul-claro); box-shadow:0 0 0 3px rgba(61,123,224,.13); }
+.conta-senha-ajuda{ margin-top:10px !important; color:var(--txt-4) !important; font-size:11.8px !important; }
+.conta-senha-acoes{ display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
+.btn-prim{
+  min-height:38px; padding:0 15px; border:0; border-radius:9px; cursor:pointer;
+  background:var(--azul); color:#fff; font:inherit; font-size:13px; font-weight:650;
+}
+.btn-prim:disabled,.btn-sec:disabled{ opacity:.6; cursor:not-allowed; }
+.conta-ajuda-tour{ margin-top:20px; padding-top:18px; border-top:0.5px solid var(--line-soft); display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.conta-ajuda-tour div{ display:flex; flex-direction:column; gap:3px; }
+.conta-ajuda-tour strong{ color:var(--txt-2); font-size:13px; }
+.conta-ajuda-tour span{ color:var(--txt-4); font-size:12px; }
+
+.tour-convite-fundo{ position:fixed; inset:0; z-index:1200; background:rgba(5,10,17,.70); display:grid; place-items:center; padding:20px; }
+.tour-convite{
+  width:min(440px,100%); border:1px solid var(--line); border-radius:16px; background:var(--card-solido,var(--card));
+  color:var(--txt); box-shadow:0 24px 60px rgba(0,0,0,.45); padding:24px;
+}
+.tour-convite-icone{ width:42px; height:42px; display:grid; place-items:center; border-radius:12px; color:var(--azul-claro); background:rgba(61,123,224,.13); margin-bottom:14px; font-size:21px; }
+.tour-convite h2{ margin:0 0 8px; font-size:20px; }
+.tour-convite p{ margin:0; color:var(--txt-3); font-size:13.5px; line-height:1.6; }
+.tour-convite-acoes{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.tour-bloqueio{ position:fixed; inset:0; z-index:1300; background:transparent; }
+.tour-destaque{
+  position:fixed; z-index:1301; pointer-events:none; border:2px solid var(--azul-claro); border-radius:12px;
+  box-shadow:0 0 0 9999px rgba(4,9,15,.76),0 0 0 5px rgba(61,123,224,.16); transition:all .18s ease;
+}
+.tour-caixa{
+  position:fixed; z-index:1302; width:min(360px,calc(100vw - 28px)); border:1px solid var(--line); border-radius:14px;
+  background:var(--card-solido,var(--card)); color:var(--txt); padding:17px 18px; box-shadow:0 20px 50px rgba(0,0,0,.45);
+}
+.tour-caixa-topo{ display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:8px; }
+.tour-caixa-topo strong{ font-size:15px; }
+.tour-contador{ color:var(--txt-4); font-size:11.5px; }
+.tour-caixa p{ color:var(--txt-3); font-size:13px; line-height:1.55; margin:0; }
+.tour-caixa-acoes{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:15px; }
+.tour-caixa-nav{ display:flex; gap:8px; }
+.tour-pular{ border:0; background:none; color:var(--txt-4); cursor:pointer; font:inherit; font-size:12px; padding:6px 0; }
+.tour-pular:hover{ color:var(--txt-2); }
+body.tour-ativo{ overflow:hidden; }
+@media (max-width:760px){
+  .conta-seguranca-cabecalho,.conta-ajuda-tour{ flex-direction:column; }
+  .conta-seguranca-cabecalho .btn-sec,.conta-ajuda-tour .btn-sec{ width:100%; }
+  .conta-senha-grid{ grid-template-columns:1fr; }
+  .conta-senha-acoes{ flex-direction:column-reverse; }
+  .conta-senha-acoes button{ width:100%; min-height:44px; }
+  .tour-caixa{ padding:15px; }
+}

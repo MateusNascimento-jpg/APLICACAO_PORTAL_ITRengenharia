@@ -189,6 +189,37 @@
         <div class="conta-valor" id="contaEmail">—</div>
       </div>
     </div>
+
+    <div class="conta-seguranca" id="contaSeguranca" hidden>
+      <div class="conta-seguranca-cabecalho">
+        <div>
+          <div class="conta-seguranca-kicker"><i class="ti ti-shield-lock" aria-hidden="true"></i> Segurança da conta</div>
+          <h3>Sua senha pessoal</h3>
+          <p>Para entrar no Portal, use seu CNPJ e a senha que você criou. A ITR nunca pede sua senha por telefone, e-mail ou WhatsApp.</p>
+        </div>
+        <button class="btn-sec" id="btnMostrarAlterarSenha" type="button"><i class="ti ti-key" aria-hidden="true"></i> Alterar senha</button>
+      </div>
+
+      <div class="conta-seguranca-msg" id="mensagemSeguranca" role="status" aria-live="polite" hidden></div>
+
+      <form class="conta-senha-form" id="formAlterarSenha" hidden novalidate>
+        <div class="conta-senha-grid">
+          <label>Senha atual<input type="password" id="senhaAtual" autocomplete="current-password" maxlength="128" required></label>
+          <label>Nova senha<input type="password" id="novaSenhaConta" autocomplete="new-password" maxlength="128" required></label>
+          <label>Confirmar nova senha<input type="password" id="confirmarSenhaConta" autocomplete="new-password" maxlength="128" required></label>
+        </div>
+        <p class="conta-senha-ajuda">Use pelo menos 12 caracteres. Depois da troca, outras sessões abertas serão encerradas por segurança.</p>
+        <div class="conta-senha-acoes">
+          <button class="btn-sec" id="btnCancelarAlterarSenha" type="button">Cancelar</button>
+          <button class="btn-prim" id="btnSalvarNovaSenha" type="submit">Salvar nova senha</button>
+        </div>
+      </form>
+
+      <div class="conta-ajuda-tour">
+        <div><strong>Precisa de ajuda para usar o Portal?</strong><span>Você pode rever o tour guiado quando quiser.</span></div>
+        <button class="btn-sec" id="btnRefazerTour" type="button"><i class="ti ti-route" aria-hidden="true"></i> Fazer tour do Portal</button>
+      </div>
+    </div>
   </section>
 
   <!-- Rodapé institucional (ETAPA 2 — aditivo) -->
@@ -253,5 +284,7 @@
 
 <script src="assets/js/common.js" defer></script>
 <script src="assets/js/portal.js" defer></script>
+<script src="assets/js/account-security.js" defer></script>
+<script src="assets/js/onboarding.js" defer></script>
 </body>
 </html>

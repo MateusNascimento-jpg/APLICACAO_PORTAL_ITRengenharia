@@ -72,3 +72,54 @@ test('assets JS e CSS revalidam para evitar mistura de versões após atualizaç
   assert.match(server, /css\|js/);
   assert.ok(server.includes("res.setHeader('Cache-Control', 'no-cache')"), 'JS/CSS não usam revalidação');
 });
+
+test('senhas de clientes ficam atrás de feature flag e tokens de uso único são armazenados como hash', () => {
+  const config = read('config.js');
+  const auth = read('lib/client-auth.js');
+  const migration = read('scripts/migrate.js');
+  assert.match(config, /CLIENT_PASSWORDS_ENABLED/);
+  assert.match(auth, /sha256\(String\(raw/);
+  assert.match(migration, /portal_password_tokens/);
+  assert.match(migration, /token_hash CHAR\(64\)/);
+  assert.doesNotMatch(migration, /token_raw|raw_token|password_plain/i);
+});
+
+test('ativação e redefinição usam token no fragmento, não em query string', () => {
+  const server = read('server.js');
+  const shared = read('public/assets/js/auth-shared.js');
+  assert.match(server, /criar-senha\.html#token=/);
+  assert.match(server, /redefinir-senha\.html#token=/);
+  assert.match(shared, /location\.hash/);
+  assert.match(shared, /history\.replaceState/);
+  assert.doesNotMatch(server, /criar-senha\.html\?token=|redefinir-senha\.html\?token=/);
+});
+
+test('alteração de senha autenticada exige origem, cliente e CSRF', () => {
+  const server = read('server.js');
+  assert.match(server, /app\.post\('\/api\/auth\/password\/change',\s*sameOriginOnly,\s*autenticado,\s*somenteCliente,\s*senhasClientesHabilitadas,\s*csrfProtegido/);
+  assert.match(read('lib/client-auth.js'), /DELETE FROM portal_sessions WHERE airtable_client_id = \?/);
+});
+
+test('recuperação evita enumeração e o envio de e-mail não faz parte do tempo da resposta pública', () => {
+  const server = read('server.js');
+  assert.match(server, /respostaRecuperacaoGenerica/);
+  assert.match(server, /setImmediate\(\(\) => \{[\s\S]*sendSecurityNotification/);
+  assert.match(server, /await defensiveDelay\(\);[\s\S]*return respostaRecuperacaoGenerica\(res\)/);
+});
+
+test('notificações do Portal são assinadas com HMAC, timestamp e nonce', () => {
+  const notification = read('lib/notifications.js');
+  assert.match(notification, /createHmac\('sha256'/);
+  assert.match(notification, /X-ITR-Timestamp/);
+  assert.match(notification, /X-ITR-Nonce/);
+  assert.match(notification, /X-ITR-Signature/);
+  assert.match(read('config.js'), /PORTAL_NOTIFICATIONS_HMAC_SECRET/);
+});
+
+test('readiness verifica tabelas críticas antes de declarar a produção pronta', () => {
+  const server = read('server.js');
+  assert.match(server, /verificarEstruturasCriticas/);
+  assert.match(server, /portal_client_accounts/);
+  assert.match(server, /portal_password_tokens/);
+  assert.match(server, /INFORMATION_SCHEMA\.TABLES/);
+});
