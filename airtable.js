@@ -521,16 +521,30 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
     const mapa = await carregarMapaEnsaios();
     const mapaOrdens = await carregarMapaOS();
 
-    // O nome serve somente para reduzir o conjunto retornado pelo Airtable.
-    // A autorização verdadeira acontece logo abaixo, comparando o Record ID
+    // O texto do campo link "Cliente" no filterByFormula corresponde ao valor
+    // primario exibido pelo Airtable, e nao ao Record ID. Nesta base, registros
+    // historicos podem ser identificados por "ID Cliente" enquanto alguns fluxos
+    // antigos ainda carregam "Nome Cliente". Usar apenas Nome Cliente fazia a
+    // pre-consulta retornar zero trabalhos mesmo com a sessao vinculada ao Record ID
+    // correto.
+    //
+    // Estes textos servem SOMENTE para reduzir o conjunto retornado. A autorizacao
+    // verdadeira continua fail-closed logo abaixo, comparando o Record ID imutavel
     // presente no campo link "Cliente" de cada registro.
     const cli = await airtableGet(`${API}/${TBL_CLIENTES}/${encodeURIComponent(recordIdCliente)}`);
-    const nomeCliente = cli.fields?.['Nome Cliente'] || null;
-    if (!nomeCliente) {
+    const idCliente = String(cli.fields?.['ID Cliente'] || '').trim();
+    const nomeClienteLegado = String(cli.fields?.['Nome Cliente'] || '').trim();
+    const chavesCliente = [...new Set([idCliente, nomeClienteLegado].filter(Boolean))];
+    const nomeCliente = idCliente || nomeClienteLegado || null;
+    if (chavesCliente.length === 0) {
         return { nome_cliente: null, trabalhos: [], offset: null, tem_mais: false, modo };
     }
 
-    const porCliente = `{Cliente} = '${escaparFormula(nomeCliente)}'`;
+    const expressoesCliente = chavesCliente
+        .map(valor => `{Cliente} = '${escaparFormula(valor)}'`);
+    const porCliente = expressoesCliente.length === 1
+        ? expressoesCliente[0]
+        : `OR(${expressoesCliente.join(', ')})`;
     let formula = porCliente;
     if (modo === 'recente') {
         const limite = dataLimiteRecente(meses);
