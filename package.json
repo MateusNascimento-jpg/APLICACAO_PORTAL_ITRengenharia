@@ -1,7 +1,7 @@
 {
   "name": "portal-itr-engenharia",
-  "version": "3.2.0",
-  "description": "Portal do Cliente ITR Engenharia — escopo empresarial seguro code-only, autenticação robusta e design original preservado.",
+  "version": "3.2.1",
+  "description": "Portal do Cliente ITR Engenharia — escopo empresarial seguro, visualização DEV simples e design original preservado.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

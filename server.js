@@ -33,7 +33,7 @@ const {
     verifyCsrf,
     cleanupSessions
 } = require('./lib/sessions');
-const { scryptVerify, hmac } = require('./lib/security-crypto');
+const { scryptVerify, hmac, sha256, safeEqualHex } = require('./lib/security-crypto');
 const {
     PURPOSE_ACTIVATE,
     PURPOSE_RESET,
@@ -258,6 +258,13 @@ function senhaInformada(req) {
     return String(req.body?.senha ?? req.body?.password ?? req.body?.email ?? '');
 }
 
+function credenciaisDevValidas(username, password) {
+    if (!config.devViewer.enabled) return false;
+    const userOk = safeEqualHex(sha256(String(username || '').trim().toLowerCase()), sha256(config.devViewer.username));
+    const passwordOk = safeEqualHex(sha256(String(password || '')), sha256(config.devViewer.password));
+    return userOk && passwordOk;
+}
+
 async function consumirLimiteDiretor(req, username) {
     const windowMs = 20 * 60 * 1000;
     const ip = await consume('director-login-ip', req.ip || 'unknown', {
@@ -373,6 +380,75 @@ app.get('/api/public-config', (req, res) => {
 
 // Todas as rotas abaixo podem usar sessão por cookie.
 app.use('/api', carregarSessao);
+
+// ---------- Visualização DEV do Portal do Cliente ----------
+// Rota separada do login normal. O DEV informa suas próprias credenciais e o
+// CNPJ-alvo; após validação, criamos uma sessão comum de Cliente para reutilizar
+// exatamente portal.html, /api/meus-dados e as mesmas regras de escopo/PDF.
+app.post('/api/dev/login', sameOriginOnly, async (req, res) => {
+    if (!config.devViewer.enabled) {
+        return erro(res, 404, 'Visualização DEV não habilitada.', 'DEV_VIEWER_DISABLED');
+    }
+
+    const cheapRl = loginBurstGuard.consume(`dev:${req.ip || 'unknown'}`);
+    if (!cheapRl.ok) {
+        res.setHeader('Retry-After', String(Math.max(1, Math.ceil(cheapRl.retryAfterMs / 1000))));
+        return erro(res, 429, 'Muitas tentativas. Aguarde alguns instantes.', 'RATE_LIMITED');
+    }
+
+    const username = String(req.body?.username || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const documento = limparDocumento(req.body?.documento);
+
+    if (documento.length !== 14 || !credenciaisDevValidas(username, password)) {
+        await defensiveDelay();
+        await audit(req, 'dev_viewer_login', { actorType: 'DevViewer', actorId: hmac(username || 'invalid'), outcome: 'denied' });
+        return erro(res, 401, 'Login DEV, senha ou CNPJ inválidos.', 'INVALID_CREDENTIALS');
+    }
+
+    try {
+        const cliente = await buscarClientePorCnpj(documento);
+        if (!cliente) {
+            await defensiveDelay();
+            await audit(req, 'dev_viewer_login', { actorType: 'DevViewer', actorId: hmac(username), outcome: 'target_not_found' });
+            return erro(res, 401, 'Login DEV, senha ou CNPJ inválidos.', 'INVALID_CREDENTIALS');
+        }
+
+        if (req.session) await destroySession(req, res);
+        const sessao = await createSession(req, res, {
+            role: 'Cliente',
+            airtableId: cliente.id,
+            documento: cliente.cnpj,
+            email: null,
+            nomeEmpresa: cliente.idCliente || cliente.nome || null
+        });
+
+        await audit(req, 'dev_viewer_login', {
+            actorType: 'DevViewer',
+            actorId: hmac(username),
+            targetType: 'Cliente',
+            targetId: cliente.id,
+            outcome: 'success'
+        });
+
+        return res.json({
+            sucesso: true,
+            perfil: 'Cliente',
+            usuario: usuarioPublico({
+                role: 'Cliente',
+                documento: cliente.cnpj,
+                airtableId: cliente.id,
+                email: null,
+                nomeEmpresa: cliente.idCliente || cliente.nome || null
+            }),
+            csrfToken: sessao.csrfToken,
+            redirectTo: '/portal.html'
+        });
+    } catch (error) {
+        console.error(`[${req.requestId}] [DEV_VIEWER_LOGIN]`, error.message);
+        return erro(res, 503, 'Não foi possível abrir a visualização do cliente agora.', 'DEV_VIEWER_UNAVAILABLE');
+    }
+});
 
 // ---------- Login do cliente ----------
 // Migração segura: com CLIENT_PASSWORDS_ENABLED=false, preserva CNPJ + e-mail.

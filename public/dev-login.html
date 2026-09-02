@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualização DEV — ITR Engenharia</title>
+<link rel="icon" href="IMG/logo.png">
+<link rel="stylesheet" href="assets/css/original-login.css">
+</head>
+<body>
+<canvas id="campo" aria-hidden="true"></canvas>
+<div id="vinheta" aria-hidden="true"></div>
+<header class="topo">
+  <a href="#" class="logo-link" id="logoLink" aria-label="ITR Engenharia"><img src="IMG/logo.png" alt="ITR Engenharia"></a>
+  <button class="btn-tema" id="btnTema" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema"><span id="iconeTema"></span></button>
+</header>
+<main class="palco">
+  <div class="moldura">
+    <aside class="vitrine">
+      <div class="vitrine-marca">
+        <span class="vitrine-eyebrow"><i class="ti ti-test-pipe"></i> Visualização DEV</span>
+        <h1>Veja exatamente o Portal do Cliente.</h1>
+        <p class="lead">Informe suas credenciais DEV e o CNPJ que deseja visualizar. O sistema abrirá a mesma tela, com o mesmo escopo empresarial e os mesmos relatórios apresentados ao cliente.</p>
+      </div>
+      <div class="vitrine-etapas" aria-hidden="true">
+        <div class="vit-etapa"><span class="vit-bolha"><i class="ti ti-check"></i></span><div class="vit-etapa-txt"><b>Escolha o CNPJ</b><span>Qualquer cliente cadastrado</span></div></div>
+        <div class="vit-etapa"><span class="vit-bolha"><i class="ti ti-check"></i></span><div class="vit-etapa-txt"><b>Escopo automático</b><span>Matriz, filiais e vínculos relacionados</span></div></div>
+        <div class="vit-etapa atual"><span class="vit-bolha"><i class="ti ti-eye"></i></span><div class="vit-etapa-txt"><b>Mesma visão do cliente</b><span>Abre diretamente o Portal</span></div></div>
+      </div>
+      <div class="vitrine-rodape"><i class="ti ti-building"></i> ITR Engenharia — acesso interno de visualização</div>
+    </aside>
+    <section class="form-painel">
+      <div class="form-cabeca">
+        <h2>Acesso DEV</h2>
+        <p>Use o login DEV e informe o CNPJ do cliente que deseja visualizar.</p>
+      </div>
+      <div class="alerta-form" id="alertaForm" role="alert"><i class="ti ti-alert-circle"></i><span id="alertaFormTexto">Não foi possível entrar.</span></div>
+      <form id="formDevLogin" novalidate>
+        <div class="campo-grupo" id="grupoUsuario">
+          <label for="usuarioDev">Login DEV</label>
+          <div class="campo-caixa"><i class="ti ti-id"></i><input type="text" id="usuarioDev" autocomplete="username" maxlength="64" placeholder="Login DEV"></div>
+          <div class="campo-erro" id="erroUsuario"><i class="ti ti-alert-circle"></i><span>Digite o login DEV.</span></div>
+        </div>
+        <div class="campo-grupo" id="grupoSenha">
+          <label for="senhaDev">Senha DEV</label>
+          <div class="campo-caixa"><i class="ti ti-lock"></i><input type="password" id="senhaDev" autocomplete="current-password" maxlength="128" placeholder="Senha DEV"></div>
+          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span>Digite a senha DEV.</span></div>
+        </div>
+        <div class="campo-grupo" id="grupoDocumento">
+          <label for="documento">CNPJ que deseja visualizar</label>
+          <div class="campo-caixa"><i class="ti ti-building"></i><input type="text" id="documento" inputmode="numeric" maxlength="18" placeholder="Somente números"></div>
+          <div class="campo-erro" id="erroDocumento"><i class="ti ti-alert-circle"></i><span>Digite os 14 números do CNPJ.</span></div>
+        </div>
+        <button type="submit" class="btn-entrar" id="btnEntrar"><span id="iconeBotao"></span><span id="textoBotao">Visualizar cliente</span></button>
+        <p class="form-rodape"><a href="/login.html">Voltar ao login normal</a></p>
+      </form>
+    </section>
+  </div>
+</main>
+<p class="rodape-pagina">ITR Engenharia — Visualização DEV</p>
+<script src="assets/js/common.js" defer></script>
+<script src="assets/js/dev-login.js" defer></script>
+</body>
+</html>

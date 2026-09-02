@@ -80,7 +80,7 @@ if (!/frame-ancestors[^;]*'none'/.test(headers)) fail('CSP sem proteção de fra
 
 const server = read('server.js');
 const requiredRoutes = [
-  '/api/login', '/api/perfil', '/perfil', '/api/meus-dados', '/api/trabalhos',
+  '/api/login', '/api/dev/login', '/api/perfil', '/perfil', '/api/meus-dados', '/api/trabalhos',
   '/api/trabalho/:id/download', '/api/relatorio/:id', '/api/diretor/clientes', '/api/clientes',
   '/api/diretor/trabalhos/:clienteId', '/api/cliente/:id/trabalhos', '/api/trabalho/:id/aprovacao',
   '/api/diretor/downloads', '/api/esqueci-senha', '/api/redefinir-senha',
@@ -100,6 +100,7 @@ if (!/Aprovação[^\n]*!==\s*['"]Aprovado['"]/.test(airtable)) fail('download n�
 
 const pairs = [
   ['public/assets/js/login.js', 'public/login.html', []],
+  ['public/assets/js/dev-login.js', 'public/dev-login.html', []],
   ['public/assets/js/portal.js', 'public/portal.html', ['btnTentarNovamente', 'carregandoMais']],
   ['public/assets/js/painel.js', 'public/painel.html', ['avisoModoSeguro']],
   ['public/assets/js/diretor.js', 'public/diretor.html', []],

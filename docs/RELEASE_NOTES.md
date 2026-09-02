@@ -1,3 +1,12 @@
+
+## 3.2.1 — Visualização DEV simples
+
+- adiciona `/dev-login.html` com o mesmo visual do login do cliente;
+- credenciais DEV ficam somente em `DEV_VIEWER_USERNAME` / `DEV_VIEWER_PASSWORD`;
+- o DEV informa um CNPJ e recebe uma sessão normal de Cliente daquele escopo;
+- redireciona diretamente para `/portal.html`, reutilizando o mesmo payload, escopo empresarial e autorização de relatórios;
+- não altera Airtable nem schema MySQL e não interfere no `/api/login` normal dos clientes.
+
 # 3.2.0 — Escopo empresarial code-only e hardening
 
 - Client Scope Resolver para multiplos Record IDs/CNPJs/e-mails sem alterar Airtable.

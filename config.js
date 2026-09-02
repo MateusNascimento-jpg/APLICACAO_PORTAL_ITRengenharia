@@ -152,6 +152,15 @@ const config = {
         confirmIpLimit: inteiro('PASSWORD_CONFIRM_IP_LIMIT', 15, 3, 100)
     },
 
+    // Visualizador DEV: credenciais independentes do login normal dos clientes.
+    // Quando habilitado, permite escolher um CNPJ e abrir exatamente o mesmo
+    // portal daquele escopo empresarial. Nenhum segredo fica no Git.
+    devViewer: {
+        enabled: booleano('DEV_VIEWER_ENABLED', false),
+        username: String(process.env.DEV_VIEWER_USERNAME || '').trim().toLowerCase(),
+        password: String(process.env.DEV_VIEWER_PASSWORD || '')
+    },
+
     notifications: {
         url: urlOpcional('PORTAL_NOTIFICATIONS_URL'),
         secret: chaveBase64Opcional('PORTAL_NOTIFICATIONS_HMAC_SECRET', 32),
@@ -173,6 +182,15 @@ if (origin.username || origin.password || origin.pathname !== '/' || origin.sear
 }
 if (production && config.security.safeMode && config.security.writeEnabled) {
     throw new Error('Configuração incoerente: PORTAL_SAFE_MODE=true não pode ser combinada com PORTAL_WRITE_ENABLED=true.');
+}
+
+if (config.devViewer.enabled) {
+    if (!/^[a-z0-9._-]{3,64}$/.test(config.devViewer.username)) {
+        throw new Error('DEV_VIEWER_USERNAME inválido. Use 3 a 64 caracteres: letras minúsculas, números, ponto, hífen ou underscore.');
+    }
+    if (config.devViewer.password.length < 16 || config.devViewer.password.length > 128) {
+        throw new Error('DEV_VIEWER_PASSWORD deve ter entre 16 e 128 caracteres.');
+    }
 }
 
 if (config.clientAuth.enabled) {

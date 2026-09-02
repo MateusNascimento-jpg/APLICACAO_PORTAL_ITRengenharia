@@ -10,6 +10,7 @@ const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 
 const pairs = [
   ['assets/js/login.js', 'login.html', []],
+  ['assets/js/dev-login.js', 'dev-login.html', []],
   ['assets/js/portal.js', 'portal.html', ['btnTentarNovamente', 'carregandoMais']],
   ['assets/js/painel.js', 'painel.html', ['avisoModoSeguro']],
   ['assets/js/diretor.js', 'diretor.html', []],
