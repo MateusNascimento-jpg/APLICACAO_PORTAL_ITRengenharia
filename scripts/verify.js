@@ -95,7 +95,7 @@ if (!/app\.patch\('\/api\/trabalho\/:id\/aprovacao',\s*sameOriginOnly,\s*autenti
 if (!/HttpOnly|httpOnly\s*:\s*true/.test(read('lib/sessions.js'))) fail('cookie de sessão não está marcado HttpOnly.');
 
 const airtable = read('airtable.js');
-if (!/includes\(recordIdCliente\)/.test(airtable)) fail('isolamento Airtable por Record ID não foi localizado.');
+if (!/scopeClientIds/.test(airtable) || !/links\.some\(id => scopeClientIds\.includes\(id\)\)/.test(airtable)) fail('isolamento Airtable por escopo de Record IDs não foi localizado.');
 if (!/Aprovação[^\n]*!==\s*['"]Aprovado['"]/.test(airtable)) fail('download não valida o estado atual Aprovado.');
 
 const pairs = [
@@ -127,7 +127,7 @@ for (const visual of ['public/assets/css/original-login.css','public/assets/css/
 if (/diretor\/mfa|DirectorMfaPending|DirectorSetup|generateTotpSecret|verifyTotp/.test(server)) fail('fluxo MFA/TOTP legado ainda está ativo no servidor.');
 
 
-if (!exists('lib/client-auth.js') || !exists('lib/notifications.js')) fail('módulos de autenticação/notificação de clientes ausentes.');
+if (!exists('lib/client-auth.js') || !exists('lib/notifications.js') || !exists('lib/client-scope.js') || !exists('lib/abuse-guard.js')) fail('módulos de autenticação/escopo/hardening ausentes.');
 for (const pagina of ['public/criar-senha.html','public/recuperar-senha.html','public/redefinir-senha.html']) {
   if (!exists(pagina)) fail(`fluxo de senha ausente: ${pagina}`);
 }

@@ -9,6 +9,8 @@ const {
     buscarTrabalhosDoCliente,
     buscarClientePorCnpj,
     buscarClientePorId,
+    resolverEscopoCliente,
+    carregarScopeSnapshot,
     urlRelatorioAprovado,
     listarClientes,
     definirAprovacao,
@@ -20,6 +22,7 @@ const {
 const { applySecurityHeaders, sameOriginOnly } = require('./lib/http-security');
 const { cleanupSecurityState, scheduleMaintenance } = require('./lib/maintenance');
 const { consume, reset, defensiveDelay } = require('./lib/rate-limit');
+const { createInMemoryGuard } = require('./lib/abuse-guard');
 const { audit } = require('./lib/audit');
 const {
     createSession,
@@ -36,6 +39,8 @@ const {
     PURPOSE_RESET,
     getAccount,
     verifyPassword,
+    findScopeAccount,
+    verifyPasswordInScope,
     touchLogin,
     createPasswordToken,
     peekPasswordToken,
@@ -49,6 +54,8 @@ const { sendSecurityNotification } = require('./lib/notifications');
 
 const app = express();
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const apiBurstGuard = createInMemoryGuard({ limit: config.security.apiBurstPerMinute, windowMs: 60_000 });
+const loginBurstGuard = createInMemoryGuard({ limit: config.security.loginBurstPerMinute, windowMs: 60_000 });
 
 if (config.security.trustProxyHops > 0) app.set('trust proxy', config.security.trustProxyHops);
 app.disable('x-powered-by');
@@ -61,6 +68,14 @@ app.use((req, res, next) => {
 });
 app.use(applySecurityHeaders);
 app.use(express.json({ limit: '64kb', strict: true }));
+app.use('/api', (req, res, next) => {
+    const rl = apiBurstGuard.consume(req.ip || 'unknown');
+    if (!rl.ok) {
+        res.setHeader('Retry-After', String(Math.max(1, Math.ceil(rl.retryAfterMs / 1000))));
+        return erro(res, 429, 'Muitas requisições. Aguarde alguns instantes.', 'RATE_LIMITED');
+    }
+    next();
+});
 app.use('/api', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -304,9 +319,19 @@ async function verificarEstruturasCriticas() {
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 app.get('/status', (req, res) => res.json({ status: 'Online' }));
+let readinessCache = { checkedAt: 0, ok: false, pending: null };
 app.get('/ready', async (req, res) => {
+    const now = Date.now();
+    if (now - readinessCache.checkedAt < config.security.readinessCacheMs) {
+        return res.status(readinessCache.ok ? 200 : 503).json({ ok: readinessCache.ok });
+    }
     try {
-        await Promise.all([verificarBanco(), verificarAirtable(), verificarEstruturasCriticas()]);
+        if (!readinessCache.pending) {
+            readinessCache.pending = Promise.all([verificarBanco(), verificarAirtable(), verificarEstruturasCriticas()])
+                .then(() => { readinessCache = { checkedAt: Date.now(), ok: true, pending: null }; })
+                .catch(error => { readinessCache = { checkedAt: Date.now(), ok: false, pending: null }; throw error; });
+        }
+        await readinessCache.pending;
         return res.json({ ok: true });
     } catch (error) {
         console.error(`[${req.requestId}] [READY]`, error.message);
@@ -354,6 +379,11 @@ app.use('/api', carregarSessao);
 // Quando habilitado, clientes sem senha usam o e-mail apenas como credencial
 // inicial para receber um link de ativação. Depois, o login é CNPJ + senha.
 app.post('/api/login', sameOriginOnly, async (req, res) => {
+    const cheapRl = loginBurstGuard.consume(req.ip || 'unknown');
+    if (!cheapRl.ok) {
+        res.setHeader('Retry-After', String(Math.max(1, Math.ceil(cheapRl.retryAfterMs / 1000))));
+        return erro(res, 429, 'Muitas tentativas de acesso. Aguarde alguns instantes.', 'RATE_LIMITED');
+    }
     const documento = limparDocumento(req.body?.documento);
     const segredo = senhaInformada(req);
     const remember = Boolean(req.body?.remember || req.body?.lembrar);
@@ -381,7 +411,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
         // Compatibilidade controlada para implantação gradual da 3.1.0.
         if (!config.clientAuth.enabled) {
             const email = normalizarEmail(segredo);
-            const valido = cliente.emailLogin && normalizarEmail(cliente.emailLogin) === email;
+            const valido = emailValido(email) && (cliente.emails || []).includes(email);
             if (!valido) {
                 await defensiveDelay();
                 await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
@@ -416,7 +446,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
             });
         }
 
-        const verificacao = await verifyPassword(cliente.id, segredo);
+        const verificacao = await verifyPasswordInScope(cliente.scopeClientIds || [cliente.id], segredo, cliente.id);
         if (verificacao.exists) {
             if (!verificacao.ok) {
                 await defensiveDelay();
@@ -427,7 +457,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
             if (req.session) await destroySession(req, res);
             const sessao = await createSession(req, res, {
                 role: 'Cliente',
-                airtableId: cliente.id,
+                airtableId: verificacao.accountId || cliente.id,
                 documento: cliente.cnpj,
                 email: cliente.emailLogin,
                 nomeEmpresa: cliente.idCliente || cliente.nome || null
@@ -436,7 +466,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
             await Promise.allSettled([
                 reset('client-login-account', documento),
                 reset('client-login-ip', req.ip || 'unknown'),
-                touchLogin(cliente.id),
+                touchLogin(verificacao.accountId || cliente.id),
                 registrarUltimoAcesso(cliente),
                 audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'success' })
             ]);
@@ -445,7 +475,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
                 sucesso: true,
                 perfil: 'Cliente',
                 usuario: usuarioPublico({
-                    role: 'Cliente', documento: cliente.cnpj, airtableId: cliente.id,
+                    role: 'Cliente', documento: cliente.cnpj, airtableId: verificacao.accountId || cliente.id,
                     email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
                 }),
                 csrfToken: sessao.csrfToken,
@@ -457,8 +487,7 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
         // Portal só é liberado depois que o dono do e-mail abre o link recebido.
         const emailInicial = normalizarEmail(segredo);
         const emailConfere = emailValido(emailInicial)
-            && cliente.emailLogin
-            && normalizarEmail(cliente.emailLogin) === emailInicial;
+            && (cliente.emails || []).includes(emailInicial);
         if (!emailConfere) {
             await defensiveDelay();
             await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
@@ -473,10 +502,11 @@ app.post('/api/login', sameOriginOnly, async (req, res) => {
 
         if (req.session) await destroySession(req, res);
         const token = await createPasswordToken({ airtableId: cliente.id, purpose: PURPOSE_ACTIVATE, req });
+        const clienteNotificacao = { ...cliente, emailLogin: emailInicial };
         const actionUrl = `${config.publicOrigin}/criar-senha.html#token=${encodeURIComponent(token.raw)}`;
 
         try {
-            await sendSecurityNotification('FIRST_ACCESS', { client: cliente, actionUrl });
+            await sendSecurityNotification('FIRST_ACCESS', { client: clienteNotificacao, actionUrl });
         } catch (notifyError) {
             console.error(`[${req.requestId}] [FIRST_ACCESS_NOTIFY]`, notifyError.message);
             await audit(req, 'client_first_access', {
@@ -519,16 +549,18 @@ app.post('/api/auth/password-reset/request', sameOriginOnly, senhasClientesHabil
         }
 
         const cliente = await buscarClientePorCnpj(documento);
-        const corresponde = cliente?.emailLogin && normalizarEmail(cliente.emailLogin) === email;
+        const corresponde = cliente && (cliente.emails || []).includes(email);
         if (!corresponde) {
             await defensiveDelay();
             await audit(req, 'client_password_request', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'ignored' });
             return respostaRecuperacaoGenerica(res);
         }
 
-        const account = await getAccount(cliente.id);
+        const account = await findScopeAccount(cliente.scopeClientIds || [cliente.id], cliente.id);
+        const accountId = account?.airtable_client_id || cliente.id;
         const purpose = account ? PURPOSE_RESET : PURPOSE_ACTIVATE;
-        const token = await createPasswordToken({ airtableId: cliente.id, purpose, req });
+        const token = await createPasswordToken({ airtableId: accountId, purpose, req });
+        const clienteNotificacao = { ...cliente, id: accountId, emailLogin: email };
         const tipo = account ? 'PASSWORD_RESET' : 'FIRST_ACCESS';
         const actionUrl = account
             ? `${config.publicOrigin}/redefinir-senha.html#token=${encodeURIComponent(token.raw)}`
@@ -538,7 +570,7 @@ app.post('/api/auth/password-reset/request', sameOriginOnly, senhasClientesHabil
         // se o CNPJ/e-mail corresponde a uma conta existente (anti-enumeração).
         const requestId = req.requestId;
         setImmediate(() => {
-            sendSecurityNotification(tipo, { client: cliente, actionUrl })
+            sendSecurityNotification(tipo, { client: clienteNotificacao, actionUrl })
                 .then(() => audit(req, 'client_password_request', {
                     actorType: 'Cliente', actorId: hmac(documento), outcome: account ? 'reset_sent' : 'activation_sent'
                 }))
@@ -578,13 +610,14 @@ app.post('/api/auth/password/activate', sameOriginOnly, senhasClientesHabilitada
         if (!token || token.purpose !== PURPOSE_ACTIVATE) {
             return erro(res, 400, 'Este link de primeiro acesso é inválido ou expirou.', 'TOKEN_INVALID');
         }
-        const cliente = await buscarClientePorId(token.airtable_client_id);
-        if (!cliente?.emailLogin) return erro(res, 400, 'Este link de primeiro acesso não pode mais ser utilizado.', 'TOKEN_INVALID');
+        const clienteEscopo = await buscarClientePorId(token.airtable_client_id);
+        if (!clienteEscopo?.emailLogin) return erro(res, 400, 'Este link de primeiro acesso não pode mais ser utilizado.', 'TOKEN_INVALID');
+        const cliente = { ...clienteEscopo, id: token.airtable_client_id };
 
         await activateAccount(tokenRaw, password, cliente);
         if (req.session) await destroySession(req, res);
         const sessao = await createSession(req, res, {
-            role: 'Cliente', airtableId: cliente.id, documento: cliente.cnpj,
+            role: 'Cliente', airtableId: token.airtable_client_id, documento: cliente.cnpj,
             email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
         });
         await Promise.allSettled([
@@ -625,12 +658,13 @@ app.post('/api/auth/password/reset', sameOriginOnly, senhasClientesHabilitadas, 
         if (!token || token.purpose !== PURPOSE_RESET) {
             return erro(res, 400, 'Este link de recuperação é inválido ou expirou.', 'TOKEN_INVALID');
         }
-        const cliente = await buscarClientePorId(token.airtable_client_id);
-        if (!cliente?.emailLogin) return erro(res, 400, 'Este link de recuperação não pode mais ser utilizado.', 'TOKEN_INVALID');
+        const clienteEscopo = await buscarClientePorId(token.airtable_client_id);
+        if (!clienteEscopo?.emailLogin) return erro(res, 400, 'Este link de recuperação não pode mais ser utilizado.', 'TOKEN_INVALID');
+        const cliente = { ...clienteEscopo, id: token.airtable_client_id };
 
         await resetPasswordWithToken(tokenRaw, password, cliente);
         const sessao = await createSession(req, res, {
-            role: 'Cliente', airtableId: cliente.id, documento: cliente.cnpj,
+            role: 'Cliente', airtableId: token.airtable_client_id, documento: cliente.cnpj,
             email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
         });
         await Promise.allSettled([
@@ -666,13 +700,13 @@ app.post('/api/auth/password/change', sameOriginOnly, autenticado, somenteClient
         if (!cliente) return erro(res, 403, 'Sua conta não possui vínculo de cliente válido.', 'CLIENT_REQUIRED');
         const remember = Boolean(req.session.remember);
         await changePassword({
-            airtableId: cliente.id,
+            airtableId: req.session.airtableId,
             currentPassword,
             newPassword,
             client: cliente
         });
         const sessao = await createSession(req, res, {
-            role: 'Cliente', airtableId: cliente.id, documento: cliente.cnpj,
+            role: 'Cliente', airtableId: req.session.airtableId, documento: cliente.cnpj,
             email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
         }, { remember });
         await Promise.allSettled([
@@ -1061,6 +1095,14 @@ async function iniciar() {
         console.log(` Modo seguro: ${config.security.safeMode || !config.security.writeEnabled ? 'ATIVO' : 'desativado'}`);
         console.log('===================================================');
     });
+    // Hardening contra slowloris/conexoes presas. Valores conservadores para Render.
+    server.headersTimeout = 15000;
+    server.requestTimeout = 30000;
+    server.keepAliveTimeout = 5000;
+    server.maxRequestsPerSocket = 1000;
+    setImmediate(() => carregarScopeSnapshot().catch(error => {
+        console.warn('[AIRTABLE_SCOPE] prewarm falhou:', error.message);
+    }));
 }
 
 async function shutdown(signal) {

@@ -26,7 +26,7 @@ test('mutação administrativa exige origem, Diretor, CSRF e escrita habilitada'
 
 test('relatório exige vínculo do cliente e aprovação atual', () => {
   const airtable = read('airtable.js');
-  assert.match(airtable, /includes\(recordIdCliente\)/);
+  assert.match(airtable, /links\.some\(id => scopeClientIds\.includes\(id\)\)/);
   assert.match(airtable, /Aprovação[^\n]*!==\s*['"]Aprovado['"]/);
   assert.match(read('server.js'), /validarUrlAirtable/);
 });

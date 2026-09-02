@@ -52,6 +52,17 @@ function chaveBase64Opcional(nome, bytesMinimos = 32) {
     return valor;
 }
 
+function jsonArrayOpcional(nome) {
+    const bruto = String(process.env[nome] || '').trim();
+    if (!bruto) return [];
+    let value;
+    try { value = JSON.parse(bruto); } catch (_) { throw new Error(`${nome} deve conter JSON valido.`); }
+    if (!Array.isArray(value) || !value.every(group => Array.isArray(group) && group.every(id => /^rec[a-zA-Z0-9]{14}$/.test(String(id))))) {
+        throw new Error(`${nome} deve ser um array JSON de arrays de Record IDs do Airtable.`);
+    }
+    return value;
+}
+
 function urlOpcional(nome) {
     const bruto = String(process.env[nome] || '').trim().replace(/\/$/, '');
     if (!bruto) return '';
@@ -88,6 +99,15 @@ const config = {
         clientWhatsappField: String(process.env.AIRTABLE_CLIENT_WHATSAPP_FIELD || 'WhatsApp do Cliente').trim()
     },
 
+    clientScope: {
+        cacheTtlMs: inteiro('PORTAL_SCOPE_CACHE_TTL_MS', 300000, 30000, 3600000),
+        staleMaxMs: inteiro('PORTAL_SCOPE_STALE_MAX_MS', 900000, 60000, 7200000),
+        pagePaceMs: inteiro('PORTAL_SCOPE_PAGE_PACE_MS', 220, 120, 1000),
+        ownerMinWorks: inteiro('PORTAL_SCOPE_OWNER_MIN_WORKS', 3, 2, 50),
+        sampleTextMinShared: inteiro('PORTAL_SCOPE_SAMPLE_MIN_SHARED', 5, 3, 50),
+        overrides: jsonArrayOpcional('PORTAL_SCOPE_OVERRIDES_JSON')
+    },
+
     db: {
         host: obrigatoria('DB_HOST'),
         user: obrigatoria('DB_USER'),
@@ -112,7 +132,12 @@ const config = {
         loginIpLimit: inteiro('LOGIN_MAX_TENTATIVAS_IP', 40, 3, 200),
         loginAccountLimit: inteiro('LOGIN_MAX_TENTATIVAS_CONTA', 10, 3, 100),
         directorLoginLimit: inteiro('DIRETOR_MAX_TENTATIVAS', 8, 3, 50),
-        auditRetentionDays: inteiro('AUDIT_RETENTION_DAYS', 180, 30, 730)
+        auditRetentionDays: inteiro('AUDIT_RETENTION_DAYS', 180, 30, 730),
+        apiBurstPerMinute: inteiro('API_BURST_PER_MINUTE', 600, 60, 5000),
+        loginBurstPerMinute: inteiro('LOGIN_BURST_PER_MINUTE', 30, 5, 300),
+        scryptConcurrency: inteiro('SCRYPT_MAX_CONCURRENCY', 4, 1, 16),
+        scryptQueueLimit: inteiro('SCRYPT_QUEUE_LIMIT', 24, 4, 200),
+        readinessCacheMs: inteiro('READINESS_CACHE_MS', 5000, 1000, 30000)
     },
 
     clientAuth: {

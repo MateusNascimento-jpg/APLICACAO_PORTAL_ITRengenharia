@@ -1,3 +1,19 @@
+# 3.2.0 — Escopo empresarial code-only e hardening
+
+- Client Scope Resolver para multiplos Record IDs/CNPJs/e-mails sem alterar Airtable.
+- Uniao segura de trabalhos com deduplicacao por Record ID.
+- PDF autorizado pelo mesmo escopo empresarial.
+- Cache global/single-flight do snapshot Airtable.
+- Cheap burst guard, gate de scrypt, readiness cache e timeouts anti-abuso.
+- Testes de isolamento, graph poisoning, bursts e carga local.
+
+# Release 3.1.1 — correção crítica de amostras do cliente
+
+- Corrige a consulta de trabalhos/amostras após autenticação do cliente.
+- O pré-filtro do campo vinculado `Cliente` passa a considerar `ID Cliente` (identificador operacional/primário da base) e mantém compatibilidade com `Nome Cliente` legado.
+- A autorização continua fail-closed pelo Airtable Record ID da sessão; texto de cliente nunca concede acesso.
+- Adiciona testes de regressão para cliente com `Nome Cliente` vazio e para impedir vazamento de registros de outro cliente.
+
 # Release 3.1.0 — senhas dos clientes + onboarding
 
 - Design original preservado.
