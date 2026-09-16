@@ -35,15 +35,15 @@
         <p>Use o login DEV e informe o CNPJ do cliente que deseja visualizar.</p>
       </div>
       <div class="alerta-form" id="alertaForm" role="alert"><i class="ti ti-alert-circle"></i><span id="alertaFormTexto">Não foi possível entrar.</span></div>
-      <form id="formDevLogin" novalidate>
+      <form id="formDevLogin" novalidate autocomplete="off">
         <div class="campo-grupo" id="grupoUsuario">
           <label for="usuarioDev">Login DEV</label>
-          <div class="campo-caixa"><i class="ti ti-id"></i><input type="text" id="usuarioDev" autocomplete="username" maxlength="64" placeholder="Login DEV"></div>
+          <div class="campo-caixa"><i class="ti ti-id"></i><input type="text" id="usuarioDev" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" placeholder="Login DEV"></div>
           <div class="campo-erro" id="erroUsuario"><i class="ti ti-alert-circle"></i><span>Digite o login DEV.</span></div>
         </div>
         <div class="campo-grupo" id="grupoSenha">
           <label for="senhaDev">Senha DEV</label>
-          <div class="campo-caixa"><i class="ti ti-lock"></i><input type="password" id="senhaDev" autocomplete="current-password" maxlength="128" placeholder="Senha DEV"></div>
+          <div class="campo-caixa"><i class="ti ti-lock"></i><input type="password" id="senhaDev" autocomplete="new-password" maxlength="128" placeholder="Senha DEV"></div>
           <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span>Digite a senha DEV.</span></div>
         </div>
         <div class="campo-grupo" id="grupoDocumento">

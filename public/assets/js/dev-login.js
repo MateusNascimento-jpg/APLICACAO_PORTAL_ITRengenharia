@@ -49,7 +49,22 @@ form.addEventListener('submit',function(e){
  busy(true);
  fetch('/api/dev/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,documento:d})})
   .then(function(resp){return ITR.jsonSeguro(resp).then(function(data){return {status:resp.status,data:data||{}};});})
-  .then(function(result){busy(false);if(!result.data.sucesso){showError(result.data.erro||'Não foi possível abrir esse cliente.');return;}if(result.data.csrfToken)ITR.setCsrfToken(result.data.csrfToken);window.location.replace(result.data.redirectTo||'/portal.html');})
+  .then(function(result){
+   busy(false);
+   if(!result.data.sucesso){
+    if(result.status===401&&result.data.codigo==='INVALID_CREDENTIALS'){
+     var tamanhoSenha=p.length;
+     senha.value='';
+     showError('Login DEV, senha ou CNPJ inválidos. A senha enviada tinha '+tamanhoSenha+' caracteres. Confira o valor atual de DEV_VIEWER_PASSWORD no Coolify.');
+     senha.focus();
+     return;
+    }
+    showError(result.data.erro||'Não foi possível abrir esse cliente.');
+    return;
+   }
+   if(result.data.csrfToken)ITR.setCsrfToken(result.data.csrfToken);
+   window.location.replace(result.data.redirectTo||'/portal.html');
+  })
   .catch(function(){busy(false);showError('Não foi possível conectar ao servidor.');});
 });
 })();

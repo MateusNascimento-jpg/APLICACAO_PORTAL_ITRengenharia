@@ -19,12 +19,14 @@ test('visualizador DEV usa rota separada e reaproveita a sessao/tela Cliente', (
 test('credenciais DEV ficam somente em variaveis de ambiente', () => {
   const config = read('config.js');
   const envExample = read('.env.example');
-  const server = read('server.js');
   assert.match(config, /DEV_VIEWER_ENABLED/);
   assert.match(config, /DEV_VIEWER_USERNAME/);
   assert.match(config, /DEV_VIEWER_PASSWORD/);
+  assert.match(config, /username:\s*String\(process\.env\.DEV_VIEWER_USERNAME/);
+  assert.match(config, /password:\s*String\(process\.env\.DEV_VIEWER_PASSWORD/);
   assert.match(envExample, /DEV_VIEWER_ENABLED=false/);
-  assert.doesNotMatch(server, /dev_itr_2rphat|eU@v\*3VJ!akDG9%e7VI8L2sJ/);
+  assert.match(envExample, /DEV_VIEWER_USERNAME=\s*$/m);
+  assert.match(envExample, /DEV_VIEWER_PASSWORD=\s*$/m);
 });
 
 test('pagina DEV usa o mesmo visual do login e envia CNPJ + credenciais para rota DEV', () => {
@@ -34,6 +36,11 @@ test('pagina DEV usa o mesmo visual do login e envia CNPJ + credenciais para rot
   assert.match(html, /id="usuarioDev"/);
   assert.match(html, /id="senhaDev"/);
   assert.match(html, /id="documento"/);
+  assert.match(html, /<form id="formDevLogin"[^>]*autocomplete="off"/);
+  assert.match(html, /id="usuarioDev"[^>]*autocomplete="off"/);
+  assert.match(html, /id="senhaDev"[^>]*autocomplete="new-password"/);
   assert.match(js, /fetch\('\/api\/dev\/login'/);
+  assert.match(js, /senha enviada tinha '\+tamanhoSenha\+' caracteres/);
+  assert.match(js, /senha\.value=''/);
   assert.match(js, /window\.location\.replace\(result\.data\.redirectTo\|\|'\/portal\.html'\)/);
 });

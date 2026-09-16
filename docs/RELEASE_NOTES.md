@@ -1,3 +1,9 @@
+## 3.2.2 — Correção do login DEV no navegador
+
+- reduz interferência de autofill/gerenciadores de senha no formulário DEV;
+- em credencial inválida, informa apenas a quantidade de caracteres enviada e limpa o campo de senha;
+- mantém a senha DEV exclusivamente em `DEV_VIEWER_PASSWORD`, sem segredo no Git;
+- remove do teste uma credencial histórica literal e reforça o contrato de configuração por ambiente.
 
 ## 3.2.1 — Visualização DEV simples
 
