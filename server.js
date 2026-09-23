@@ -647,9 +647,12 @@ app.post('/api/auth/password-reset/request', sameOriginOnly, senhasClientesHabil
         const requestId = req.requestId;
         setImmediate(() => {
             sendSecurityNotification(tipo, { client: clienteNotificacao, actionUrl })
-                .then(() => audit(req, 'client_password_request', {
-                    actorType: 'Cliente', actorId: hmac(documento), outcome: account ? 'reset_sent' : 'activation_sent'
-                }))
+                .then(() => {
+                    console.info(`[${requestId}] [PASSWORD_NOTIFY] Serviço de notificações confirmou o processamento (${tipo}).`);
+                    return audit(req, 'client_password_request', {
+                        actorType: 'Cliente', actorId: hmac(documento), outcome: account ? 'reset_sent' : 'activation_sent'
+                    });
+                })
                 .catch(async notifyError => {
                     console.error(`[${requestId}] [PASSWORD_NOTIFY]`, notifyError.message);
                     try {
@@ -1168,6 +1171,7 @@ async function iniciar() {
         console.log('===================================================');
         console.log(` Portal ITR: http://localhost:${config.port}`);
         console.log(` Ambiente: ${config.nodeEnv}`);
+        console.log(` Notificações: ${config.notifications.url || "não configurado"}`);
         console.log(` Modo seguro: ${config.security.safeMode || !config.security.writeEnabled ? 'ATIVO' : 'desativado'}`);
         console.log('===================================================');
     });

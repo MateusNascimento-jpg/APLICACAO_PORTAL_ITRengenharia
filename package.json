@@ -1,6 +1,6 @@
 {
   "name": "portal-itr-engenharia",
-  "version": "3.2.2",
+  "version": "3.2.3",
   "description": "Portal do Cliente ITR Engenharia — escopo empresarial seguro, visualização DEV simples e design original preservado.",
   "main": "server.js",
   "scripts": {
@@ -20,7 +20,8 @@
     "generate:notification-secret": "node scripts/generate-notification-secret.js",
     "test:security": "node --test tests/security-*.test.js tests/client-scope.test.js tests/abuse-guard.test.js",
     "test:load": "node scripts/security-load-test.js",
-    "scope:diagnose": "node scripts/diagnose-client-scope.js"
+    "scope:diagnose": "node scripts/diagnose-client-scope.js",
+    "diagnose:notifications": "node scripts/diagnose-notifications.js"
   },
   "repository": {
     "type": "git",

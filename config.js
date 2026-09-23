@@ -68,7 +68,7 @@ function urlOpcional(nome) {
     if (!bruto) return '';
     let parsed;
     try { parsed = new URL(bruto); } catch (_) { throw new Error(`${nome} deve ser uma URL válida.`); }
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash || parsed.pathname !== '/') {
         throw new Error(`${nome} deve ser uma origem HTTP/HTTPS válida, sem credenciais ou parâmetros.`);
     }
     return bruto;
