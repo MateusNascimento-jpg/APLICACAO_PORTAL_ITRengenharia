@@ -19,6 +19,7 @@
       var resp=await fetch('/api/auth/password-reset/request',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({documento:doc,email:email.value.trim()})});
       var dados=await ITR.jsonSeguro(resp)||{};
       if(resp.status===429) throw new Error(dados.erro||'Muitas solicitações. Aguarde alguns minutos.');
+      if(!resp.ok || dados.sucesso !== true) throw new Error(dados.erro||'Não foi possível processar a solicitação agora.');
       ITRAuth.alerta('alertaAuth',dados.mensagem||'Se os dados corresponderem ao cadastro, enviaremos as instruções ao e-mail cadastrado.',true);
       form.reset();
     }catch(error){ ITRAuth.alerta('alertaAuth',error.message||'Não foi possível processar a solicitação agora.',false); }
