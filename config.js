@@ -95,6 +95,7 @@ const config = {
         timeoutMs: inteiro('AIRTABLE_TIMEOUT_MS', 12000, 1000, 60000),
         retries: inteiro('AIRTABLE_RETRIES', 3, 0, 6),
         cacheTtlMs: inteiro('AIRTABLE_CACHE_TTL_MS', 300000, 5000, 3600000),
+        clientSiglaField: require('./lib/portal-access').campoSigla(),
         clientEmailField: String(process.env.AIRTABLE_CLIENT_EMAIL_FIELD || 'Email Cliente').trim(),
         clientWhatsappField: String(process.env.AIRTABLE_CLIENT_WHATSAPP_FIELD || 'WhatsApp do Cliente').trim()
     },
@@ -141,6 +142,7 @@ const config = {
     },
 
     clientAuth: {
+        mode: String(process.env.CLIENT_AUTH_MODE || 'generated').trim(),
         enabled: booleano('CLIENT_PASSWORDS_ENABLED', false),
         passwordMinLength: inteiro('CLIENT_PASSWORD_MIN_LENGTH', 12, 10, 64),
         passwordMaxLength: inteiro('CLIENT_PASSWORD_MAX_LENGTH', 128, 32, 256),
@@ -164,7 +166,7 @@ const config = {
     notifications: {
         url: urlOpcional('PORTAL_NOTIFICATIONS_URL'),
         secret: chaveBase64Opcional('PORTAL_NOTIFICATIONS_HMAC_SECRET', 32),
-        timeoutMs: inteiro('PORTAL_NOTIFICATIONS_TIMEOUT_MS', 10000, 1000, 30000)
+        timeoutMs: inteiro('PORTAL_NOTIFICATIONS_TIMEOUT_MS', 60000, 1000, 120000)
     }
 };
 
@@ -193,9 +195,10 @@ if (config.devViewer.enabled) {
     }
 }
 
-if (config.clientAuth.enabled) {
+if (config.clientAuth.mode !== 'generated') throw new Error('Esta versão exige CLIENT_AUTH_MODE=generated.');
+if (config.clientAuth.enabled || config.clientAuth.mode === 'generated') {
     if (!config.notifications.url || !config.notifications.secret) {
-        throw new Error('CLIENT_PASSWORDS_ENABLED=true exige PORTAL_NOTIFICATIONS_URL e PORTAL_NOTIFICATIONS_HMAC_SECRET.');
+        throw new Error('O acesso gerado exige PORTAL_NOTIFICATIONS_URL e PORTAL_NOTIFICATIONS_HMAC_SECRET.');
     }
     const notifyUrl = new URL(config.notifications.url);
     if (production && notifyUrl.protocol !== 'https:') {

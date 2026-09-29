@@ -6,7 +6,7 @@
     { seletor:'#resumo', titulo:'Resumo dos ensaios', texto:'Aqui você vê rapidamente quantos ensaios estão prontos, em andamento ou aguardando alguma etapa.' },
     { seletor:'.barra', titulo:'Busca e filtros', texto:'Use a busca, os filtros e a ordenação para encontrar um trabalho sem precisar procurar manualmente na lista.' },
     { seletor:'#lista', titulo:'Seus trabalhos', texto:'Cada trabalho mostra o andamento do ensaio. Quando o relatório estiver aprovado, o download fica disponível no próprio item.' },
-    { seletor:'#navConta', titulo:'Sua conta', texto:'Em Conta você confere seus dados, pode alterar sua senha e também iniciar este tour novamente.' },
+    { seletor:'#navConta', titulo:'Sua conta', texto:'Em Conta você confere seus dados e pode iniciar este tour novamente. Para receber sua senha, use Recuperar acesso na tela de login.' },
     { seletor:'#waFlutuante', titulo:'Fale com a ITR', texto:'Se tiver qualquer dúvida, este botão abre o WhatsApp da ITR. Você não precisa resolver tudo sozinho.' }
   ];
 
@@ -17,15 +17,15 @@
   }
   function perfilTemTour(p){
     var s=p&&p.seguranca;
-    return Boolean(s&&s.senhaPessoalAtiva&&Number(s.onboardingVersion||0)<Number(s.onboardingTargetVersion||0));
+    if (!p || p.visualizacaoDev || p.perfil !== 'Cliente') return false;
+    try { return localStorage.getItem('itr-tour-version') !== String(s&&s.onboardingTargetVersion||1); }
+    catch (_) { return false; }
   }
   async function salvarEstado(action){
-    try{
-      var resp=await ITR.apiFetch('/api/onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action})});
-      var dados=await ITR.jsonSeguro(resp)||{};
-      if(resp.ok&&dados.sucesso&&perfil&&perfil.seguranca) perfil.seguranca.onboardingVersion=Number(dados.onboardingVersion)||perfil.seguranca.onboardingTargetVersion;
-    }catch(_){ /* preferência não bloqueia o uso do Portal */ }
+    try { localStorage.setItem('itr-tour-version', String(perfil&&perfil.seguranca&&perfil.seguranca.onboardingTargetVersion||1)); }
+    catch (_) { /* Sem armazenamento local, o tour manual permanece disponível. */ }
   }
+
   function remover(id){ var el=document.getElementById(id); if(el) el.remove(); }
   function fecharConvite(){ remover('tourConviteFundo'); }
   function convite(){

@@ -73,18 +73,18 @@ test('assets JS e CSS revalidam para evitar mistura de versões após atualizaç
   assert.ok(server.includes("res.setHeader('Cache-Control', 'no-cache')"), 'JS/CSS não usam revalidação');
 });
 
-test('senhas de clientes ficam atrás de feature flag e tokens de uso único são armazenados como hash', () => {
+test('schema legado preserva hashes; o modo gerado é obrigatório', () => {
   const config = read('config.js');
   const auth = read('lib/client-auth.js');
   const migration = read('scripts/migrate.js');
-  assert.match(config, /CLIENT_PASSWORDS_ENABLED/);
+  assert.match(config, /CLIENT_AUTH_MODE=generated/);
   assert.match(auth, /sha256\(String\(raw/);
   assert.match(migration, /portal_password_tokens/);
   assert.match(migration, /token_hash CHAR\(64\)/);
   assert.doesNotMatch(migration, /token_raw|raw_token|password_plain/i);
 });
 
-test('ativação e redefinição usam token no fragmento, não em query string', () => {
+test('artefatos legados de ativação mantêm token fora da query; endpoints foram aposentados', () => {
   const server = read('server.js');
   const shared = read('public/assets/js/auth-shared.js');
   assert.match(server, /criar-senha\.html#token=/);
@@ -100,10 +100,10 @@ test('alteração de senha autenticada exige origem, cliente e CSRF', () => {
   assert.match(read('lib/client-auth.js'), /DELETE FROM portal_sessions WHERE airtable_client_id = \?/);
 });
 
-test('recuperação evita enumeração e o envio de e-mail não faz parte do tempo da resposta pública', () => {
+test('recuperação usa resposta genérica e aguarda tentativa de envio', () => {
   const server = read('server.js');
   assert.match(server, /respostaRecuperacaoGenerica/);
-  assert.match(server, /setImmediate\(\(\) => \{[\s\S]*sendSecurityNotification/);
+  assert.match(server, /await sendSecurityNotification\('ACCESS_REQUEST'/);
   assert.match(server, /await defensiveDelay\(\);[\s\S]*return respostaRecuperacaoGenerica\(res\)/);
 });
 

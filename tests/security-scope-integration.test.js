@@ -14,10 +14,10 @@ test('PDF e trabalhos autorizam pelo escopo de Record IDs, nao por texto',()=>{
   assert.doesNotMatch(a,/\{Cliente\}\s*=\s*'\$\{escaparFormula\(.*Cliente/);
 });
 
-test('login usa conta existente em qualquer membro do escopo',()=>{
+test('login gerado usa identidade do CNPJ digitado',()=>{
   const s=read('server.js');
-  assert.match(s,/verifyPasswordInScope\(cliente\.scopeClientIds/);
-  assert.match(s,/findScopeAccount\(cliente\.scopeClientIds/);
+  assert.match(s,/buscarIdentidadeAcesso\(documento\)/);
+  assert.match(s,/sha256\(cliente\.accessPassword\)/);
 });
 
 test('hardening anti-abuso inclui cheap guard, limite scrypt e timeouts do servidor',()=>{

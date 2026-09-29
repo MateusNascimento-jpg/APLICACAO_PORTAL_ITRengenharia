@@ -60,12 +60,12 @@
     <section class="form-painel">
       <div class="form-cabeca">
         <h2>Entrar</h2>
-        <p id="textoAjudaLogin">Acesse com o CNPJ e o e-mail cadastrados na ITR. Não é necessário criar conta.</p>
+        <p id="textoAjudaLogin">Entre com o CNPJ e a senha de acesso enviada pela ITR.</p>
       </div>
 
       <div class="alerta-form" id="alertaForm" role="alert">
         <i class="ti ti-alert-circle"></i>
-        <span id="alertaFormTexto">CNPJ ou e-mail de acesso incorretos.</span>
+        <span id="alertaFormTexto">CNPJ ou senha incorretos.</span>
       </div>
 
       <form id="formLogin" novalidate>
@@ -79,18 +79,18 @@
         </div>
 
         <div class="campo-grupo" id="grupoSenha">
-          <label for="senha" id="rotuloSenha">E-mail de acesso</label>
+          <label for="senha" id="rotuloSenha">Senha</label>
           <div class="campo-caixa" id="caixaSenha">
-            <i class="ti ti-mail" id="iconeSenhaCampo"></i>
-            <input type="email" id="senha" name="email" placeholder="E-mail cadastrado na ITR" autocomplete="email" inputmode="email">
-            <button class="btn-olho" id="btnOlhoSenha" type="button" aria-label="Mostrar senha" title="Mostrar senha" hidden><i class="ti ti-eye"></i></button>
+            <i class="ti ti-lock" id="iconeSenhaCampo"></i>
+            <input type="password" id="senha" name="senha" placeholder="Senha" autocomplete="current-password" maxlength="128">
+            <button class="btn-olho" id="btnOlhoSenha" type="button" aria-label="Mostrar senha" title="Mostrar senha"><i class="ti ti-eye"></i></button>
           </div>
-          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span id="erroSenhaTexto">Digite o e-mail cadastrado.</span></div>
+          <div class="campo-erro" id="erroSenha"><i class="ti ti-alert-circle"></i><span id="erroSenhaTexto">Digite sua senha de acesso.</span></div>
         </div>
 
         <div class="linha-aux">
           <label class="lembrar"><input type="checkbox" id="lembrar"> Manter conectado</label>
-          <a class="link-esqueci" id="linkEsqueci" href="/recuperar-senha.html" hidden>Esqueci minha senha</a>
+          <a class="link-esqueci" id="linkEsqueci" href="/recuperar-senha.html">Esqueci minha senha</a>
         </div>
 
         <button type="submit" class="btn-entrar" id="btnEntrar">

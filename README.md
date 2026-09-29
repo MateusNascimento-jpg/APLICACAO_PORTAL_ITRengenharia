@@ -1,3 +1,7 @@
+> **Versão consolidada 3.3.1:** consulte [RELEASE_CONSOLIDADO.md](RELEASE_CONSOLIDADO.md). Esta referência substitui as instruções antigas de senha pessoal.
+
+> **Versão 3.3.0:** consulte [RELEASE_3.3.0.md](RELEASE_3.3.0.md). O acesso atual é CNPJ + senha gerada; instruções antigas de ativação/e-mail como senha não se aplicam.
+
 # Portal ITR Engenharia — 3.1.0 final
 
 Esta versão preserva o **design original** e mantém o hardening da 3.0.1. A 3.1 adiciona, atrás de feature flag, senha pessoal para clientes, recuperação segura e onboarding guiado opcional.

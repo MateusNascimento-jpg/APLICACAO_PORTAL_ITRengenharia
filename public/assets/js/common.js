@@ -34,6 +34,7 @@
   async function csrfToken(forcar) {
     if (csrfCache && !forcar) return csrfCache;
     var resp = await fetch('/api/csrf', { credentials: 'same-origin', cache: 'no-store' });
+    if (resp.status === 401) throw Object.assign(new Error('Sessão encerrada.'), { sessionExpired: true });
     if (!resp.ok) throw new Error('Não foi possível renovar a sessão de segurança.');
     var dados = await jsonSeguro(resp);
     if (!dados || !dados.csrfToken) throw new Error('Resposta de segurança inválida.');
@@ -77,7 +78,8 @@
       if (!resp.ok) throw new Error('logout recusado');
       csrfCache = null;
       window.location.replace(destino || '/login.html');
-    } catch (_) {
+    } catch (error) {
+      if (error.sessionExpired) { csrfCache = null; window.location.replace(destino || '/login.html'); return; }
       // Não simulamos um logout quando o servidor não confirmou a revogação.
       // Isso evita deixar uma sessão HttpOnly ativa em um computador compartilhado.
       window.alert('Não foi possível encerrar a sessão agora. Verifique sua conexão e tente novamente.');

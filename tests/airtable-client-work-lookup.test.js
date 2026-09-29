@@ -8,6 +8,8 @@ Module._load = function patchedLoad(request, parent, isMain) {
   if (request === 'dotenv') return { config() { return {}; } };
   return originalModuleLoad.call(this, request, parent, isMain);
 };
+process.env.PORTAL_NOTIFICATIONS_URL = 'http://localhost:3001';
+process.env.PORTAL_NOTIFICATIONS_HMAC_SECRET = Buffer.alloc(32, 1).toString('base64');
 process.on('exit', () => { Module._load = originalModuleLoad; });
 
 function jsonResponse(body, status = 200) {
@@ -40,7 +42,7 @@ async function runScenario({ clients, works, seedId, modo = 'todos' }) {
   } finally { global.fetch = originalFetch; }
 }
 
-test('escopo empresarial une dois Record IDs e continua excluindo terceiro tenant', async () => {
+test('CNPJs distintos mantêm apenas trabalhos diretamente vinculados', async () => {
   const A=`rec${'A'.repeat(14)}`, B=`rec${'B'.repeat(14)}`, C=`rec${'C'.repeat(14)}`;
   const clients=[
     {id:A,fields:{'ID Cliente':'Grupo Aterpa','Nome Cliente':'Grupo Aterpa',CNPJ:'17162983000165','Email Cliente':'a@aterpa.com.br'}},
@@ -52,7 +54,7 @@ test('escopo empresarial une dois Record IDs e continua excluindo terceiro tenan
   for(let i=0;i<4;i++) works.push({id:`rec${('E'+String(i)).padEnd(14,'E')}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[B],'ID Trabalho':`Grupo Aterpa_B-${i}`,'Link Amostras':`Amostra B ${i}`,'Status Cliente':'Amostra Recebida'}});
   works.push({id:`rec${'F'.repeat(14)}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[C],'ID Trabalho':'Outro_X','Link Amostras':'Segredo outro tenant','Status Cliente':'Amostra Recebida'}});
   const result=await runScenario({clients,works,seedId:A});
-  assert.equal(result.trabalhos.length,8);
+  assert.equal(result.trabalhos.length,4);
   assert.ok(result.trabalhos.every(t=>t.id!==`rec${'F'.repeat(14)}`));
 });
 
@@ -69,4 +71,30 @@ test('uma amostra igual isolada nao rompe tenant isolation', async () => {
   const result=await runScenario({clients,works,seedId:A});
   assert.equal(result.trabalhos.length,1);
   assert.equal(result.trabalhos[0].id,`rec${'I'.repeat(14)}`);
+});
+
+test('identidade por CNPJ não consulta trabalhos e reúne só seus contatos', async () => {
+  env(); const previous=global.fetch;let requests=0;
+  const records=[
+    {id:'recAAAAAAAAAAAAAA',fields:{CNPJ:'12345678000190','Sigla Cliente':'EX','Email Cliente':'a@example.test;b@example.test'}},
+    {id:'recBBBBBBBBBBBBBB',fields:{CNPJ:'12345678000190','Sigla Cliente':'EX','Email Cliente':'c@example.test'}},
+    {id:'recCCCCCCCCCCCCCC',fields:{CNPJ:'99999999000190','Sigla Cliente':'OUT','Email Cliente':'outsider@example.test'}}
+  ];
+  global.fetch=async url=>{assert.match(String(url),/tblkQxQ6q7cBKXZ3C/);requests++;return jsonResponse({records});};
+  try{
+    delete require.cache[require.resolve('../airtable')];const api=require('../airtable');
+    const [a,b]=await Promise.all([api.buscarIdentidadeAcesso('12345678000190'),api.buscarIdentidadeAcesso('12345678000190')]);
+    assert.equal(requests,1);assert.equal(a.accessPassword,'EX123456');assert.equal(a.id,b.id);assert.deepEqual(a.emails,['a@example.test','b@example.test','c@example.test']);
+    assert.equal(await api.buscarIdentidadeAcesso('00000000000000'),null);
+    records[1].fields['Sigla Cliente']='BAD';delete require.cache[require.resolve('../airtable')];await assert.rejects(require('../airtable').buscarIdentidadeAcesso('12345678000190'),{code:'ACCESS_DATA_INVALID'});
+  }finally{global.fetch=previous;}
+});
+
+test('listagem e download usam a mesma regra de aprovação e arquivo publicado',()=>{
+ env();const {relatorioLiberado}=require('../airtable');
+ const pdf={url:'https://dl.airtable.com/test.pdf',filename:'teste.pdf',type:'application/pdf'};
+ assert.equal(relatorioLiberado({'Aprovação':'Em Andamento','Relatórios_Aprovados':[pdf]}),null);
+ assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf]}),null);
+ assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf],'Relatórios_Aprovados':[{...pdf,filename:'outro.pdf'}]}),null);
+ assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf],'Relatórios_Aprovados':[pdf]}).url,pdf.url);
 });

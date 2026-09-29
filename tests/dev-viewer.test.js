@@ -7,11 +7,11 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 
-test('visualizador DEV usa rota separada e reaproveita a sessao/tela Cliente', () => {
+test('visualizador DEV usa rota separada e usa papel próprio e reaproveita a tela Cliente', () => {
   const server = read('server.js');
   assert.match(server, /app\.post\('\/api\/dev\/login',\s*sameOriginOnly/);
   assert.match(server, /credenciaisDevValidas/);
-  assert.match(server, /role:\s*'Cliente'[\s\S]*airtableId:\s*cliente\.id/);
+  assert.match(server, /role:\s*'DevViewer'[\s\S]*airtableId:\s*cliente\.id/);
   assert.match(server, /redirectTo:\s*'\/portal\.html'/);
   assert.match(server, /buscarClientePorCnpj\(documento\)/);
 });

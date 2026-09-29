@@ -84,24 +84,9 @@ var VALORES_ETAPA = ETAPAS.map(function(e){ return e.valor; });
 /* ---- DADOS DE EXEMPLO (fictícios — só para o preview visual) ----
    Cobrem todos os casos: aprovado c/ PDF, preparando PDF, em andamento,
    aguardando (timeline vazia) e cancelado. */
-var EXEMPLOS = [
-  { id:'r1', ensaio:'Módulo de Resiliência - Próctor Intermediário', sigla:'MR-I', amostra:'REG 1681 (ST-TPS-TAC-J31-109)', amostra_extra:0, data:'2026-06-18', data_ordenacao:'2026-06-18', status_cliente:'Relatório Disponível', os:'OS 28', os_extra:0, ensaio_lixo:false, pdf:true, preparando:false, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-05-02','Data Início Ensaio':'2026-05-15','Data de Conclusão do Ensaio':'2026-06-05','Data de Envio do Relatório':'2026-06-18' } },
-  { id:'r2', ensaio:'Deformação Permanente - Intermediário', sigla:'DP - IND', amostra:'ST-06', amostra_extra:5, data:'2026-06-15', data_ordenacao:'2026-06-15', status_cliente:'Relatório Disponível', os:'OS 61', os_extra:0, ensaio_lixo:false, pdf:false, preparando:true, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-04-28','Data Início Ensaio':'2026-05-10','Data de Conclusão do Ensaio':'2026-06-01','Data de Envio do Relatório':'2026-06-15' } },
-  { id:'r3', ensaio:'Limites de Atterberg', sigla:'Limite', amostra:'POXOTINS', amostra_extra:0, data:'2026-06-10', data_ordenacao:'2026-06-10', status_cliente:'Relatório em Andamento', os:'OS 44 - ST', os_extra:0, ensaio_lixo:false, pdf:false, preparando:false, relatorio_em_andamento:true, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-05-08','Data Início Ensaio':'2026-05-22','Data de Conclusão do Ensaio':'2026-06-10' } },
-  { id:'r4', ensaio:'Sedimentação', sigla:'SED', amostra:'MINERTINS', amostra_extra:0, data:'2026-06-05', data_ordenacao:'2026-06-05', status_cliente:'Ensaio em Andamento', os:'OS 52', os_extra:0, ensaio_lixo:false, pdf:false, preparando:false, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-05-12','Data Início Ensaio':'2026-06-05' } },
-  { id:'r5', ensaio:'Triaxial - CU', sigla:'Triaxial - CU', amostra:'PI-TAC-TST-C21-004', amostra_extra:0, data:'2026-05-28', data_ordenacao:'2026-05-28', status_cliente:'Amostra Recebida', os:'OS 66', os_extra:0, ensaio_lixo:false, pdf:false, preparando:false, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-05-28' } },
-  { id:'r6', ensaio:'Densidade Real', sigla:'DENSIDADE REAL', amostra:'REG 1288 (PI-TAC-TST-C21-005)', amostra_extra:0, data:'2026-05-20', data_ordenacao:'2026-05-20', status_cliente:'', os:'OS 28', os_extra:0, ensaio_lixo:false, pdf:false, preparando:false, cancelado:false, datas:{} },
-  { id:'r7', ensaio:'Módulo de Resiliência - Próctor Modificado', sigla:'MR-N', amostra:'J2-ST-08 - 3% - 28D', amostra_extra:14, data:'2026-05-12', data_ordenacao:'2026-05-12', status_cliente:'Relatório Disponível', os:'OS 11 - LASTRO', os_extra:0, ensaio_lixo:false, pdf:true, preparando:false, cancelado:false,
-    datas:{ 'Data de Chegada':'2026-03-20','Data Início Ensaio':'2026-04-02','Data de Conclusão do Ensaio':'2026-04-28','Data de Envio do Relatório':'2026-05-12' } },
-  { id:'r8', ensaio:'Deformação Permanente - Intermediário', sigla:'DP', amostra:'CIBE-AM07', amostra_extra:0, data:'2026-04-30', data_ordenacao:'2026-04-30', status_cliente:'', os:'TAC-TST (10)', os_extra:0, ensaio_lixo:false, pdf:false, preparando:false, cancelado:true, datas:{} }
-];
 
-var NOME_CLIENTE = 'Geodeep';
+
+var NOME_CLIENTE = 'Sua empresa';
 
 /* ---- Estado ---- */
 var TODOS = [];          // todos os trabalhos carregados
@@ -152,7 +137,7 @@ function atualizarContadores(){
   var total = TODOS.length;
   var prontos = TODOS.filter(function(t){ return t.pdf; }).length;
   var aguardando = TODOS.filter(function(t){ return indiceEtapaDe(t)<0 && !t.cancelado; }).length;
-  var andamento = total - prontos - aguardando; // o resto está em alguma fase intermediária
+  var andamento = TODOS.filter(function(t){ return !t.pdf && !t.cancelado && indiceEtapaDe(t) >= 0; }).length; // o resto está em alguma fase intermediária
   if(andamento<0) andamento=0;
   document.getElementById('kpiTotal').textContent = total;
   document.getElementById('kpiProntos').textContent = prontos;
@@ -182,7 +167,7 @@ function atualizarFreshness(trabalhos){
   var datas = (trabalhos || []).map(function(t){ return dataValida(t.data_ordenacao || t.data); }).filter(Boolean);
   if(!datas.length){ el.textContent = 'Dados sincronizados com o laboratório'; return; }
   var ultima = new Date(Math.max.apply(null, datas.map(function(d){ return d.getTime(); })));
-  el.textContent = 'Última movimentação em ' + ultima.toLocaleDateString('pt-BR') + ' às ' + ultima.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  el.textContent = 'Último cadastro em ' + ultima.toLocaleDateString('pt-BR') + ' às ' + ultima.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 /* ---- Monta os chips de "tipo de ensaio" a partir dos dados ---- */
 var LIMITE_CHIPS_RECOLHIDO = 8; // quantos chips mostrar antes do "ver todos"
@@ -448,7 +433,8 @@ window.expandir = expandir;
 function baixarRelatorio(ev, idTrabalho){
   if(ev) ev.preventDefault();
   if(!idTrabalho) return false;
-  var aba = window.open('', '_blank', 'noopener');
+  var aba = window.open('', '_blank');
+  if (aba) aba.opener = null;
   fetch('/api/trabalho/' + encodeURIComponent(idTrabalho) + '/download', {
     credentials: 'same-origin',
     cache: 'no-store'

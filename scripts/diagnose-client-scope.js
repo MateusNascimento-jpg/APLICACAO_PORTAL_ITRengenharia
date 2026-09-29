@@ -8,8 +8,10 @@ async function main() {
   const cnpjs = (assertSame ? args.slice(1) : args).map(v => String(v).replace(/\D/g, '')).filter(v => v.length === 14);
   if (!cnpjs.length) {
     const snapshot = await carregarScopeSnapshot(true);
+    const proposed = require('../lib/client-scope').buildClientScopes(snapshot.clientes, snapshot.trabalhos, { diagnosticHeuristics: true });
+    const suggestions = proposed.scopes.filter(s => s.clientIds.length > 1);
     const multi = snapshot.model.scopes.filter(s => s.clientIds.length > 1).map(s => ({ canonicalId: s.canonicalId, clientIds: s.clientIds, evidence: s.evidence }));
-    console.log(JSON.stringify({ scopesMultiCliente: multi }, null, 2));
+    console.log(JSON.stringify({ scopesAutorizados: multi, sugestoesNaoAutorizadas: suggestions }, null, 2));
     return;
   }
 

@@ -49,44 +49,10 @@ document.getElementById('btnTema').addEventListener('click', function(){ ITR.alt
 
 document.getElementById('logoLink').addEventListener('click', function(e){ e.preventDefault(); window.scrollTo({top:0,behavior:'smooth'}); });
 
-/* ---- Modo de autenticação: compatibilidade ou senha pessoal ---- */
-var PASSWORDS_ENABLED = false;
-var PASSWORD_MIN_LENGTH = 12;
+/* ---- Senha de acesso da empresa ---- */
 var campoSenha = document.getElementById('senha');
 var btnOlhoSenha = document.getElementById('btnOlhoSenha');
-var rotuloSenha = document.getElementById('rotuloSenha');
-var textoAjudaLogin = document.getElementById('textoAjudaLogin');
-var erroSenhaTexto = document.getElementById('erroSenhaTexto');
-var linkEsqueci = document.getElementById('linkEsqueci');
-var iconeSenhaCampo = document.getElementById('iconeSenhaCampo');
-
-function aplicarModoAutenticacao(configPublica){
-  PASSWORDS_ENABLED = Boolean(configPublica && configPublica.clientPasswordsEnabled);
-  PASSWORD_MIN_LENGTH = Number(configPublica && configPublica.passwordMinLength) || 12;
-  if(!PASSWORDS_ENABLED) return;
-
-  rotuloSenha.textContent = 'Senha';
-  textoAjudaLogin.textContent = 'Já tem senha? Entre com CNPJ e senha. Primeiro acesso? Use o e-mail cadastrado na ITR para criar sua senha pessoal.';
-  campoSenha.type = 'password';
-  campoSenha.name = 'senha';
-  campoSenha.placeholder = 'Senha ou e-mail';
-  campoSenha.autocomplete = 'current-password';
-  campoSenha.removeAttribute('inputmode');
-  erroSenhaTexto.textContent = 'Digite sua senha. No primeiro acesso, use o e-mail cadastrado na ITR.';
-  linkEsqueci.hidden = false;
-  btnOlhoSenha.hidden = false;
-  iconeSenhaCampo.className = 'ti ti-lock';
-  iconeSenhaCampo.removeAttribute('data-svg-ok');
-  aplicarIcones(document.getElementById('caixaSenha'));
-}
-
-fetch('/api/public-config', { credentials:'same-origin', cache:'no-store' })
-  .then(function(resp){ return resp.ok ? resp.json() : null; })
-  .then(function(dados){ if(dados && dados.sucesso) aplicarModoAutenticacao(dados); })
-  .catch(function(){ /* fallback seguro: mantém o fluxo legado exibido no HTML */ });
-
 btnOlhoSenha.addEventListener('click', function(){
-  if(!PASSWORDS_ENABLED) return;
   var mostrar = campoSenha.type === 'password';
   campoSenha.type = mostrar ? 'text' : 'password';
   this.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
@@ -148,9 +114,7 @@ formLogin.addEventListener('submit', function(e){
   var documento = limparDocumento(campoDocumento.value);
   var segredo = String(campoSenha.value || '');
   var docInvalido = documento.length !== 14;
-  var segredoInvalido = PASSWORDS_ENABLED
-    ? segredo.length < 5
-    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(segredo.trim());
+  var segredoInvalido = segredo.length < 1;
 
   mostrarErroCampo(grupoDocumento, erroDocumento, docInvalido);
   mostrarErroCampo(grupoSenha, erroSenha, segredoInvalido);
@@ -158,8 +122,7 @@ formLogin.addEventListener('submit', function(e){
 
   setCarregando(true);
   var corpo = { documento: documento, remember: document.getElementById('lembrar').checked };
-  if(PASSWORDS_ENABLED) corpo.senha = segredo;
-  else corpo.email = segredo.trim();
+  corpo.senha = segredo;
 
   fetch('/api/login', {
     method:'POST', credentials:'same-origin',
@@ -171,11 +134,6 @@ formLogin.addEventListener('submit', function(e){
     setCarregando(false);
     if(!res.dados.sucesso){
       mostrarAlertaForm(res.dados.erro || 'Não foi possível validar os dados informados.', false);
-      return;
-    }
-    if(res.dados.primeiroAcesso){
-      campoSenha.value = '';
-      mostrarAlertaForm(res.dados.mensagem || 'Enviamos as instruções de primeiro acesso ao e-mail cadastrado.', true);
       return;
     }
     if(res.dados.csrfToken) ITR.setCsrfToken(res.dados.csrfToken);

@@ -6,8 +6,7 @@ const { verificarBanco, encerrarBanco } = require('../db');
 const { verificarAirtable } = require('../airtable');
 
 async function verificarSchemaAutenticacao() {
-  if (!config.clientAuth.enabled) return true;
-  const obrigatorias = ['portal_client_accounts', 'portal_password_tokens', 'portal_sessions', 'portal_rate_limits'];
+  const obrigatorias = ['portal_sessions', 'portal_rate_limits', 'portal_audit_events', 'portal_director', 'ultimo_acesso_cliente', 'relatorios_baixados'];
   const [rows] = await pool.query(
     `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES
      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (${obrigatorias.map(() => '?').join(',')})`,
@@ -28,7 +27,7 @@ async function main() {
   console.log(`[preflight] ambiente: ${config.nodeEnv}`);
   console.log(`[preflight] origem pública: ${config.publicOrigin}`);
   console.log(`[preflight] modo seguro: ${config.security.safeMode || !config.security.writeEnabled ? 'ATIVO' : 'desativado'}`);
-  console.log(`[preflight] senhas de clientes: ${config.clientAuth.enabled ? 'ATIVADAS' : 'compatibilidade CNPJ + e-mail'}`);
+  console.log(`[preflight] senhas de clientes: CNPJ + senha gerada (6 dígitos)`);
   console.log(`[preflight] notificações internas: ${config.notifications.url ? 'configuradas' : 'não configuradas'}`);
   itens.forEach(([nome, ok, detalhe]) => console.log(`[preflight] ${nome}: ${ok ? 'OK' : 'FALHA'}${detalhe ? ` — ${detalhe}` : ''}`));
   if (itens.some(item => !item[1])) process.exitCode = 1;

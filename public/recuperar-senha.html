@@ -22,19 +22,19 @@
       <div class="vitrine-marca">
         <span class="vitrine-eyebrow"><i class="ti ti-key"></i> Recuperação segura</span>
         <h1>Esqueceu sua senha? É simples recuperar.</h1>
-        <p class="lead">Informe os dados cadastrados na ITR. Se eles corresponderem à sua empresa, enviaremos um link de uso único para o e-mail de acesso.</p>
+        <p class="lead">Informe o CNPJ da empresa para receber os dados de acesso nos e-mails cadastrados na ITR.</p>
       </div>
       <div class="auth-passos" aria-label="Etapas da recuperação">
-        <div class="auth-passo"><span class="auth-passo-num">1</span><span>Informe CNPJ e e-mail cadastrados.</span></div>
-        <div class="auth-passo"><span class="auth-passo-num">2</span><span>Abra o link recebido por e-mail.</span></div>
-        <div class="auth-passo"><span class="auth-passo-num">3</span><span>Escolha uma nova senha e continue no Portal.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">1</span><span>Informe o CNPJ cadastrado.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">2</span><span>Confira sua caixa de entrada e a pasta de spam.</span></div>
+        <div class="auth-passo"><span class="auth-passo-num">3</span><span>Entre no Portal com o CNPJ e a senha recebida.</span></div>
       </div>
-      <div class="vitrine-rodape"><i class="ti ti-shield-check"></i> Links expiram e só podem ser usados uma vez.</div>
+      <div class="vitrine-rodape"><i class="ti ti-shield-check"></i> Os dados serão enviados somente aos contatos cadastrados.</div>
     </aside>
     <section class="form-painel">
       <div class="form-cabeca">
         <h2>Recuperar acesso</h2>
-        <p>Por segurança, nunca informamos na tela se um cadastro existe ou não.</p>
+        <p>Informe o CNPJ da empresa. Os dados de acesso serão enviados aos e-mails cadastrados na ITR.</p>
       </div>
       <div class="alerta-form" id="alertaAuth" role="status" aria-live="polite"></div>
       <form id="formRecuperar" novalidate>
@@ -42,12 +42,9 @@
           <label for="documento">CNPJ de cadastro</label>
           <div class="campo-caixa"><i class="ti ti-id"></i><input type="text" id="documento" inputmode="numeric" autocomplete="username" maxlength="18" placeholder="Somente números" required></div>
         </div>
-        <div class="campo-grupo">
-          <label for="email">E-mail de acesso cadastrado</label>
-          <div class="campo-caixa"><i class="ti ti-mail"></i><input type="email" id="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="E-mail cadastrado na ITR" required></div>
-        </div>
-        <div class="auth-explicacao">Se você ainda não criou uma senha pessoal, este mesmo caminho envia um novo link para concluir o <strong>primeiro acesso</strong>.</div>
-        <button type="submit" class="btn-entrar" id="btnRecuperar">Enviar instruções</button>
+
+        <div class="auth-explicacao">Você receberá a senha que sua empresa já utiliza. Esta solicitação não altera a senha nem interrompe o acesso dos demais usuários.</div>
+        <button type="submit" class="btn-entrar" id="btnRecuperar">Enviar dados de acesso</button>
         <div class="auth-acoes"><a href="/login.html">Voltar ao login</a><a href="/como-funciona.html">Preciso de ajuda</a></div>
       </form>
     </section>
