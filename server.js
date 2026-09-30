@@ -1019,14 +1019,12 @@ app.get('/api/trabalho/:id/download', autenticado, async (req, res) => {
 
 app.get('/api/relatorio/:id', autenticado, async (req, res) => {
     let controller;
-    let timer;
-    let streamStarted = false;
     try {
         const pdf = await obterPdfAutorizado(req);
         if (!pdf?.url || !validarUrlAirtable(pdf.url)) return erro(res, 404, 'Este relatório não está disponível para download.');
 
         controller = new AbortController();
-        timer = setTimeout(() => controller.abort(), 30000);
+        const timer = setTimeout(() => controller.abort(), 30000);
         let atual = pdf.url;
         let upstream = null;
         // Segue poucos redirecionamentos e valida cada destino. Isso evita que uma
@@ -1088,9 +1086,8 @@ app.get('/api/relatorio/:id', autenticado, async (req, res) => {
                 })
             ]).catch(() => {});
         });
-        res.once('close', () => { if (!concluido) { clearTimeout(streamTimer); controller.abort(); } });
+        res.once('close', () => { if (!concluido) clearTimeout(streamTimer); });
 
-        streamStarted = true;
         Readable.fromWeb(upstream.body)
             .on('error', error => {
                 console.error(`[${req.requestId}] [PDF_STREAM]`, error.message);
@@ -1108,7 +1105,7 @@ app.get('/api/relatorio/:id', autenticado, async (req, res) => {
     } catch (error) {
         if (error.name !== 'AbortError') console.error(`[${req.requestId}] [DOWNLOAD_PDF]`, error.message);
         if (!res.headersSent) return erro(res, 503, 'Não foi possível abrir o relatório agora.');
-    } finally { clearTimeout(timer); if (!streamStarted) controller?.abort(); }
+    }
 });
 
 // ---------- Painel do Diretor ----------

@@ -42,7 +42,7 @@ async function runScenario({ clients, works, seedId, modo = 'todos' }) {
   } finally { global.fetch = originalFetch; }
 }
 
-test('CNPJs distintos mantêm apenas trabalhos diretamente vinculados', async () => {
+test('escopo empresarial une dois Record IDs e continua excluindo terceiro tenant', async () => {
   const A=`rec${'A'.repeat(14)}`, B=`rec${'B'.repeat(14)}`, C=`rec${'C'.repeat(14)}`;
   const clients=[
     {id:A,fields:{'ID Cliente':'Grupo Aterpa','Nome Cliente':'Grupo Aterpa',CNPJ:'17162983000165','Email Cliente':'a@aterpa.com.br'}},
@@ -54,7 +54,7 @@ test('CNPJs distintos mantêm apenas trabalhos diretamente vinculados', async ()
   for(let i=0;i<4;i++) works.push({id:`rec${('E'+String(i)).padEnd(14,'E')}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[B],'ID Trabalho':`Grupo Aterpa_B-${i}`,'Link Amostras':`Amostra B ${i}`,'Status Cliente':'Amostra Recebida'}});
   works.push({id:`rec${'F'.repeat(14)}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[C],'ID Trabalho':'Outro_X','Link Amostras':'Segredo outro tenant','Status Cliente':'Amostra Recebida'}});
   const result=await runScenario({clients,works,seedId:A});
-  assert.equal(result.trabalhos.length,4);
+  assert.equal(result.trabalhos.length,8);
   assert.ok(result.trabalhos.every(t=>t.id!==`rec${'F'.repeat(14)}`));
 });
 
@@ -90,11 +90,41 @@ test('identidade por CNPJ não consulta trabalhos e reúne só seus contatos', a
   }finally{global.fetch=previous;}
 });
 
-test('listagem e download usam a mesma regra de aprovação e arquivo publicado',()=>{
- env();const {relatorioLiberado}=require('../airtable');
- const pdf={url:'https://dl.airtable.com/test.pdf',filename:'teste.pdf',type:'application/pdf'};
- assert.equal(relatorioLiberado({'Aprovação':'Em Andamento','Relatórios_Aprovados':[pdf]}),null);
- assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf]}),null);
- assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf],'Relatórios_Aprovados':[{...pdf,filename:'outro.pdf'}]}),null);
- assert.equal(relatorioLiberado({'Aprovação':'Aprovado','Relatórios':[pdf],'Relatórios_Aprovados':[pdf]}).url,pdf.url);
+
+test('listagem restaura PDF publicado sem exigir novamente aprovacao ou nome do rascunho', async () => {
+ const A='recAAAAAAAAAAAAAA';
+ const clients=[{id:A,fields:{CNPJ:'12345678000190','ID Cliente':'Teste'}}];
+ const pdf={url:'https://dl.airtable.com/publicado.pdf',filename:'publicado.pdf',type:'application/pdf'};
+ const works=[{id:'recBBBBBBBBBBBBBB',createdTime:'2026-09-01T12:00:00Z',fields:{Cliente:[A],'Relatórios_Aprovados':[pdf],'Relatórios':[{...pdf,filename:'rascunho.pdf'}],'Aprovação':'Em Andamento'}}];
+ const result=await runScenario({clients,works,seedId:A});
+ assert.equal(result.trabalhos.length,1);
+ assert.equal(result.trabalhos[0].pdf,true);
+});
+
+test('download preserva aprovacao e nome do publicado conforme baseline', async () => {
+ env(); const previous=global.fetch;
+ const pdf={url:'https://dl.airtable.com/publicado.pdf',filename:'publicado.pdf',type:'application/pdf'};
+ let fields={'Aprovação':'Aprovado','Relatórios_Aprovados':[pdf],'Relatórios':[pdf]};
+ global.fetch=async url=>{assert.match(String(url),/tblJAP4Av9sWm8SmL\/recBBBBBBBBBBBBBB$/);return jsonResponse({id:'recBBBBBBBBBBBBBB',fields});};
+ try {
+  delete require.cache[require.resolve('../airtable')];const api=require('../airtable');
+  assert.equal((await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB')).url,pdf.url);
+  fields={...fields,'Aprovação':'Em Andamento'};assert.equal(await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB'),null);
+  fields={...fields,'Aprovação':'Aprovado','Relatórios':[{...pdf,filename:'novo.pdf'}]};assert.equal(await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB'),null);
+ } finally {global.fetch=previous;}
+});
+
+test('historico consulta IDs individuais sem carregar snapshot de todos os clientes', async () => {
+ env();const previous=global.fetch;let detailCalls=0;
+ global.fetch=async url=>{
+  const parsed=new URL(String(url));
+  if(parsed.pathname.endsWith('/tblJAP4Av9sWm8SmL/recBBBBBBBBBBBBBB')){detailCalls++;return jsonResponse({id:'recBBBBBBBBBBBBBB',fields:{'ID Trabalho':'TRABALHO HISTORICO'}});}
+  if(decodeURIComponent(parsed.pathname).endsWith('/Ordem de Serviço')) return jsonResponse({records:[]});
+  throw new Error('Consulta fora do contrato do historico');
+ };
+ try{
+  delete require.cache[require.resolve('../airtable')];const api=require('../airtable');
+  const result=await api.detalhesTrabalhosPorIds(['recBBBBBBBBBBBBBB','recBBBBBBBBBBBBBB']);
+  assert.equal(detailCalls,1);assert.equal(result.get('recBBBBBBBBBBBBBB').id_trabalho,'TRABALHO HISTORICO');
+ }finally{global.fetch=previous;}
 });

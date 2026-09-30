@@ -13,13 +13,13 @@ function work(id, clientId, owner, sample) {
 
 const A='recAAAAAAAAAAAAAA', B='recBBBBBBBBBBBBBB', C='recCCCCCCCCCCCCCC';
 
-test('owner operacional não une CNPJs distintos', () => {
+test('CNPJs e emails diferentes unem quando o owner operacional e consistente', () => {
   const clients=[client(A,'Grupo Aterpa','Grupo Aterpa','17162983000165','a@aterpa.com.br'),client(B,'Aterpa - Macae','Grupo Aterpa','17162983005124','b@aterpa.com.br')];
   const works=[];
   for(let i=0;i<8;i++) works.push(work(`recA${String(i).padStart(13,'0')}`,A,'Grupo Aterpa',`KM 300 ${i}`));
   for(let i=0;i<8;i++) works.push(work(`recB${String(i).padStart(13,'0')}`,B,'Grupo Aterpa',`NR 30 ${i}`));
   const model=buildClientScopes(clients,works);
-  assert.deepEqual(model.scopeByClientId.get(A).clientIds,[A]);
+  assert.deepEqual(model.scopeByClientId.get(A).clientIds.sort(),[A,B].sort());
 });
 
 test('mesmo CNPJ une automaticamente', () => {
@@ -28,10 +28,10 @@ test('mesmo CNPJ une automaticamente', () => {
   assert.equal(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
 });
 
-test('email compartilhado não une empresas', () => {
+test('mesmo email exato une automaticamente', () => {
   const clients=[client(A,'A','A','11111111111111','financeiro@empresa.com'),client(B,'B','B','22222222222222','financeiro@empresa.com')];
   const model=buildClientScopes(clients,[]);
-  assert.notEqual(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
+  assert.equal(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
 });
 
 test('uma amostra textual igual nao une tenants distintos', () => {
@@ -41,20 +41,12 @@ test('uma amostra textual igual nao une tenants distintos', () => {
   assert.notEqual(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
 });
 
-test('sobreposição de amostras não autoriza outro CNPJ', () => {
+test('sobreposicao forte de varias amostras raras une mesmo com CNPJ/email diferentes', () => {
   const clients=[client(A,'Unidade Norte','Empresa Z','11111111111111','norte@z.com'),client(B,'Unidade Sul','Empresa Z','22222222222222','sul@z.com'),client(C,'Outro','Outro','33333333333333','o@o.com')];
   const works=[];
   for(let i=0;i<7;i++){ const sample=`Amostra exclusiva projeto alpha ${i}`; works.push({id:`recF${String(i).padStart(13,'0')}`,fields:{Cliente:[A],'ID Trabalho':`A_${i}`,'Link Amostras':sample}}); works.push({id:`recG${String(i).padStart(13,'0')}`,fields:{Cliente:[B],'ID Trabalho':`B_${i}`,'Link Amostras':sample}}); }
   works.push(work('recH0000000000000',C,'Outro','Amostra completamente distinta'));
   const model=buildClientScopes(clients,works);
-  assert.notEqual(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
+  assert.equal(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(B).canonicalId);
   assert.notEqual(model.scopeByClientId.get(A).canonicalId,model.scopeByClientId.get(C).canonicalId);
-});
-
-
-test('trabalho compartilhado não funde todos os dados; override explícito autoriza grupo', () => {
- const clients=[client(A,'A','A','11111111111111','a@a.com'),client(B,'B','B','22222222222222','b@b.com')];
- const works=[{id:'recWORK',fields:{Cliente:[A,B]}}];
- assert.deepEqual(buildClientScopes(clients,works).scopeByClientId.get(A).clientIds,[A]);
- assert.deepEqual(buildClientScopes(clients,works,{overrides:[[A,B]]}).scopeByClientId.get(A).clientIds,[A,B]);
 });

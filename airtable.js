@@ -84,15 +84,7 @@ async function airtablePatch(url, fields) {
 let mapaEnsaios = null;
 let mapaEnsaiosCarregadoEm = 0;
 
-let mapaEnsaiosLoad = null;
-let mapaEnsaiosRetryAt = 0;
 async function carregarMapaEnsaios() {
-    if (mapaEnsaiosLoad) return mapaEnsaiosLoad;
-    if (Date.now() < mapaEnsaiosRetryAt) return mapaEnsaios || {};
-    mapaEnsaiosLoad = carregarMapaEnsaiosInterno().finally(() => { mapaEnsaiosLoad = null; });
-    return mapaEnsaiosLoad;
-}
-async function carregarMapaEnsaiosInterno() {
     if (mapaEnsaios && (Date.now() - mapaEnsaiosCarregadoEm) < CACHE_TTL_MS) return mapaEnsaios;
     const mapa = {};
     let offset = null;
@@ -120,7 +112,6 @@ async function carregarMapaEnsaiosInterno() {
         mapaEnsaios = mapa;
         mapaEnsaiosCarregadoEm = Date.now();
     } catch (e) {
-        mapaEnsaiosRetryAt = Date.now() + 30000;
         // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
         if (mapaEnsaios) return mapaEnsaios;
         return {};
@@ -222,15 +213,7 @@ const TBL_ORDEM_SERVICO = 'Ordem de Serviço';
 let mapaOS = null;
 let mapaOSCarregadoEm = 0;
 
-let mapaOSLoad = null;
-let mapaOSRetryAt = 0;
 async function carregarMapaOS() {
-    if (mapaOSLoad) return mapaOSLoad;
-    if (Date.now() < mapaOSRetryAt) return mapaOS || {};
-    mapaOSLoad = carregarMapaOSInterno().finally(() => { mapaOSLoad = null; });
-    return mapaOSLoad;
-}
-async function carregarMapaOSInterno() {
     if (mapaOS && (Date.now() - mapaOSCarregadoEm) < CACHE_TTL_MS) return mapaOS;
     const mapa = {};
     let offset = null;
@@ -249,7 +232,6 @@ async function carregarMapaOSInterno() {
         mapaOS = mapa;
         mapaOSCarregadoEm = Date.now();
     } catch (e) {
-        mapaOSRetryAt = Date.now() + 30000;
         // recarga falhou: mantem o cache antigo (se existir) em vez de derrubar o portal
         if (mapaOS) return mapaOS;
         return {}; // sem cache anterior; cai no fallback (nao mostra OS)
@@ -425,7 +407,7 @@ async function formatar(rec, mapa, mapaOrdens) {
     const f = rec.fields;
 
     // PDF: SO de "Relatórios_Aprovados" (regra: cliente so ve o que o diretor aprovou).
-    const pdf = relatorioLiberado(f);
+    const pdf = primeiroPdf(f['Relatórios_Aprovados']);
 
     // RELATORIO EM ANDAMENTO (nova etapa): existe relatorio gerado no campo
     // "Relatórios" (anexo), mas ainda NAO foi aprovado pelo diretor. Isso marca
@@ -649,7 +631,7 @@ function trabalhoDentroDoEscopo(rec, scopeClientIds) {
 }
 
 // ==================== BUSCAR TRABALHOS DO CLIENTE ====================
-// modo 'recente': em andamento OU trabalho criado nos últimos N meses (createdTime).
+// modo 'recente' (padrao): em andamento OU enviado nos ultimos N meses.
 // modo 'todos': historico completo.
 async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = 'recente', meses = null) {
     if (!recordIdValido(recordIdCliente)) {
@@ -706,7 +688,12 @@ async function urlRelatorioAprovado(recordIdTrabalho, recordIdCliente = null) {
         if (!Array.isArray(links) || !links.some(id => scopeClientIds.includes(id))) return null;
     }
 
-    return relatorioLiberado(rec.fields);
+    if (rec.fields?.['Aprovação'] !== 'Aprovado') return null;
+    const pdf = primeiroPdf(rec.fields?.['Relatórios_Aprovados']);
+    if (!pdf) return null;
+    const atual = primeiroPdf(rec.fields?.['Relatórios']);
+    if (atual && atual.nome && pdf.nome && atual.nome !== pdf.nome) return null;
+    return { nome: pdf.nome, url: pdf.url };
 }
 
 async function trabalhoPertenceAoCliente(recordIdTrabalho, recordIdCliente) {
@@ -831,16 +818,20 @@ async function detalheTrabalhoPorId(recordId) {
 }
 
 async function detalhesTrabalhosPorIds(ids, concorrencia = 5) {
-    const snapshot = await carregarScopeSnapshot();
-    const mapa = await carregarMapaOS();
-    const indice = new Map(snapshot.trabalhos.map(r => [r.id, r]));
+    const unicos = [...new Set((ids || []).filter(recordIdValido))];
     const resultado = new Map();
-    for (const id of new Set((ids || []).filter(recordIdValido))) {
-        const rec = indice.get(id);
-        if (!rec) { resultado.set(id, { id_trabalho: null, os: null }); continue; }
-        const ordem = await traduzirOS(rec.fields['Ordem de Serviço'] ?? rec.fields['Link Ordem de Serviço'], mapa);
-        resultado.set(id, { id_trabalho: rec.fields['ID Trabalho'] || null, os: ordem.os });
+    let cursor = 0;
+
+    async function worker() {
+        while (cursor < unicos.length) {
+            const atual = unicos[cursor++];
+            try { resultado.set(atual, await detalheTrabalhoPorId(atual)); }
+            catch (_) { resultado.set(atual, { id_trabalho: null, os: null }); }
+        }
     }
+
+    const workers = Array.from({ length: Math.min(Math.max(1, concorrencia), unicos.length || 1) }, () => worker());
+    await Promise.all(workers);
     return resultado;
 }
 
@@ -910,11 +901,3 @@ async function buscarIdentidadeAcesso(cnpj) {
 }
 module.exports.buscarIdentidadeAcesso = buscarIdentidadeAcesso;
 
-function relatorioLiberado(fields = {}) {
-    if (fields['Aprovação'] !== 'Aprovado') return null;
-    const pdf = primeiroPdf(fields['Relatórios_Aprovados']);
-    const atual = primeiroPdf(fields['Relatórios']);
-    if (!pdf || (atual?.nome && pdf.nome && atual.nome !== pdf.nome)) return null;
-    return pdf;
-}
-module.exports.relatorioLiberado = relatorioLiberado;

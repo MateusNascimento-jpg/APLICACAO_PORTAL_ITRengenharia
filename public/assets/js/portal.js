@@ -137,7 +137,7 @@ function atualizarContadores(){
   var total = TODOS.length;
   var prontos = TODOS.filter(function(t){ return t.pdf; }).length;
   var aguardando = TODOS.filter(function(t){ return indiceEtapaDe(t)<0 && !t.cancelado; }).length;
-  var andamento = TODOS.filter(function(t){ return !t.pdf && !t.cancelado && indiceEtapaDe(t) >= 0; }).length; // o resto está em alguma fase intermediária
+  var andamento = total - prontos - aguardando; // o resto está em alguma fase intermediária
   if(andamento<0) andamento=0;
   document.getElementById('kpiTotal').textContent = total;
   document.getElementById('kpiProntos').textContent = prontos;
@@ -167,7 +167,7 @@ function atualizarFreshness(trabalhos){
   var datas = (trabalhos || []).map(function(t){ return dataValida(t.data_ordenacao || t.data); }).filter(Boolean);
   if(!datas.length){ el.textContent = 'Dados sincronizados com o laboratório'; return; }
   var ultima = new Date(Math.max.apply(null, datas.map(function(d){ return d.getTime(); })));
-  el.textContent = 'Último cadastro em ' + ultima.toLocaleDateString('pt-BR') + ' às ' + ultima.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  el.textContent = 'Última movimentação em ' + ultima.toLocaleDateString('pt-BR') + ' às ' + ultima.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 /* ---- Monta os chips de "tipo de ensaio" a partir dos dados ---- */
 var LIMITE_CHIPS_RECOLHIDO = 8; // quantos chips mostrar antes do "ver todos"
@@ -433,8 +433,7 @@ window.expandir = expandir;
 function baixarRelatorio(ev, idTrabalho){
   if(ev) ev.preventDefault();
   if(!idTrabalho) return false;
-  var aba = window.open('', '_blank');
-  if (aba) aba.opener = null;
+  var aba = window.open('', '_blank', 'noopener');
   fetch('/api/trabalho/' + encodeURIComponent(idTrabalho) + '/download', {
     credentials: 'same-origin',
     cache: 'no-store'

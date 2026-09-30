@@ -1,3 +1,5 @@
+> **Histórico 3.3.1:** as alterações de relatórios e agrupamentos descritas aqui foram revertidas em 3.3.2. Consulte RESTAURACAO_RELATORIOS_3.3.2.md. Login/e-mails permanecem.
+
 # ITR — versão consolidada final
 
 Data: 29/09/2026. Portal **3.3.1** e Notificações **2.4.1**.

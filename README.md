@@ -1,3 +1,5 @@
+> **Portal 3.3.2:** restaura as regras de relatórios anteriores à mudança de login. Consulte [RESTAURACAO_RELATORIOS_3.3.2.md](RESTAURACAO_RELATORIOS_3.3.2.md). Instruções históricas de escopo estrito da 3.3.1 foram revertidas.
+
 > **Versão consolidada 3.3.1:** consulte [RELEASE_CONSOLIDADO.md](RELEASE_CONSOLIDADO.md). Esta referência substitui as instruções antigas de senha pessoal.
 
 > **Versão 3.3.0:** consulte [RELEASE_3.3.0.md](RELEASE_3.3.0.md). O acesso atual é CNPJ + senha gerada; instruções antigas de ativação/e-mail como senha não se aplicam.
