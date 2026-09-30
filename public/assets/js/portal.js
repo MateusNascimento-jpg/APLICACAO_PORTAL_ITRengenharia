@@ -439,16 +439,39 @@ function baixarRelatorio(ev, idTrabalho){
   var trabalho = TODOS.find(function(t){ return t.id === idTrabalho; });
   var quantidade = trabalho && Number.isInteger(trabalho.relatorios_quantidade) && trabalho.relatorios_quantidade > 0 ? trabalho.relatorios_quantidade : 1;
   var abas = [];
-  var aviso = null;
-  if(botao){
-    var anterior = botao.parentNode.querySelector('[data-relatorios-aviso]');
-    if(anterior) anterior.remove();
-    aviso = document.createElement('div');
-    aviso.setAttribute('data-relatorios-aviso', '');
-    aviso.setAttribute('role', 'status');
-    botao.parentNode.appendChild(aviso);
+  function mostrarArquivos(titulo, arquivos, mensagem){
+    var antigo = document.querySelector('.relatorios-dialog');
+    if(antigo) antigo.remove();
+    var dialog = document.createElement('dialog');
+    dialog.className = 'relatorios-dialog';
+    var heading = document.createElement('h2');
+    heading.textContent = titulo;
+    dialog.setAttribute('aria-label', titulo);
+    dialog.appendChild(heading);
+    if(mensagem){ var texto = document.createElement('p'); texto.textContent = mensagem; dialog.appendChild(texto); }
+    if(arquivos && arquivos.length){
+      var lista = document.createElement('ul');
+      lista.className = 'relatorios-lista';
+      arquivos.forEach(function(a, index){
+        var item = document.createElement('li');
+        var nome = document.createElement('span');
+        nome.textContent = a.arquivo || ('Relatório ' + (index + 1) + '.pdf');
+        var link = document.createElement('a');
+        link.href = a.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.className = 'relatorios-abrir'; link.textContent = 'Abrir PDF';
+        link.setAttribute('aria-label', 'Abrir PDF: ' + nome.textContent);
+        item.appendChild(nome); item.appendChild(link); lista.appendChild(item);
+      });
+      dialog.appendChild(lista);
+    }
+    var fecharBotao = document.createElement('button');
+    fecharBotao.type = 'button'; fecharBotao.className = 'relatorios-fechar'; fecharBotao.textContent = 'Fechar';
+    fecharBotao.addEventListener('click', function(){ dialog.close(); });
+    dialog.appendChild(fecharBotao);
+    dialog.addEventListener('close', function(){ dialog.remove(); if(botao) botao.focus(); });
+    document.body.appendChild(dialog);
+    dialog.showModal();
   }
-  function informar(texto){ if(aviso) aviso.textContent = texto; else alert(texto); }
   function fechar(aba){ try{ if(aba && !aba.closed) aba.close(); }catch(_){} }
   // Abre durante o clique, antes do fetch. noopener como feature impediria obter a referência.
   for(var i=0; i<quantidade; i++){
@@ -463,7 +486,6 @@ function baixarRelatorio(ev, idTrabalho){
     }catch(_){ fechar(aba); aba = null; }
     abas.push(aba);
   }
-  informar('Preparando os relatórios…');
   fetch('/api/trabalho/' + encodeURIComponent(idTrabalho) + '/download', {
     credentials: 'same-origin', cache: 'no-store'
   }).then(function(resp){
@@ -491,22 +513,11 @@ function baixarRelatorio(ev, idTrabalho){
     });
     abas.forEach(fechar);
     if(pendentes.length){
-      informar('O navegador não abriu todos os PDFs. Clique abaixo para abrir os arquivos restantes em novas guias:');
-      if(aviso){
-        var lista = document.createElement('ul');
-        pendentes.forEach(function(a, index){
-          var li = document.createElement('li');
-          var link = document.createElement('a');
-          link.href = a.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-          link.textContent = a.arquivo || ('Relatório ' + (index + 1) + '.pdf');
-          li.appendChild(link); lista.appendChild(li);
-        });
-        aviso.appendChild(lista);
-      }
-    }else{ informar(arquivos.length === 1 ? 'PDF aberto em uma nova guia.' : arquivos.length + ' PDFs abertos em novas guias.'); }
+      mostrarArquivos('Relatórios disponíveis', pendentes, 'Abra os PDFs abaixo em novas guias.');
+    }
   }).catch(function(error){
     abas.forEach(fechar);
-    informar(error.message || 'Não foi possível abrir os relatórios. Tente novamente.');
+    mostrarArquivos('Não foi possível abrir os relatórios', [], error.message || 'Tente novamente em alguns instantes.');
   }).finally(function(){ if(botao) botao.removeAttribute('aria-busy'); });
   return false;
 }
