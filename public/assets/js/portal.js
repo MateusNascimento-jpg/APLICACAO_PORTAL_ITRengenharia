@@ -433,29 +433,81 @@ window.expandir = expandir;
 function baixarRelatorio(ev, idTrabalho){
   if(ev) ev.preventDefault();
   if(!idTrabalho) return false;
-  var aba = window.open('', '_blank', 'noopener');
+  var botao = ev && ev.target && ev.target.closest('[data-download-id]');
+  if(botao && botao.getAttribute('aria-busy') === 'true') return false;
+  if(botao) botao.setAttribute('aria-busy', 'true');
+  var trabalho = TODOS.find(function(t){ return t.id === idTrabalho; });
+  var quantidade = trabalho && Number.isInteger(trabalho.relatorios_quantidade) && trabalho.relatorios_quantidade > 0 ? trabalho.relatorios_quantidade : 1;
+  var abas = [];
+  var aviso = null;
+  if(botao){
+    var anterior = botao.parentNode.querySelector('[data-relatorios-aviso]');
+    if(anterior) anterior.remove();
+    aviso = document.createElement('div');
+    aviso.setAttribute('data-relatorios-aviso', '');
+    aviso.setAttribute('role', 'status');
+    botao.parentNode.appendChild(aviso);
+  }
+  function informar(texto){ if(aviso) aviso.textContent = texto; else alert(texto); }
+  function fechar(aba){ try{ if(aba && !aba.closed) aba.close(); }catch(_){} }
+  // Abre durante o clique, antes do fetch. noopener como feature impediria obter a referência.
+  for(var i=0; i<quantidade; i++){
+    var aba = null;
+    try{
+      aba = window.open('', '_blank');
+      if(aba){
+        aba.opener = null;
+        aba.document.title = 'Preparando PDF — ITR';
+        aba.document.body.textContent = 'Preparando seu relatório. Aguarde alguns instantes…';
+      }
+    }catch(_){ fechar(aba); aba = null; }
+    abas.push(aba);
+  }
+  informar('Preparando os relatórios…');
   fetch('/api/trabalho/' + encodeURIComponent(idTrabalho) + '/download', {
-    credentials: 'same-origin',
-    cache: 'no-store'
+    credentials: 'same-origin', cache: 'no-store'
   }).then(function(resp){
-    if(resp.status === 401 || resp.status === 403){
-      if(aba) aba.close();
-      window.location.replace('/login.html');
-      return null;
-    }
-    return resp.json().then(function(dados){ return { ok: resp.ok, dados: dados }; });
-  }).then(function(res){
-    if(!res) return;
-    if(res.ok && res.dados && res.dados.sucesso && res.dados.url){
-      if(aba) aba.location.replace(res.dados.url); else window.location.assign(res.dados.url);
-    } else {
-      if(aba) aba.close();
-      alert((res.dados && res.dados.erro) || 'O relatório ainda não está disponível para download.');
-    }
-  }).catch(function(){
-    if(aba) aba.close();
-    alert('Não foi possível abrir o relatório. Tente novamente.');
-  });
+    if(resp.status === 401){ throw new Error('Sua sessão expirou. Entre novamente no Portal para abrir os relatórios.'); }
+    if(resp.status === 403){ throw new Error('Você não tem permissão para abrir estes relatórios.'); }
+    return resp.json().then(function(dados){
+      if(!resp.ok || !dados.sucesso) throw new Error(dados.erro || 'Os relatórios não estão disponíveis para download.');
+      return dados;
+    });
+  }).then(function(dados){
+    var arquivos = Array.isArray(dados.arquivos) ? dados.arquivos : (dados.url ? [{url:dados.url,arquivo:dados.arquivo}] : []);
+    if(!arquivos.length) throw new Error('Nenhum PDF aprovado foi encontrado.');
+    arquivos.forEach(function(a){
+      // Só navega para o proxy autenticado deste trabalho, nunca URLs fornecidas pelo cliente.
+      var u = new URL(a.url, window.location.origin);
+      if(u.origin !== window.location.origin || u.pathname !== '/api/relatorio/' + encodeURIComponent(idTrabalho)) throw new Error('Não foi possível validar o endereço do relatório.');
+    });
+    var pendentes = [];
+    arquivos.forEach(function(a, index){
+      var aba = abas[index];
+      if(aba && !aba.closed){
+        try{ aba.location.replace(a.url); abas[index] = null; }
+        catch(_){ fechar(aba); abas[index] = null; pendentes.push(a); }
+      }else{ pendentes.push(a); }
+    });
+    abas.forEach(fechar);
+    if(pendentes.length){
+      informar('O navegador não abriu todos os PDFs. Clique abaixo para abrir os arquivos restantes em novas guias:');
+      if(aviso){
+        var lista = document.createElement('ul');
+        pendentes.forEach(function(a, index){
+          var li = document.createElement('li');
+          var link = document.createElement('a');
+          link.href = a.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+          link.textContent = a.arquivo || ('Relatório ' + (index + 1) + '.pdf');
+          li.appendChild(link); lista.appendChild(li);
+        });
+        aviso.appendChild(lista);
+      }
+    }else{ informar(arquivos.length === 1 ? 'PDF aberto em uma nova guia.' : arquivos.length + ' PDFs abertos em novas guias.'); }
+  }).catch(function(error){
+    abas.forEach(fechar);
+    informar(error.message || 'Não foi possível abrir os relatórios. Tente novamente.');
+  }).finally(function(){ if(botao) botao.removeAttribute('aria-busy'); });
   return false;
 }
 

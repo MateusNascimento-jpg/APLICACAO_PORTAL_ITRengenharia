@@ -1,6 +1,7 @@
 // airtable.js — acesso ao Airtable com isolamento por Record ID e resiliência.
 
 const config = require('./config');
+const { pdfs: anexosPdf, publicados: pdfsPublicados } = require('./lib/report-attachments');
 const { senhaGerada, emails: emailsAcesso } = require('./lib/portal-access');
 const { buildClientScopes, normalizarCnpj } = require('./lib/client-scope');
 
@@ -498,6 +499,7 @@ async function formatar(rec, mapa, mapaOrdens) {
 
         // PDF aprovado
         pdf: !!pdf,
+        relatorios_quantidade: anexosPdf(f['Relatórios_Aprovados']).length,
         relatorio_nome: pdf ? pdf.nome : null,
         relatorio_em_andamento: relatorioEmAndamento, // tem relatorio mas nao aprovado
         relatorio_desatualizado: relatorioDesatualizado, // PDF trocado apos aprovacao; automacao nao re-disparou
@@ -675,7 +677,7 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
 // ==================== URL FRESCA DO PDF (download na hora) ====================
 // Os links de anexo do Airtable expiram. Esta funcao busca o trabalho de novo
 // no momento do clique e devolve uma URL valida do PDF aprovado.
-async function urlRelatorioAprovado(recordIdTrabalho, recordIdCliente = null) {
+async function relatoriosAprovados(recordIdTrabalho, recordIdCliente = null) {
     if (!recordIdValido(recordIdTrabalho)) return null;
     const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordIdTrabalho)}`);
 
@@ -688,12 +690,15 @@ async function urlRelatorioAprovado(recordIdTrabalho, recordIdCliente = null) {
         if (!Array.isArray(links) || !links.some(id => scopeClientIds.includes(id))) return null;
     }
 
-    if (rec.fields?.['Aprovação'] !== 'Aprovado') return null;
-    const pdf = primeiroPdf(rec.fields?.['Relatórios_Aprovados']);
-    if (!pdf) return null;
-    const atual = primeiroPdf(rec.fields?.['Relatórios']);
-    if (atual && atual.nome && pdf.nome && atual.nome !== pdf.nome) return null;
-    return { nome: pdf.nome, url: pdf.url };
+    if (rec.fields?.['Aprovação'] !== 'Aprovado') return [];
+    return pdfsPublicados(rec.fields);
+}
+
+// Compatibilidade: as integrações que pedem um PDF continuam recebendo o primeiro.
+async function urlRelatorioAprovado(recordIdTrabalho, recordIdCliente = null, arquivoId = null) {
+    const arquivos = await relatoriosAprovados(recordIdTrabalho, recordIdCliente);
+    const pdf = arquivoId == null ? arquivos?.[0] : arquivos?.find(a => a.id === arquivoId);
+    return pdf ? { nome: pdf.nome, url: pdf.url } : null;
 }
 
 async function trabalhoPertenceAoCliente(recordIdTrabalho, recordIdCliente) {
@@ -862,6 +867,7 @@ module.exports = {
     resolverEscopoCliente,
     carregarScopeSnapshot,
     urlRelatorioAprovado,
+    relatoriosAprovados,
     trabalhoPertenceAoCliente,
     listarClientes,
     definirAprovacao,

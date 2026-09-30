@@ -13,6 +13,7 @@ const {
     resolverEscopoCliente,
     carregarScopeSnapshot,
     urlRelatorioAprovado,
+    relatoriosAprovados,
     listarClientes,
     definirAprovacao,
     APROVACAO_VALIDAS,
@@ -999,18 +1000,20 @@ async function obterPdfAutorizado(req) {
     const id = req.params.id;
     if (!recordIdValido(id)) return null;
     const clientId = req.session.role !== 'Director' ? req.session.airtableId : null;
-    return urlRelatorioAprovado(id, clientId);
+    const arquivoId = req.query.arquivo;
+    if (arquivoId !== undefined && (typeof arquivoId !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(arquivoId))) return null;
+    return urlRelatorioAprovado(id, clientId, arquivoId == null ? null : arquivoId);
 }
 
 app.get('/api/trabalho/:id/download', autenticado, async (req, res) => {
     try {
-        const pdf = await obterPdfAutorizado(req);
-        if (!pdf?.url) return erro(res, 404, 'Este relatório não está disponível para download.');
-        return res.json({
-            sucesso: true,
-            arquivo: pdf.nome,
-            url: `/api/relatorio/${encodeURIComponent(req.params.id)}`
-        });
+        const id = req.params.id;
+        if (!recordIdValido(id)) return erro(res, 404, 'Este relatório não está disponível para download.');
+        const clientId = req.session.role !== 'Director' ? req.session.airtableId : null;
+        const pdfs = await relatoriosAprovados(id, clientId);
+        if (!pdfs?.length) return erro(res, 404, 'Este relatório não está disponível para download.');
+        const arquivos = pdfs.map(pdf => ({ arquivo: pdf.nome, url: `/api/relatorio/${encodeURIComponent(id)}?arquivo=${encodeURIComponent(pdf.id)}` }));
+        return res.json({ sucesso: true, arquivo: arquivos[0].arquivo, url: arquivos[0].url, arquivos });
     } catch (error) {
         console.error(`[${req.requestId}] [DOWNLOAD_INFO]`, error.message);
         return erro(res, 503, 'Não foi possível preparar o relatório agora.');

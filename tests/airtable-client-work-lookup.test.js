@@ -128,3 +128,18 @@ test('historico consulta IDs individuais sem carregar snapshot de todos os clien
   assert.equal(detailCalls,1);assert.equal(result.get('recBBBBBBBBBBBBBB').id_trabalho,'TRABALHO HISTORICO');
  }finally{global.fetch=previous;}
 });
+
+test('PDF por ID continua correto apos reordenacao e nao substitui arquivo removido', async()=>{
+ env();const previous=global.fetch;
+ const a={id:'attA',filename:'a.pdf',url:'https://dl.airtable.com/a.pdf',type:'application/pdf'};
+ const b={id:'attB',filename:'b.pdf',url:'https://dl.airtable.com/b.pdf',type:'application/pdf'};
+ let fields={'Aprovação':'Aprovado','Relatórios_Aprovados':[a,b]};
+ global.fetch=async()=>jsonResponse({id:'recBBBBBBBBBBBBBB',fields});
+ try{
+  delete require.cache[require.resolve('../airtable')];const api=require('../airtable');
+  assert.equal((await api.relatoriosAprovados('recBBBBBBBBBBBBBB')).length,2);
+  assert.equal((await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB')).url,b.url);
+  fields['Relatórios_Aprovados']=[b,a];assert.equal((await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB')).url,b.url);
+  fields['Relatórios_Aprovados']=[a];assert.equal(await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB'),null);
+ }finally{global.fetch=previous;}
+});
