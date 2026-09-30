@@ -389,15 +389,9 @@ function montarCard(t){
   }
 
   // AMOSTRA: agora é o TÍTULO do card (com ícone de tubo de ensaio).
-  // "ler mais" se comprida; "+N" se houver mais de uma amostra no trabalho.
+  // Nome completo; "+N" se houver mais de uma amostra no trabalho.
   var amostraTxt = t.amostra || '—';
-  var amostraHtml;
-  if(amostraTxt.length > 38){
-    var curto = esc(amostraTxt.slice(0,38))+'…';
-    amostraHtml = '<span class="amo-txt" data-full="'+esc(amostraTxt)+'">'+curto+'</span> <button type="button" class="lermais" data-expandir="1">ler mais</button>';
-  } else {
-    amostraHtml = '<span>'+esc(amostraTxt)+'</span>';
-  }
+  var amostraHtml = '<span class="amostra-nome-completo">'+esc(amostraTxt)+'</span>';
   var extraHtml = (t.amostra_extra && t.amostra_extra > 0)
     ? '<span class="extra" title="Mais '+t.amostra_extra+' amostra(s) neste trabalho">+'+t.amostra_extra+'</span>'
     : '';

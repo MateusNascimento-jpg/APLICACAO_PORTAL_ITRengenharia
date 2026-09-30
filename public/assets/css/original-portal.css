@@ -756,3 +756,6 @@ body.tour-ativo{ overflow:hidden; }
 .relatorios-dialog .relatorios-fechar{display:block;margin:20px 0 0 auto;padding:9px 16px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;font:inherit;font-size:14px;cursor:pointer}
 .relatorios-dialog a:focus-visible,.relatorios-dialog button:focus-visible{outline:3px solid #93b8fb;outline-offset:3px}
 @media(max-width:420px){.relatorios-dialog{padding:18px}.relatorios-dialog .relatorios-lista li{align-items:flex-start;flex-direction:column;gap:10px}}
+
+/* Nome completo da amostra, sem truncamento. */
+.work .amostra-titulo .amostra-nome-completo{white-space:normal;overflow-wrap:anywhere}
