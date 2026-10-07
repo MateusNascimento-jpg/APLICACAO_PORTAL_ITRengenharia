@@ -85,7 +85,16 @@ async function airtablePatch(url, fields) {
 let mapaEnsaios = null;
 let mapaEnsaiosCarregadoEm = 0;
 
+let mapaEnsaiosLoad = null;
 async function carregarMapaEnsaios() {
+    if (mapaEnsaios && Date.now() - mapaEnsaiosCarregadoEm < CACHE_TTL_MS) return mapaEnsaios;
+    if (!mapaEnsaiosLoad) {
+        mapaEnsaiosLoad = lerMapaEnsaios().finally(() => { mapaEnsaiosLoad = null; });
+    }
+    return mapaEnsaiosLoad;
+}
+
+async function lerMapaEnsaios() {
     if (mapaEnsaios && (Date.now() - mapaEnsaiosCarregadoEm) < CACHE_TTL_MS) return mapaEnsaios;
     const mapa = {};
     let offset = null;
@@ -214,7 +223,16 @@ const TBL_ORDEM_SERVICO = 'Ordem de Serviço';
 let mapaOS = null;
 let mapaOSCarregadoEm = 0;
 
+let mapaOSLoad = null;
 async function carregarMapaOS() {
+    if (mapaOS && Date.now() - mapaOSCarregadoEm < CACHE_TTL_MS) return mapaOS;
+    if (!mapaOSLoad) {
+        mapaOSLoad = lerMapaOS().finally(() => { mapaOSLoad = null; });
+    }
+    return mapaOSLoad;
+}
+
+async function lerMapaOS() {
     if (mapaOS && (Date.now() - mapaOSCarregadoEm) < CACHE_TTL_MS) return mapaOS;
     const mapa = {};
     let offset = null;
@@ -539,17 +557,19 @@ async function paginarTabelaComRitmo(table) {
     return todos;
 }
 
-async function recarregarScopeSnapshot() {
+async function recarregarScopeSnapshot(force = false) {
     // Clientes primeiro; trabalhos depois. Nao há concorrencia deliberada aqui
     // para respeitar a cota da base e reduzir 429 no cold start.
-    const clientes = await paginarTabelaComRitmo(TBL_CLIENTES);
+    const clientes = (force || scopeSnapshot)
+        ? await paginarTabelaComRitmo(TBL_CLIENTES)
+        : await carregarIdentidades();
     const trabalhos = await paginarTabelaComRitmo(TBL_NOVOS_TRABALHOS);
     const model = buildClientScopes(clientes, trabalhos, {
         ownerMinWorks: config.clientScope.ownerMinWorks,
         sampleTextMinShared: config.clientScope.sampleTextMinShared,
         overrides: config.clientScope.overrides
     });
-    return { clientes, trabalhos, model, loadedAt: Date.now() };
+    return { clientes, trabalhos, model, clientesPorId: new Map(clientes.map(rec => [rec.id, rec])), loadedAt: Date.now() };
 }
 
 async function carregarScopeSnapshot(force = false) {
@@ -559,7 +579,7 @@ async function carregarScopeSnapshot(force = false) {
 
     const startRefresh = () => {
         if (scopeSnapshotPromise) return scopeSnapshotPromise;
-        scopeSnapshotPromise = recarregarScopeSnapshot()
+        scopeSnapshotPromise = recarregarScopeSnapshot(force)
             .then(snapshot => {
                 scopeSnapshot = snapshot;
                 scopeSnapshotLoadedAt = snapshot.loadedAt;
@@ -585,7 +605,7 @@ async function carregarScopeSnapshot(force = false) {
 }
 
 function clientRecordById(snapshot, id) {
-    return snapshot.clientes.find(rec => rec.id === id) || null;
+    return snapshot.clientesPorId.get(id) || null;
 }
 
 function enriquecerClienteComEscopo(snapshot, seedRecord, cnpjConhecido = null) {
@@ -641,12 +661,11 @@ async function buscarTrabalhosDoCliente(recordIdCliente, offset = null, modo = '
     }
 
     const snapshot = await carregarScopeSnapshot();
-    const cliente = await resolverEscopoCliente(recordIdCliente);
+    const cliente = enriquecerClienteComEscopo(snapshot, clientRecordById(snapshot, recordIdCliente));
     if (!cliente) return { nome_cliente: null, trabalhos: [], offset: null, tem_mais: false, modo };
 
     const scopeClientIds = cliente.scopeClientIds;
-    const mapa = await carregarMapaEnsaios();
-    const mapaOrdens = await carregarMapaOS();
+    const [mapa, mapaOrdens] = await Promise.all([carregarMapaEnsaios(), carregarMapaOS()]);
 
     // Tenant isolation fail-closed: apenas linked-record IDs explicitamente
     // pertencentes ao escopo resolvido entram no payload. Nome/CNPJ/amostra nunca
@@ -822,21 +841,35 @@ async function detalheTrabalhoPorId(recordId) {
     };
 }
 
-async function detalhesTrabalhosPorIds(ids, concorrencia = 5) {
+async function detalhesTrabalhosPorIds(ids) {
     const unicos = [...new Set((ids || []).filter(recordIdValido))];
-    const resultado = new Map();
-    let cursor = 0;
-
-    async function worker() {
-        while (cursor < unicos.length) {
-            const atual = unicos[cursor++];
-            try { resultado.set(atual, await detalheTrabalhoPorId(atual)); }
-            catch (_) { resultado.set(atual, { id_trabalho: null, os: null }); }
-        }
+    const resultado = new Map(unicos.map(id => [id, { id_trabalho: null, os: null }]));
+    if (!unicos.length) return resultado;
+    const mapaOrdens = await carregarMapaOS();
+    // Até 50 IDs por consulta: mantém dados atuais sem uma requisição por download.
+    // IDs já validados; nenhuma entrada livre é interpolada na fórmula.
+    for (let i = 0; i < unicos.length; i += 50) {
+        const lote = unicos.slice(i, i + 50);
+        const permitidos = new Set(lote);
+        const formula = `OR(${lote.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+        try {
+            let offset = null;
+            do {
+                const params = new URLSearchParams({ pageSize: '100', filterByFormula: formula });
+                if (offset) params.set('offset', offset);
+                const resposta = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}?${params}`);
+                for (const rec of resposta.records || []) {
+                    if (!permitidos.has(rec.id)) continue;
+                    const fields = rec.fields || {};
+                    const ordem = await traduzirOS(fields['Ordem de Serviço'] ?? fields['Link Ordem de Serviço'], mapaOrdens);
+                    resultado.set(rec.id, { id_trabalho: fields['ID Trabalho'] || null, os: ordem.os });
+                }
+                offset = resposta.offset || null;
+                if (offset) await esperar(config.clientScope.pagePaceMs);
+            } while (offset);
+        } catch (_) { /* Preserva o histórico mesmo se os detalhes estiverem indisponíveis. */ }
+        if (i + 50 < unicos.length) await esperar(config.clientScope.pagePaceMs);
     }
-
-    const workers = Array.from({ length: Math.min(Math.max(1, concorrencia), unicos.length || 1) }, () => worker());
-    await Promise.all(workers);
     return resultado;
 }
 
@@ -907,3 +940,28 @@ async function buscarIdentidadeAcesso(cnpj) {
 }
 module.exports.buscarIdentidadeAcesso = buscarIdentidadeAcesso;
 
+
+// Dados da Conta são consultados somente ao abrir a aba. Não retornam senha/sigla
+// e não ampliam contatos pelo agrupamento operacional de relatórios.
+async function buscarContatosConta(cnpj, recordIdCliente) {
+    const documento = normalizarCnpj(cnpj);
+    if (!documento || !recordIdValido(recordIdCliente)) return null;
+    const records = await carregarIdentidades();
+    const matches = records.filter(rec => normalizarCnpj(rec.fields?.CNPJ) === documento);
+    if (!matches.some(rec => rec.id === recordIdCliente)) return null;
+    const emails = emailsAcesso(matches.flatMap(rec =>
+        rec.fields?.[config.airtable.clientEmailField] ?? rec.fields?.['Email Cliente'] ?? []));
+    const telefones = matches.flatMap(rec => {
+        const valor = rec.fields?.[config.airtable.clientWhatsappField] ?? rec.fields?.['WhatsApp do Cliente'];
+        return (Array.isArray(valor) ? valor.flat(Infinity) : [valor])
+            .flatMap(v => String(v || '').split(/[;,\r\n|]+/)).map(v => v.trim()).filter(Boolean);
+    });
+    const vistos = new Set();
+    const whatsapps = telefones.filter(numero => {
+        const chave = numero.replace(/\D/g, '') || numero;
+        if (vistos.has(chave)) return false;
+        vistos.add(chave); return true;
+    });
+    return { documento, emails, whatsapps };
+}
+module.exports.buscarContatosConta = buscarContatosConta;

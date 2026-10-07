@@ -114,11 +114,11 @@ test('download preserva aprovacao e nome do publicado conforme baseline', async 
  } finally {global.fetch=previous;}
 });
 
-test('historico consulta IDs individuais sem carregar snapshot de todos os clientes', async () => {
+test('historico consulta IDs em lote sem carregar snapshot de todos os clientes', async () => {
  env();const previous=global.fetch;let detailCalls=0;
  global.fetch=async url=>{
   const parsed=new URL(String(url));
-  if(parsed.pathname.endsWith('/tblJAP4Av9sWm8SmL/recBBBBBBBBBBBBBB')){detailCalls++;return jsonResponse({id:'recBBBBBBBBBBBBBB',fields:{'ID Trabalho':'TRABALHO HISTORICO'}});}
+  if(parsed.pathname.endsWith('/tblJAP4Av9sWm8SmL')){assert.match(parsed.searchParams.get('filterByFormula'), /RECORD_ID\(\)='recBBBBBBBBBBBBBB'/);detailCalls++;return jsonResponse({records:[{id:'recBBBBBBBBBBBBBB',fields:{'ID Trabalho':'TRABALHO HISTORICO'}}]});}
   if(decodeURIComponent(parsed.pathname).endsWith('/Ordem de Serviço')) return jsonResponse({records:[]});
   throw new Error('Consulta fora do contrato do historico');
  };
@@ -141,5 +141,61 @@ test('PDF por ID continua correto apos reordenacao e nao substitui arquivo remov
   assert.equal((await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB')).url,b.url);
   fields['Relatórios_Aprovados']=[b,a];assert.equal((await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB')).url,b.url);
   fields['Relatórios_Aprovados']=[a];assert.equal(await api.urlRelatorioAprovado('recBBBBBBBBBBBBBB',null,'attB'),null);
+ }finally{global.fetch=previous;}
+});
+
+
+test('Conta reúne todos os contatos do CNPJ sem senha nem contatos de outros CNPJs', async () => {
+ env(); const previous=global.fetch;
+ const records=[
+  {id:'recAAAAAAAAAAAAAA',fields:{CNPJ:'12345678000190','Sigla Cliente':'EX','Email Cliente':'a@example.test;B@example.test\na@example.test','WhatsApp do Cliente':'(61) 99999-1111; (61) 99999-2222'}},
+  {id:'recBBBBBBBBBBBBBB',fields:{CNPJ:'12345678000190','Email Cliente':'c@example.test','WhatsApp do Cliente':['61999991111','61999993333']}},
+  {id:'recCCCCCCCCCCCCCC',fields:{CNPJ:'99999999000190','Email Cliente':'a@example.test;outro@example.test','WhatsApp do Cliente':'11999999999'}}
+ ];
+ global.fetch=async()=>jsonResponse({records});
+ try {
+  delete require.cache[require.resolve('../airtable')]; const api=require('../airtable');
+  const conta=await api.buscarContatosConta('12345678000190','recAAAAAAAAAAAAAA');
+  assert.deepEqual(conta.emails,['a@example.test','b@example.test','c@example.test']);
+  assert.deepEqual(conta.whatsapps,['(61) 99999-1111','(61) 99999-2222','61999993333']);
+  assert.deepEqual(Object.keys(conta).sort(),['documento','emails','whatsapps']);
+  assert.equal(await api.buscarContatosConta('12345678000190','recCCCCCCCCCCCCCC'),null);
+ } finally {global.fetch=previous;}
+});
+
+test('login seguido de listagens concorrentes compartilha clientes e dicionários', async()=>{
+ env(); const previous=global.fetch; const counts={};
+ global.fetch=async url=>{
+  const table=decodeURIComponent(new URL(url).pathname).split('/').pop();
+  counts[table]=(counts[table]||0)+1;
+  await new Promise(resolve=>setTimeout(resolve,10));
+  if(table==='tblkQxQ6q7cBKXZ3C') return jsonResponse({records:[{id:'recAAAAAAAAAAAAAA',fields:{CNPJ:'12345678000190','Sigla Cliente':'EX'}}]});
+  return jsonResponse({records:[]});
+ };
+ try {
+  delete require.cache[require.resolve('../airtable')]; const api=require('../airtable');
+  await api.buscarIdentidadeAcesso('12345678000190');
+  await Promise.all(Array.from({length:8},()=>api.buscarTrabalhosDoCliente('recAAAAAAAAAAAAAA')));
+  assert.deepEqual(counts,{tblkQxQ6q7cBKXZ3C:1,tblJAP4Av9sWm8SmL:1,tblYtVM2crMxpxHgG:1,'Ordem de Serviço':1});
+ } finally {global.fetch=previous;}
+});
+
+test('histórico de 120 trabalhos faz três consultas em lote e ignora IDs inválidos', async()=>{
+ env(); const previous=global.fetch;let batches=0;
+ const ids=Array.from({length:120},(_,i)=>'rec'+String(i).padStart(14,'0'));
+ global.fetch=async url=>{
+  const parsed=new URL(url);
+  if(decodeURIComponent(parsed.pathname).endsWith('/Ordem de Serviço')) return jsonResponse({records:[]});
+  const formula=parsed.searchParams.get('filterByFormula');
+  assert.ok(formula);batches++;
+  const wanted=[...formula.matchAll(/rec[0-9]{14}/g)].map(m=>m[0]);
+  assert.ok(wanted.length<=50);
+  return jsonResponse({records:wanted.map(id=>({id,fields:{'ID Trabalho':id}}))});
+ };
+ try {
+  delete require.cache[require.resolve('../airtable')];const api=require('../airtable');
+  const result=await api.detalhesTrabalhosPorIds([...ids,...ids,'invalid']);
+  assert.equal(batches,3);assert.equal(result.size,120);
+  for(const id of ids) assert.equal(result.get(id).id_trabalho,id);
  }finally{global.fetch=previous;}
 });

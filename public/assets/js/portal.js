@@ -809,32 +809,82 @@ document.getElementById('btnTema').addEventListener('click', function(){ ITR.alt
   if(rodapeConta) rodapeConta.addEventListener('click', function(){ ativarViewConta(); });
 })();
 
-/* ---- Aba "Conta" (ETAPA 2 — aditivo, 100% front, dados mascarados) ---- */
+/* ---- Aba Conta: contatos carregados sob demanda, sem atrasar os relatórios. ---- */
 var PERFIL_ATUAL = null;
-function mascararCnpj(cnpj){
+var CONTA_ATUAL = null;
+var contaCarregadaEm = 0;
+var contaEmVoo = null;
+function formatarCnpj(cnpj){
   var d = String(cnpj||'').replace(/\D/g,'');
-  if(d.length !== 14) return d || '—';
-  return d.slice(0,2)+'.***.***/**'+d.slice(-2);
+  return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : d || '—';
 }
-function mascararEmail(email){
-  var s = String(email||'').trim();
-  var arroba = s.indexOf('@');
-  if(arroba < 0) return s || '—';
-  var usuario = s.slice(0, arroba);
-  var resto = s.slice(arroba+1);
-  var ponto = resto.indexOf('.');
-  var dominioNome = ponto >= 0 ? resto.slice(0, ponto) : resto;
-  var tld = ponto >= 0 ? resto.slice(ponto) : '';
-  return usuario.slice(0, Math.min(2, usuario.length)) + '****@' + dominioNome.slice(0,1) + '*****' + tld;
+function formatarWhatsapp(valor){
+  var d = String(valor || '').replace(/\D/g, '');
+  if(/^55\d{10,11}$/.test(d)){
+    var local = d.slice(2);
+    return '+55 (' + local.slice(0,2) + ') ' + local.slice(2,-4) + '-' + local.slice(-4);
+  }
+  return valor;
+}
+function preencherListaContatos(id, valores, check){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.replaceChildren();
+  if(!valores.length){ el.textContent = 'Nenhum cadastrado.'; return; }
+  valores.forEach(function(valor){
+    var linha = document.createElement('div');
+    linha.className = 'conta-contato';
+    var texto = document.createElement('span');
+    texto.textContent = check ? valor : formatarWhatsapp(valor);
+    linha.appendChild(texto);
+    if(check){
+      var selo = document.createElement('span');
+      selo.className = 'conta-contato-check';
+      selo.textContent = '✓';
+      selo.title = 'E-mail cadastrado';
+      selo.setAttribute('aria-label', 'E-mail cadastrado');
+      linha.appendChild(selo);
+    }
+    el.appendChild(linha);
+  });
 }
 function preencherConta(){
   var elEmpresa = document.getElementById('contaEmpresa');
   var elCnpj = document.getElementById('contaCnpj');
-  var elEmail = document.getElementById('contaEmail');
   if(elEmpresa) elEmpresa.textContent = (PERFIL_ATUAL && PERFIL_ATUAL.nomeEmpresa) || NOME_CLIENTE || '—';
-  if(elCnpj) elCnpj.textContent = mascararCnpj(PERFIL_ATUAL && PERFIL_ATUAL.documento);
-  if(elEmail) elEmail.textContent = mascararEmail(PERFIL_ATUAL && PERFIL_ATUAL.email);
+  if(elCnpj) elCnpj.textContent = formatarCnpj(PERFIL_ATUAL && PERFIL_ATUAL.documento);
+  if(CONTA_ATUAL){
+    preencherListaContatos('contaEmail', CONTA_ATUAL.emails || [], true);
+    preencherListaContatos('contaWhatsapp', CONTA_ATUAL.whatsapps || [], false);
+  }
 }
+function carregarContatosConta(){
+  if(!PERFIL_ATUAL || contaEmVoo) return contaEmVoo;
+  if(CONTA_ATUAL && Date.now() - contaCarregadaEm < 60000) return;
+  var estado = document.getElementById('contaEstado');
+  var tentar = document.getElementById('contaTentar');
+  estado.textContent = 'Carregando contatos…';
+  tentar.hidden = true;
+  var controller = new AbortController();
+  var timer = setTimeout(function(){ controller.abort(); }, 20000);
+  contaEmVoo = fetch('/api/conta', {credentials:'same-origin', cache:'no-store', signal:controller.signal})
+    .then(function(resp){
+      if(resp.status === 401){ window.location.replace('/login.html'); throw new Error('Sessão encerrada'); }
+      if(!resp.ok) throw new Error('Contatos indisponíveis');
+      return resp.json();
+    }).then(function(dados){
+      if(!dados.sucesso || !dados.conta) throw new Error('Resposta inválida');
+      CONTA_ATUAL = dados.conta;
+      contaCarregadaEm = Date.now();
+      preencherConta();
+      estado.textContent = '';
+    }).catch(function(){
+      estado.textContent = CONTA_ATUAL ? 'Não foi possível atualizar os contatos. Exibindo a última consulta.' : 'Não foi possível carregar os contatos. Tente novamente.';
+      tentar.hidden = false;
+    }).finally(function(){ clearTimeout(timer); contaEmVoo = null; });
+  return contaEmVoo;
+}
+document.getElementById('contaTentar').addEventListener('click', carregarContatosConta);
 
 function ativarViewConta(){
   var viewRel = document.getElementById('viewRelatorios');
@@ -847,6 +897,7 @@ function ativarViewConta(){
   if(navCta) navCta.classList.add('ativo');
   document.body.classList.add('conta-ativa');
   preencherConta();
+  carregarContatosConta();
 }
 function ativarViewRelatorios(){
   var viewRel = document.getElementById('viewRelatorios');
@@ -881,6 +932,7 @@ ITR.perfil().then(function(perfil){
     return;
   }
   PERFIL_ATUAL = perfil;
+  if(document.body.classList.contains('conta-ativa')){ preencherConta(); carregarContatosConta(); }
   document.dispatchEvent(new CustomEvent('itr:perfil-carregado', { detail: perfil }));
   iniciar();
 }).catch(function(){ window.location.replace('/login.html'); });

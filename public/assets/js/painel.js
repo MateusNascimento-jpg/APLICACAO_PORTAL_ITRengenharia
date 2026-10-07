@@ -244,7 +244,7 @@ async function carregarMapaDownloadsDoCliente(cnpj){
   MAPA_DOWNLOADS_ATUAL = {};
   if(!cnpj) return;
   try {
-    var resp = await fetch('/api/diretor/downloads', { credentials:'same-origin', cache:'no-store' });
+    var resp = await fetch('/api/diretor/downloads?resumo=1&cnpj=' + encodeURIComponent(cnpj), { credentials:'same-origin', cache:'no-store' });
     if(!resp.ok) return; // selo so' nao aparece; nao trava a tela de trabalhos
     var dados = await resp.json();
     if(!dados.sucesso) return;

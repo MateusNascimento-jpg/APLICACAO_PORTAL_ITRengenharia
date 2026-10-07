@@ -759,3 +759,11 @@ body.tour-ativo{ overflow:hidden; }
 
 /* Nome completo da amostra, sem truncamento. */
 .work .amostra-titulo .amostra-nome-completo{white-space:normal;overflow-wrap:anywhere}
+
+/* Contatos: mantém o cartão original e permite listas sem cortar endereços. */
+.conta-contato { display:flex; align-items:center; gap:6px; margin:4px 0; }
+.conta-contato > span:first-child { min-width:0; overflow-wrap:anywhere; }
+.conta-contato-check { display:inline-flex; align-items:center; justify-content:center; flex:0 0 14px; width:14px; height:14px; border:1px solid #16834a; border-radius:50%; color:#16834a; font-size:10px; line-height:1; }
+#contaEstado:empty { display:none; }
+#contaEstado { font-size:13px; margin:12px 0 0; }
+#contaTentar[hidden] { display:none; }

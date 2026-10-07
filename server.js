@@ -9,6 +9,7 @@ const {
     buscarTrabalhosDoCliente,
     buscarClientePorCnpj,
     buscarIdentidadeAcesso,
+    buscarContatosConta,
     buscarClientePorId,
     resolverEscopoCliente,
     carregarScopeSnapshot,
@@ -918,6 +919,20 @@ app.post('/api/diretor/login', sameOriginOnly, async (req, res) => {
 });
 
 // ---------- Sessão ----------
+app.get('/api/conta', autenticado, async (req, res) => {
+    if (!['GeneratedClient', 'DevViewer'].includes(req.session.role)) {
+        return erro(res, 403, 'Esta consulta está disponível na conta do cliente.');
+    }
+    try {
+        const conta = await buscarContatosConta(req.session.documento, req.session.airtableId);
+        if (!conta) return erro(res, 404, 'Não foi possível localizar os contatos desta conta.');
+        return res.json({ sucesso: true, conta });
+    } catch (error) {
+        console.error(`[${req.requestId}] [CONTA]`, error.code || 'dependency_unavailable');
+        return erro(res, 503, 'Não foi possível carregar os contatos agora. Tente novamente.');
+    }
+});
+
 app.get('/api/perfil', autenticado, async (req, res) => {
     try {
         return res.json({ sucesso: true, usuario: await usuarioPublicoComEstado(req.session) });
@@ -1173,11 +1188,18 @@ app.patch('/api/trabalho/:id/aprovacao', sameOriginOnly, autenticado, somenteDir
 app.get('/api/diretor/downloads', autenticado, somenteDiretor, async (req, res) => {
     try {
         const limite = Math.max(1, Math.min(Number(req.query.limit) || 500, 1000));
+        const resumo = req.query.resumo === '1';
+        const cnpj = String(req.query.cnpj || '');
+        if (resumo && !/^\d{14}$/.test(cnpj)) return erro(res, 400, 'CNPJ inválido.');
         const [linhas] = await pool.query(
             `SELECT cnpj, record_id_trabalho, baixado_em FROM relatorios_baixados
-             ORDER BY baixado_em DESC LIMIT ?`,
-            [limite]
+             ${resumo ? 'WHERE cnpj = ?' : ''} ORDER BY baixado_em DESC LIMIT ?`,
+            resumo ? [cnpj, limite] : [limite]
         );
+        // O selo no cartão só precisa do histórico MySQL; não consulta Airtable.
+        if (resumo) return res.json({ sucesso: true, downloads: linhas.map(linha => ({
+            cnpj: linha.cnpj, record_id: linha.record_id_trabalho, baixado_em: linha.baixado_em
+        })) });
 
         let mapaEmpresaPorCnpj = {};
         try {
