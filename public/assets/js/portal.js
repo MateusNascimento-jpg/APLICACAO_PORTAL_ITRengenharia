@@ -35,11 +35,17 @@ var TI_SVG = {
   'user':'<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>',
   'help':'<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 17l0 .01"/><path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/>',
   'external-link':'<path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/>',
+  'file-description':'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 17h6"/><path d="M9 13h6"/>',
   'menu-2':'<path d="M4 6l16 0"/><path d="M4 12l16 0"/><path d="M4 18l16 0"/>',
   'stack-2':'<path d="M12 4l-8 4l8 4l8 -4l-8 -4"/><path d="M4 12l8 4l8 -4"/><path d="M4 16l8 4l8 -4"/>',
   'mail':'<path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"/><path d="M3 7l9 6l9 -6"/>',
   'brand-instagram':'<path d="M4 4m0 4a4 4 0 0 1 4 -4h8a4 4 0 0 1 4 4v8a4 4 0 0 1 -4 4h-8a4 4 0 0 1 -4 -4z"/><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M16.5 7.5l0 .01"/>',
-  'brand-linkedin':'<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 11l0 5"/><path d="M8 8l0 .01"/><path d="M12 16l0 -5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/>'
+  'brand-linkedin':'<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 11l0 5"/><path d="M8 8l0 .01"/><path d="M12 16l0 -5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/>',
+  'send':'<path d="M3 20l18 -8l-18 -8l4 8z"/><path d="M7 12h14"/>',
+  'hourglass':'<path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3c0 5 8 5 8 9s-8 4-8 9"/>',
+  'circle-check':'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3l5 -6"/>',
+  'circle-x':'<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/>',
+  'clock-x':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5"/><path d="M15 15l3 3"/><path d="M18 15l-3 3"/>'
 };
 function svgIcone(nome){
   var corpo = TI_SVG[nome];
@@ -775,6 +781,9 @@ document.getElementById('btnTema').addEventListener('click', function(){ ITR.alt
   var navConta = document.getElementById('navConta');
   if(navConta) navConta.addEventListener('click', function(){ ativarViewConta(); });
 
+  var navPropostas = document.getElementById('navPropostas');
+  if(navPropostas) navPropostas.addEventListener('click', function(){ ativarViewPropostas(); });
+
   /* ---- Colapso desktop (mini-sidebar) — ETAPA 2.1 ---- */
   var btnSidebarToggle = document.getElementById('btnSidebarToggle');
   var layoutShell = document.querySelector('.layout-shell');
@@ -886,30 +895,227 @@ function carregarContatosConta(){
 }
 document.getElementById('contaTentar').addEventListener('click', carregarContatosConta);
 
-function ativarViewConta(){
+function limparNavAtiva(){
+  ['navRelatorios','navConta','navPropostas'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.classList.remove('ativo');
+  });
+}
+function ocultarViewsPortal(){
   var viewRel = document.getElementById('viewRelatorios');
   var painelConta = document.getElementById('painelConta');
+  var painelPropostas = document.getElementById('painelPropostas');
   if(viewRel) viewRel.hidden = true;
+  if(painelConta) painelConta.hidden = true;
+  if(painelPropostas) painelPropostas.hidden = true;
+}
+function ativarViewConta(){
+  ocultarViewsPortal();
+  var painelConta = document.getElementById('painelConta');
   if(painelConta) painelConta.hidden = false;
-  var navRel = document.getElementById('navRelatorios');
+  limparNavAtiva();
   var navCta = document.getElementById('navConta');
-  if(navRel) navRel.classList.remove('ativo');
   if(navCta) navCta.classList.add('ativo');
   document.body.classList.add('conta-ativa');
   preencherConta();
   carregarContatosConta();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function ativarViewRelatorios(){
+  ocultarViewsPortal();
   var viewRel = document.getElementById('viewRelatorios');
-  var painelConta = document.getElementById('painelConta');
-  if(painelConta) painelConta.hidden = true;
   if(viewRel) viewRel.hidden = false;
+  limparNavAtiva();
   var navRel = document.getElementById('navRelatorios');
-  var navCta = document.getElementById('navConta');
-  if(navCta) navCta.classList.remove('ativo');
   if(navRel) navRel.classList.add('ativo');
   document.body.classList.remove('conta-ativa');
 }
+
+/* ---- Aba Propostas: base financeira separada, carregada somente ao abrir. ---- */
+var PROPOSTAS_ATUAIS = [];
+var propostasCarregadasEm = 0;
+var propostasEmVoo = null;
+var propostasRuntime = null;
+var propostaAbertaId = null;
+
+function moedaBR(valor){
+  if(typeof valor !== 'number' || !isFinite(valor)) return '—';
+  try{ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(valor); }
+  catch(e){ return 'R$ ' + valor.toFixed(2).replace('.',','); }
+}
+function statusClasseProposta(status){
+  if(status === 'Aceita') return 'aprovada';
+  if(status === 'Rejeitada') return 'rejeitada';
+  if(status === 'Em Análise pelo Cliente') return 'analise';
+  if(status === 'Expirada') return 'expirada';
+  return '';
+}
+function statusRotuloProposta(status){
+  if(status === 'Aceita') return '✓ PROPOSTA APROVADA';
+  if(status === 'Rejeitada') return '✕ PROPOSTA REJEITADA';
+  return status || 'Pendente';
+}
+function fluxoProposta(status){
+  var analise = ['Em Análise pelo Cliente','Aceita','Rejeitada','Expirada'].includes(status);
+  var enviada = ['Enviada','Em Análise pelo Cliente','Aceita','Rejeitada','Expirada'].includes(status);
+  var finalClasse = status === 'Aceita' ? 'concluida final-aprovada' : status === 'Rejeitada' ? 'concluida final-rejeitada' : status === 'Expirada' ? 'final-expirada' : '';
+  var finalTexto = status === 'Aceita' ? 'Aceita' : status === 'Rejeitada' ? 'Rejeitada' : status === 'Expirada' ? 'Expirada' : 'Decisão';
+  var finalIconeHtml = status === 'Aceita'
+    ? '<i class="ti ti-circle-check" aria-hidden="true"></i>'
+    : status === 'Rejeitada'
+      ? '<i class="ti ti-circle-x" aria-hidden="true"></i>'
+      : status === 'Expirada'
+        ? '<i class="ti ti-clock-x" aria-hidden="true"></i>'
+        : '<svg class="proposta-ampulheta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12"/><path d="M6 22h12"/><path d="M7 2c0 5 2.3 7.4 5 10-2.7 2.6-5 5-5 10"/><path d="M17 2c0 5-2.3 7.4-5 10 2.7 2.6 5 5 5 10"/></svg>';
+  return '<div class="proposta-fluxo" aria-label="Andamento da proposta">'+
+    '<div class="proposta-etapa '+(enviada?'concluida':'')+'"><span class="proposta-etapa-marca"><i class="ti ti-send" aria-hidden="true"></i></span><span class="proposta-etapa-texto">Enviada</span></div>'+
+    '<div class="proposta-etapa '+(analise?'concluida':'')+'"><span class="proposta-etapa-marca"><i class="ti ti-search" aria-hidden="true"></i></span><span class="proposta-etapa-texto">Em análise</span></div>'+
+    '<div class="proposta-etapa '+finalClasse+'"><span class="proposta-etapa-marca">'+finalIconeHtml+'</span><span class="proposta-etapa-texto">'+esc(finalTexto)+'</span></div>'+
+  '</div>';
+}
+function podeAceitarProposta(status){
+  return !['Aceita','Rejeitada','Expirada'].includes(status);
+}
+function documentosProposta(p){
+  var docs = Array.isArray(p.documentos) ? p.documentos : [];
+  if(!docs.length) return '<div class="proposta-documento-destaque"><div class="proposta-documento-cabecalho"><span class="proposta-documento-kicker">Documento</span></div><div class="proposta-documento-vazio"><i class="ti ti-file-off" aria-hidden="true"></i><span>Documento não disponível.</span></div></div>';
+  return '<div class="proposta-documento-destaque"><div class="proposta-documento-cabecalho"><span class="proposta-documento-kicker">Documento</span></div><div class="proposta-documentos">' + docs.map(function(d){
+    var url = '/api/propostas/'+encodeURIComponent(p.id)+'/documento/'+encodeURIComponent(d.id);
+    return '<div class="proposta-documento"><div class="proposta-documento-nome"><span class="proposta-documento-icone"><i class="ti ti-file-description" aria-hidden="true"></i></span><span>'+esc(d.nome || 'Proposta.pdf')+'</span></div><a href="'+url+'" target="_blank" rel="noopener">Visualizar PDF <i class="ti ti-arrow-up-right" aria-hidden="true"></i></a></div>';
+  }).join('') + '</div></div>';
+}
+function blocoAceiteProposta(p){
+  if(p.status === 'Aceita') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo aprovada"><i class="ti ti-check" aria-hidden="true"></i> Proposta aprovada</div></div>';
+  if(p.status === 'Rejeitada') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo rejeitada"><i class="ti ti-x" aria-hidden="true"></i> Proposta rejeitada</div></div>';
+  if(!podeAceitarProposta(p.status)) return '<div class="proposta-info proposta-acao"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-info-valor">Nenhuma ação disponível.</div></div>';
+  var seguro = propostasRuntime && propostasRuntime.safeMode;
+  return '<div class="proposta-info proposta-acao">'+
+    '<div class="proposta-info-rotulo">Decisão</div>'+
+    '<button type="button" class="proposta-btn-aceitar" data-acao="aceitar" data-id="'+esc(p.id)+'" '+(seguro?'disabled':'')+'><span class="proposta-btn-icone"><i class="ti ti-check" aria-hidden="true"></i></span><span>Aceitar proposta</span></button>'+
+    (seguro?'<span class="proposta-safe-note">Aceite bloqueado neste ambiente local pelo modo seguro.</span>':'')+
+    '<div class="proposta-confirmacao" data-confirmacao="'+esc(p.id)+'" hidden><p>Confirma o aceite desta proposta? Após a confirmação, o status será atualizado para <strong>Aceita</strong>.</p><div class="proposta-confirmacao-acoes"><button type="button" class="proposta-confirmar" data-acao="confirmar" data-id="'+esc(p.id)+'">Confirmar aceite</button><button type="button" class="proposta-cancelar" data-acao="cancelar" data-id="'+esc(p.id)+'">Cancelar</button></div><div class="proposta-feedback" data-feedback="'+esc(p.id)+'" hidden></div></div>'+
+  '</div>';
+}
+function renderizarPropostas(){
+  var lista = document.getElementById('propostasLista');
+  var estado = document.getElementById('propostasEstado');
+  if(!lista) return;
+  lista.innerHTML = '';
+  if(estado) estado.hidden = true;
+  if(!PROPOSTAS_ATUAIS.length){
+    lista.innerHTML = '<div class="propostas-vazio"><strong>Nenhuma proposta disponível.</strong><span>Quando a ITR enviar uma proposta para sua empresa, ela aparecerá aqui.</span></div>';
+    return;
+  }
+  PROPOSTAS_ATUAIS.forEach(function(p){
+    var classe = statusClasseProposta(p.status);
+    var aberta = propostaAbertaId === p.id;
+    var artigo = document.createElement('article');
+    artigo.className = 'proposta-card '+classe+(aberta?' aberta':'');
+    artigo.setAttribute('data-proposta-id', p.id);
+    artigo.innerHTML =
+      '<button class="proposta-resumo" type="button" data-acao="toggle" data-id="'+esc(p.id)+'" aria-expanded="'+(aberta?'true':'false')+'">'+
+        '<span class="proposta-resumo-icone" aria-hidden="true"><i class="ti ti-mail"></i></span>'+
+        '<div class="proposta-identificacao"><div class="proposta-numero">Proposta '+esc(p.numero || '—')+'</div><div class="proposta-meta"><span><i class="ti ti-calendar" aria-hidden="true"></i> Enviada em '+esc(formatarData(p.dataEnvio))+'</span></div></div>'+
+        '<div class="proposta-valor-resumo">'+esc(moedaBR(p.valor))+'</div>'+
+        '<div class="proposta-direita"><span class="proposta-status '+classe+'">'+esc(statusRotuloProposta(p.status))+'</span><span class="proposta-chevron"><i class="ti ti-chevron-down" aria-hidden="true"></i></span></div>'+
+      '</button>'+
+      '<div class="proposta-detalhes" '+(aberta?'':'hidden')+'>'+
+        '<div class="proposta-fluxo-wrap">'+fluxoProposta(p.status)+'</div>'+
+        documentosProposta(p)+
+        '<div class="proposta-info-grid">'+
+          '<div class="proposta-info valor-destaque"><div class="proposta-info-rotulo">Valor da proposta</div><div class="proposta-info-valor">'+esc(moedaBR(p.valor))+'</div></div>'+
+          '<div class="proposta-info"><div class="proposta-info-rotulo">Forma de pagamento</div><div class="proposta-info-valor">'+esc(p.formaPagamento || '—')+'</div></div>'+
+          '<div class="proposta-info"><div class="proposta-info-rotulo">Prazo para pagamento</div><div class="proposta-info-valor">'+esc(p.prazoPagamentoDias == null ? '—' : p.prazoPagamentoDias+' dias após emissão da NF')+'</div></div>'+
+          blocoAceiteProposta(p)+
+        '</div>'+
+      '</div>';
+    lista.appendChild(artigo);
+  });
+  aplicarIcones(lista);
+}
+function mostrarEstadoPropostas(texto, carregando){
+  var estado = document.getElementById('propostasEstado');
+  if(!estado) return;
+  estado.hidden = false;
+  estado.innerHTML = (carregando?'<i class="ti ti-loader-2" aria-hidden="true"></i>':'')+'<span>'+esc(texto)+'</span>';
+  aplicarIcones(estado);
+}
+function carregarPropostas(forcar){
+  if(propostasEmVoo) return propostasEmVoo;
+  if(!forcar && propostasCarregadasEm && Date.now()-propostasCarregadasEm < 30000){ renderizarPropostas(); return Promise.resolve(); }
+  var tentar = document.getElementById('propostasTentar');
+  if(tentar) tentar.hidden = true;
+  mostrarEstadoPropostas('Carregando propostas…', true);
+  propostasEmVoo = Promise.all([
+    fetch('/api/propostas',{credentials:'same-origin',cache:'no-store'}),
+    ITR.runtime().catch(function(){ return null; })
+  ]).then(function(result){
+    var resp = result[0]; propostasRuntime = result[1];
+    if(resp.status === 401){ window.location.replace('/login.html'); throw new Error('Sessão encerrada'); }
+    return ITR.jsonSeguro(resp).then(function(dados){
+      if(!resp.ok || !dados || !dados.sucesso) throw new Error((dados && dados.erro) || 'Propostas indisponíveis');
+      PROPOSTAS_ATUAIS = Array.isArray(dados.propostas) ? dados.propostas : [];
+      propostasCarregadasEm = Date.now();
+      renderizarPropostas();
+    });
+  }).catch(function(err){
+    mostrarEstadoPropostas(err.message || 'Não foi possível carregar as propostas. Tente novamente.', false);
+    if(tentar) tentar.hidden = false;
+  }).finally(function(){ propostasEmVoo = null; });
+  return propostasEmVoo;
+}
+function ativarViewPropostas(){
+  ocultarViewsPortal();
+  var painel = document.getElementById('painelPropostas');
+  if(painel) painel.hidden = false;
+  limparNavAtiva();
+  var nav = document.getElementById('navPropostas');
+  if(nav) nav.classList.add('ativo');
+  document.body.classList.remove('conta-ativa');
+  carregarPropostas(false);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+var propostasListaEl = document.getElementById('propostasLista');
+if(propostasListaEl) propostasListaEl.addEventListener('click', function(e){
+  var botao = e.target.closest('[data-acao]');
+  if(!botao) return;
+  var acao = botao.getAttribute('data-acao');
+  var id = botao.getAttribute('data-id');
+  if(acao === 'toggle'){
+    propostaAbertaId = propostaAbertaId === id ? null : id;
+    renderizarPropostas();
+    return;
+  }
+  var confirmacao = document.querySelector('[data-confirmacao="'+CSS.escape(id)+'"]');
+  if(acao === 'aceitar'){
+    if(confirmacao) confirmacao.hidden = false;
+    return;
+  }
+  if(acao === 'cancelar'){
+    if(confirmacao) confirmacao.hidden = true;
+    return;
+  }
+  if(acao === 'confirmar'){
+    var feedback = document.querySelector('[data-feedback="'+CSS.escape(id)+'"]');
+    botao.disabled = true;
+    if(feedback){ feedback.hidden = true; feedback.textContent = ''; }
+    ITR.apiFetch('/api/propostas/'+encodeURIComponent(id)+'/aceitar', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(function(resp){ return ITR.jsonSeguro(resp).then(function(dados){ return {resp:resp,dados:dados}; }); })
+      .then(function(r){
+        if(!r.resp.ok || !r.dados || !r.dados.sucesso) throw new Error((r.dados && r.dados.erro) || 'Não foi possível aceitar a proposta.');
+        PROPOSTAS_ATUAIS = PROPOSTAS_ATUAIS.map(function(p){ return p.id === id ? r.dados.proposta : p; });
+        propostasCarregadasEm = Date.now();
+        propostaAbertaId = id;
+        renderizarPropostas();
+      }).catch(function(err){
+        botao.disabled = false;
+        if(feedback){ feedback.textContent = err.message || 'Não foi possível concluir o aceite.'; feedback.hidden = false; }
+      });
+  }
+});
+var propostasTentar = document.getElementById('propostasTentar');
+if(propostasTentar) propostasTentar.addEventListener('click', function(){ carregarPropostas(true); });
 
 
 /* ---- Scroll infinito via IntersectionObserver ---- */

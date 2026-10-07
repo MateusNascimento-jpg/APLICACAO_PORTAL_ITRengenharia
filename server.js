@@ -54,6 +54,12 @@ const {
     markOnboarding
 } = require('./lib/client-auth');
 const { sendSecurityNotification } = require('./lib/notifications');
+const {
+    habilitado: financeiroHabilitado,
+    listarPropostasPorCnpj,
+    aceitarProposta,
+    obterDocumentoProposta
+} = require('./finance-airtable');
 
 const app = express();
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -171,6 +177,16 @@ function somenteDiretor(req, res, next) {
 function somenteCliente(req, res, next) {
     if (!req.session || req.session.role !== 'Cliente') {
         return erro(res, 403, 'Acesso não autorizado.', 'CLIENT_REQUIRED');
+    }
+    next();
+}
+
+function somenteClientePortal(req, res, next) {
+    if (!req.session || !['Cliente', 'GeneratedClient', 'DevViewer'].includes(req.session.role)) {
+        return erro(res, 403, 'Acesso não autorizado.', 'CLIENT_REQUIRED');
+    }
+    if (!req.session.documento) {
+        return erro(res, 403, 'Sua sessão não possui uma empresa válida.', 'CLIENT_REQUIRED');
     }
     next();
 }
@@ -939,6 +955,65 @@ app.get('/api/perfil', autenticado, async (req, res) => {
     } catch (error) {
         console.error(`[${req.requestId}] [PERFIL]`, error.message);
         return erro(res, 503, 'Não foi possível carregar os dados da sua sessão agora.', 'PROFILE_UNAVAILABLE');
+    }
+});
+
+// ---------- Propostas (base financeira isolada) ----------
+app.get('/api/propostas', autenticado, somenteClientePortal, async (req, res) => {
+    if (!financeiroHabilitado()) {
+        return erro(res, 503, 'A integração de propostas ainda não está configurada neste ambiente.', 'FINANCE_NOT_CONFIGURED');
+    }
+    try {
+        const resultado = await listarPropostasPorCnpj(req.session.documento);
+        return res.json({
+            sucesso: true,
+            clienteEncontrado: Boolean(resultado.cliente),
+            propostas: resultado.propostas
+        });
+    } catch (error) {
+        console.error(`[${req.requestId}] [PROPOSTAS]`, error.code || error.message);
+        return erro(res, 503, 'Não foi possível carregar suas propostas agora. Tente novamente.', 'PROPOSALS_UNAVAILABLE');
+    }
+});
+
+app.post('/api/propostas/:id/aceitar', sameOriginOnly, autenticado, somenteClientePortal, csrfProtegido, escritaHabilitada, async (req, res) => {
+    try {
+        const resultado = await aceitarProposta(req.session.documento, req.params.id);
+        if (!resultado.ok && resultado.code === 'NOT_FOUND') {
+            return erro(res, 404, 'Proposta não encontrada para esta empresa.', 'PROPOSAL_NOT_FOUND');
+        }
+        if (!resultado.ok && resultado.code === 'TERMINAL_STATUS') {
+            return erro(res, 409, `Esta proposta está ${String(resultado.status || '').toLowerCase()} e não pode ser aceita pelo Portal.`, 'PROPOSAL_TERMINAL');
+        }
+        await audit(req, 'client_proposal_accepted', {
+            actorType: 'Cliente',
+            actorId: hmac(req.session.documento),
+            outcome: resultado.idempotente ? 'already_accepted' : 'success',
+            metadata: { proposalId: req.params.id }
+        });
+        return res.json({ sucesso: true, proposta: resultado.proposta, idempotente: Boolean(resultado.idempotente) });
+    } catch (error) {
+        console.error(`[${req.requestId}] [PROPOSTA_ACEITE]`, error.code || error.message);
+        return erro(res, 503, 'Não foi possível registrar o aceite agora. Tente novamente.', 'PROPOSAL_ACCEPT_UNAVAILABLE');
+    }
+});
+
+app.get('/api/propostas/:id/documento/:anexoId', autenticado, somenteClientePortal, async (req, res) => {
+    try {
+        const doc = await obterDocumentoProposta(req.session.documento, req.params.id, req.params.anexoId);
+        if (!doc) return erro(res, 404, 'Documento da proposta não encontrado.', 'PROPOSAL_DOCUMENT_NOT_FOUND');
+        const upstream = await fetch(doc.url, { redirect: 'follow' });
+        if (!upstream.ok || !upstream.body) return erro(res, 502, 'Documento temporariamente indisponível.', 'PROPOSAL_DOCUMENT_UNAVAILABLE');
+        const nome = String(doc.nome || 'Proposta.pdf').replace(/[\\"\r\n]/g, '_');
+        res.setHeader('Content-Type', upstream.headers.get('content-type') || doc.tipo || 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${nome}"`);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        if (doc.tamanho) res.setHeader('Content-Length', String(doc.tamanho));
+        Readable.fromWeb(upstream.body).on('error', err => res.destroy(err)).pipe(res);
+    } catch (error) {
+        console.error(`[${req.requestId}] [PROPOSTA_DOCUMENTO]`, error.code || error.message);
+        if (!res.headersSent) return erro(res, 503, 'Não foi possível abrir o documento agora.', 'PROPOSAL_DOCUMENT_UNAVAILABLE');
+        res.destroy(error);
     }
 });
 // Alias legado: carrega a sessão explicitamente porque está fora do prefixo /api.

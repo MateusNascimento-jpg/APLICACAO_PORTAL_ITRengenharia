@@ -33,6 +33,9 @@
     <a class="sidebar-item" id="navSiteItr" href="https://itr.eng.br" target="_blank" rel="noopener" title="Site ITR">
       <i class="ti ti-external-link" aria-hidden="true"></i><span>Site ITR</span>
     </a>
+    <button class="sidebar-item" id="navPropostas" type="button" data-view="propostas" title="Propostas">
+      <i class="ti ti-file-description" aria-hidden="true"></i><span>Propostas</span>
+    </button>
   </aside>
 
   <div class="conteudo-wrap">
@@ -211,6 +214,22 @@
         <button class="btn-sec" id="btnRefazerTour" type="button"><i class="ti ti-route" aria-hidden="true"></i> Fazer tour do Portal</button>
       </div>
     </div>
+  </section>
+
+  <!-- Aba Propostas — integração financeira isolada -->
+  <section class="propostas-painel" id="painelPropostas" hidden aria-label="Propostas comerciais">
+    <div class="propostas-cabecalho">
+      <div>
+        <div class="propostas-kicker">Comercial</div>
+        <h2>Minhas propostas</h2>
+        <p>Acompanhe o andamento, consulte as condições comerciais e visualize os documentos enviados pela ITR.</p>
+      </div>
+    </div>
+    <div class="propostas-estado" id="propostasEstado" role="status" aria-live="polite">
+      <i class="ti ti-loader-2" aria-hidden="true"></i><span>Carregando propostas…</span>
+    </div>
+    <div class="propostas-lista" id="propostasLista" aria-live="polite"></div>
+    <button type="button" class="btn-sec propostas-tentar" id="propostasTentar" hidden>Tentar novamente</button>
   </section>
 
   <!-- Rodapé institucional (ETAPA 2 — aditivo) -->

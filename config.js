@@ -100,6 +100,15 @@ const config = {
         clientWhatsappField: String(process.env.AIRTABLE_CLIENT_WHATSAPP_FIELD || 'WhatsApp do Cliente').trim()
     },
 
+    // Base financeira separada da base operacional. Opcional para não quebrar
+    // instalações antigas; quando ausente, somente a aba Propostas fica indisponível.
+    financeAirtable: {
+        token: String(process.env.AIRTABLE_FINANCE_TOKEN || process.env.AIRTABLE_TOKEN || '').trim(),
+        baseId: String(process.env.AIRTABLE_FINANCE_BASE_ID || '').trim(),
+        timeoutMs: inteiro('AIRTABLE_FINANCE_TIMEOUT_MS', 12000, 1000, 60000),
+        retries: inteiro('AIRTABLE_FINANCE_RETRIES', 3, 0, 6)
+    },
+
     clientScope: {
         cacheTtlMs: inteiro('PORTAL_SCOPE_CACHE_TTL_MS', 300000, 30000, 3600000),
         staleMaxMs: inteiro('PORTAL_SCOPE_STALE_MAX_MS', 900000, 60000, 7200000),
