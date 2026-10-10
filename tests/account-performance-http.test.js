@@ -6,7 +6,7 @@ Object.assign(process.env,{NODE_ENV:'test',AIRTABLE_TOKEN:'fake',AIRTABLE_BASE_I
 let session=null, calls=[], queries=[], unavailable=false;
 const originalLoad=Module._load;
 Module._load=function(request,parent,isMain){
- if((request==='./db'||request==='../db')&&parent.filename.includes('APLICACAO_PORTAL')) return {query:async(sql,params)=>{queries.push({sql,params});return [[{cnpj:'12345678000190',record_id_trabalho:'recAAAAAAAAAAAAAA',baixado_em:'2026-10-06'}],[]];}};
+ if((request==='./db'||request==='../db')&&parent.filename.startsWith(require('node:path').resolve(__dirname, '..') + require('node:path').sep)) return {query:async(sql,params)=>{queries.push({sql,params});return [[{cnpj:'12345678000190',record_id_trabalho:'recAAAAAAAAAAAAAA',baixado_em:'2026-10-06'}],[]];}};
  if(request==='./airtable'&&parent.filename.endsWith('server.js')) return {
   buscarContatosConta:async(cnpj,id)=>{calls.push({cnpj,id});if(unavailable)throw new Error('unavailable');return {documento:cnpj,emails:['a@example.test','b@example.test'],whatsapps:['61999999999']};},
   listarClientes:async()=>{throw new Error('Resumo não deve consultar Airtable');},

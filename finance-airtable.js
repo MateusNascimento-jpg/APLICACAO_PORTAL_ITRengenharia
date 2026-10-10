@@ -12,6 +12,8 @@ const TBL_CATEGORIAS = 'tblvUVOgnV2jrVWre';
 
 const F_CLIENTE_NOME = 'fldzpP7zyK4AfGcYL';
 const F_CLIENTE_CNPJ = 'fldb8XcWv0Uooz3Uo';
+const F_CLIENTE_EMAIL = 'fldtqo76edbzzQcNz';
+const F_FEEDBACK = 'fldFMHkwowNMiiPpX';
 
 const F_NUMERO = 'fldrervlNmfixboQB';
 const F_DATA_ENVIO = 'fldM5NumvmCwo9LEC';
@@ -32,6 +34,8 @@ const CACHE_CATEGORIAS_MS = 5 * 60_000;
 let cacheClientes = { carregadoEm: 0, porCnpj: new Map() };
 let cacheCategorias = { carregadoEm: 0, porId: new Map() };
 const cachePropostas = new Map();
+let propostasSnapshot = null;
+let propostasInFlight = null;
 
 function habilitado() {
     return Boolean(finance && finance.baseId && finance.token);
@@ -77,7 +81,7 @@ async function request(url, options = {}) {
     }
 
     let ultimoErro;
-    for (let tentativa = 0; tentativa <= finance.retries; tentativa += 1) {
+    for (let tentativa = 0; tentativa <= (options.method === 'PATCH' ? 0 : finance.retries); tentativa += 1) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), finance.timeoutMs);
         try {
@@ -104,7 +108,7 @@ async function request(url, options = {}) {
             ultimoErro = erro;
         } catch (error) {
             ultimoErro = error;
-            const retryable = error.name === 'AbortError' || !error.status || error.status === 429 || error.status >= 500;
+            const retryable = options.method !== 'PATCH' && (error.name === 'AbortError' || !error.status || error.status === 429 || error.status >= 500);
             if (!retryable || tentativa >= finance.retries) throw error;
         } finally {
             clearTimeout(timer);
@@ -118,16 +122,23 @@ function api(tableId) {
     return `https://api.airtable.com/v0/${finance.baseId}/${tableId}`;
 }
 
-async function listarTodos(tableId, fieldIds) {
+async function listarTodos(tableId, fieldIds, filterFormula = null) {
     const registros = [];
     let offset = null;
+    const offsets = new Set();
     do {
         const params = new URLSearchParams({ pageSize: '100', returnFieldsByFieldId: 'true' });
         fieldIds.forEach(id => params.append('fields[]', id));
+        if (filterFormula) params.set('filterByFormula', filterFormula);
         if (offset) params.set('offset', offset);
         const dados = await request(`${api(tableId)}?${params.toString()}`);
         registros.push(...(dados.records || []));
         offset = dados.offset || null;
+        if (offset) {
+            if (offsets.has(offset) || offsets.size >= 1000) throw new Error('AIRTABLE_PAGINATION_INVALID');
+            offsets.add(offset);
+            await esperar(220);
+        }
     } while (offset);
     return registros;
 }
@@ -138,6 +149,7 @@ async function carregarClientes() {
     const mapa = new Map();
     regs.forEach(rec => {
         const cnpj = normalizarCnpj(rec.fields?.[F_CLIENTE_CNPJ]);
+        if (cnpj && mapa.has(cnpj)) { mapa.set(cnpj, { ambiguous: true }); return; }
         if (cnpj) mapa.set(cnpj, { id: rec.id, nome: rec.fields?.[F_CLIENTE_NOME] || null, cnpj });
     });
     cacheClientes = { carregadoEm: Date.now(), porCnpj: mapa };
@@ -148,7 +160,9 @@ async function buscarClienteFinanceiroPorCnpj(cnpj) {
     const normalizado = normalizarCnpj(cnpj);
     if (!normalizado) return null;
     const mapa = await carregarClientes();
-    return mapa.get(normalizado) || null;
+    const cliente = mapa.get(normalizado);
+    if (cliente?.ambiguous) throw new Error('FINANCE_DUPLICATE_CNPJ');
+    return cliente || null;
 }
 
 async function carregarCategorias() {
@@ -191,19 +205,32 @@ function mapearProposta(rec, categoriasPorId = new Map()) {
     };
 }
 
+async function carregarRegistrosPropostas() {
+    if (propostasSnapshot && Date.now() - propostasSnapshot.time < CACHE_PROPOSTAS_MS) return propostasSnapshot.records;
+    if (propostasInFlight) return propostasInFlight;
+    propostasInFlight = listarTodos(TBL_PROPOSTAS, [
+        F_NUMERO, F_DATA_ENVIO, F_STATUS, F_PDF, F_CLIENTE, F_VALOR,
+        F_FORMA_PAGAMENTO, F_PRAZO, F_SETOR, F_CATEGORIA, F_OBSERVACOES
+    ]).then(records => {
+        propostasSnapshot = { time: Date.now(), records };
+        return records;
+    }).finally(() => { propostasInFlight = null; });
+    return propostasInFlight;
+}
+
 async function carregarPropostasCliente(clienteId, forcar = false) {
     const cached = cachePropostas.get(clienteId);
     if (!forcar && cached && Date.now() - cached.carregadoEm < CACHE_PROPOSTAS_MS) return cached.propostas;
 
     const [registros, categoriasPorId] = await Promise.all([
-        listarTodos(TBL_PROPOSTAS, [
-            F_NUMERO, F_DATA_ENVIO, F_STATUS, F_PDF, F_CLIENTE, F_VALOR,
-            F_FORMA_PAGAMENTO, F_PRAZO, F_SETOR, F_CATEGORIA, F_OBSERVACOES
-        ]),
+        carregarRegistrosPropostas(),
         carregarCategorias()
     ]);
     const propostas = registros
-        .filter(rec => idsDeLinks(rec.fields?.[F_CLIENTE]).includes(clienteId))
+        .filter(rec => {
+            const links = idsDeLinks(rec.fields?.[F_CLIENTE]);
+            return links.length === 1 && links[0] === clienteId;
+        })
         .map(rec => mapearProposta(rec, categoriasPorId))
         .sort((a, b) => String(b.dataEnvio || '').localeCompare(String(a.dataEnvio || '')) || String(b.numero || '').localeCompare(String(a.numero || '')));
 
@@ -226,40 +253,58 @@ async function propostaDoCliente(cnpj, propostaId, forcar = false) {
     return proposta ? { cliente, proposta } : null;
 }
 
-async function aceitarProposta(cnpj, propostaId) {
-    const atual = await propostaDoCliente(cnpj, propostaId, true);
-    if (!atual) return { ok: false, code: 'NOT_FOUND' };
-    if (atual.proposta.status === 'Aceita') return { ok: true, proposta: atual.proposta, idempotente: true };
-    if (['Rejeitada', 'Expirada'].includes(atual.proposta.status)) {
-        return { ok: false, code: 'TERMINAL_STATUS', status: atual.proposta.status };
-    }
+// Decisões comerciais passam exclusivamente pelo serviço persistente de propostas.
+async function carregarPropostaAtual(propostaId, cnpj = null) {
+    if (!recordIdValido(propostaId)) throw new Error('PROPOSAL_NOT_FOUND');
+    const rec = await request(`${api(TBL_PROPOSTAS)}/${propostaId}?returnFieldsByFieldId=true`);
+    const links = idsDeLinks(rec.fields?.[F_CLIENTE]);
+    if (links.length !== 1 || !recordIdValido(links[0])) throw new Error('PROPOSAL_LINK_INVALID');
+    const cliente = await request(`${api(TBL_CLIENTES)}/${links[0]}?returnFieldsByFieldId=true`);
+    const documento = normalizarCnpj(cliente.fields?.[F_CLIENTE_CNPJ]);
+    if (!/^\d{14}$/.test(documento || '') || (cnpj && documento !== normalizarCnpj(cnpj))) throw new Error('PROPOSAL_NOT_FOUND');
+    const { emails } = require('./lib/portal-access');
+    return {
+        ...mapearProposta(rec),
+        createdTime: rec.createdTime,
+        cnpj: documento,
+        clienteId: cliente.id,
+        nomeCliente: cliente.fields?.[F_CLIENTE_NOME] || 'Cliente',
+        emails: emails(cliente.fields?.[F_CLIENTE_EMAIL] || ''),
+        anexos: rec.fields?.[F_PDF] || [],
+        feedback: rec.fields?.[F_FEEDBACK] || ''
+    };
+}
 
-    await request(`${api(TBL_PROPOSTAS)}/${encodeURIComponent(propostaId)}?returnFieldsByFieldId=true`, {
+async function atualizarDecisao(propostaId, status, feedback) {
+    if (!['Aceita', 'Rejeitada'].includes(status)) throw new Error('DECISION_INVALID');
+    const fields = { [F_STATUS]: status };
+    if (status === 'Rejeitada') fields[F_FEEDBACK] = feedback;
+    await request(`${api(TBL_PROPOSTAS)}/${propostaId}?returnFieldsByFieldId=true`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: { [F_STATUS]: 'Aceita' } })
+        body: JSON.stringify({ fields })
     });
-    cachePropostas.delete(atual.cliente.id);
-    const atualizado = await propostaDoCliente(cnpj, propostaId, true);
-    return { ok: true, proposta: atualizado?.proposta || { ...atual.proposta, status: 'Aceita' }, idempotente: false };
+    cachePropostas.clear();
+    propostasSnapshot = null;
 }
 
 async function obterDocumentoProposta(cnpj, propostaId, attachmentId) {
-    const atual = await propostaDoCliente(cnpj, propostaId, true);
-    if (!atual) return null;
-
-    const params = new URLSearchParams({ returnFieldsByFieldId: 'true' });
-    params.append('fields[]', F_PDF);
-    const dados = await request(`${api(TBL_PROPOSTAS)}/${encodeURIComponent(propostaId)}?${params.toString()}`);
-    const anexos = Array.isArray(dados.fields?.[F_PDF]) ? dados.fields[F_PDF] : [];
-    const anexo = anexos.find(a => a.id === attachmentId);
+    const proposta = await carregarPropostaAtual(propostaId, cnpj);
+    const anexo = proposta.anexos.find(item => item.id === attachmentId);
     if (!anexo?.url) return null;
-    return { nome: anexo.filename || 'Proposta.pdf', tipo: anexo.type || 'application/pdf', tamanho: anexo.size || null, url: anexo.url };
+    return { nome: anexo.filename || 'Proposta.pdf', tipo: anexo.type, tamanho: anexo.size, url: anexo.url };
+}
+
+async function listarCandidatas(cutoff) {
+    const timestamp = new Date(cutoff).toISOString();
+    return listarTodos(TBL_PROPOSTAS, [F_CLIENTE, F_STATUS, F_PDF], `IS_AFTER(CREATED_TIME(), DATETIME_PARSE('${timestamp}'))`);
 }
 
 module.exports = {
     habilitado,
     listarPropostasPorCnpj,
-    aceitarProposta,
+    carregarPropostaAtual,
+    atualizarDecisao,
+    listarCandidatas,
     obterDocumentoProposta
 };

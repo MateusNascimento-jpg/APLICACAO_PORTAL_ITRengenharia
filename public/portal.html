@@ -9,6 +9,7 @@
 
 
 <link rel="stylesheet" href="assets/css/original-portal.css">
+    <link rel="stylesheet" href="/assets/css/proposals-actions.css">
 </head>
 <body>
 <canvas id="campo" aria-hidden="true"></canvas>
@@ -21,7 +22,10 @@
     <button class="sidebar-toggle" id="btnSidebarToggle" type="button" aria-label="Recolher menu" aria-pressed="false" title="Recolher menu">
       <i class="ti ti-stack-2" aria-hidden="true"></i>
     </button>
-    <button class="sidebar-item ativo" id="navRelatorios" type="button" data-view="relatorios" title="Relatórios">
+    <button class="sidebar-item" id="navPropostas" type="button" data-view="propostas" title="Propostas" hidden>
+      <i class="ti ti-file-description" aria-hidden="true"></i><span>Propostas</span>
+    </button>
+    <button class="sidebar-item" id="navRelatorios" hidden type="button" data-view="relatorios" title="Relatórios">
       <i class="ti ti-clipboard-text" aria-hidden="true"></i><span>Relatórios</span>
     </button>
     <button class="sidebar-item" id="navConta" type="button" data-view="conta" title="Conta">
@@ -33,13 +37,12 @@
     <a class="sidebar-item" id="navSiteItr" href="https://itr.eng.br" target="_blank" rel="noopener" title="Site ITR">
       <i class="ti ti-external-link" aria-hidden="true"></i><span>Site ITR</span>
     </a>
-    <button class="sidebar-item" id="navPropostas" type="button" data-view="propostas" title="Propostas">
-      <i class="ti ti-file-description" aria-hidden="true"></i><span>Propostas</span>
-    </button>
   </aside>
 
   <div class="conteudo-wrap">
 <div class="conteudo">
+
+  <div id="navegacaoEstado" role="status">Verificando funcionalidades disponíveis… <button id="navegacaoTentar" type="button" hidden>Tentar novamente</button></div>
 
   <!-- Cabeçalho -->
   <header class="topo">
@@ -55,7 +58,7 @@
   </header>
 
   <!-- Tela "Relatórios" (ETAPA 2 — aditivo: envolve o conteúdo existente para permitir alternar com a aba Conta, sem alterar nada por dentro) -->
-  <div id="viewRelatorios">
+  <div id="viewRelatorios" hidden>
 
   <!-- Saudação -->
   <div class="saudacao">
@@ -293,6 +296,7 @@
 
 
 <script src="assets/js/common.js" defer></script>
+<script src="assets/js/proposal-actions.js" defer></script>
 <script src="assets/js/portal.js" defer></script>
 <script src="assets/js/account-security.js" defer></script>
 <script src="assets/js/onboarding.js" defer></script>

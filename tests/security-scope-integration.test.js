@@ -10,7 +10,7 @@ const read=r=>fs.readFileSync(path.join(root,r),'utf8');
 test('PDF e trabalhos autorizam pelo escopo de Record IDs, nao por texto',()=>{
   const a=read('airtable.js');
   assert.match(a,/resolverEscopoCliente/);
-  assert.match(a,/links\.some\(id => scopeClientIds\.includes\(id\)\)/);
+  assert.match(a,/links\.every\(id => scopeClientIds\.includes\(id\)\)/);
   assert.doesNotMatch(a,/\{Cliente\}\s*=\s*'\$\{escaparFormula\(.*Cliente/);
 });
 

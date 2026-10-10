@@ -919,7 +919,7 @@ body.tour-ativo{ overflow:hidden; }
 .proposta-documentos{ margin:0; min-width:0; }
 .proposta-documento{
   display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:52px; padding:9px 11px;
-  border:1px solid var(--line-soft); border-radius:7px; background:rgba(255,255,255,.62);
+  border:1px solid var(--line); border-radius:7px; background:var(--field);
 }
 .proposta-documento + .proposta-documento{ margin-top:7px; }
 .proposta-documento-nome{ display:flex; align-items:center; gap:9px; color:var(--txt-2); font-size:12.5px; min-width:0; flex:1; }
@@ -983,3 +983,10 @@ body.tour-ativo{ overflow:hidden; }
   .proposta-documento a{ margin-left:0; }
   .proposta-btn-aceitar{ width:100%; justify-content:flex-start; }
 }
+
+/* Itens condicionais permanecem ocultos inclusive durante o carregamento. */
+.sidebar-item[hidden], #viewRelatorios[hidden], #navegacaoEstado[hidden],
+#navegacaoTentar[hidden], .propostas-tentar[hidden] { display:none !important; }
+#navegacaoEstado { padding:12px; color:var(--txt-2); font-size:14px; }
+#navegacaoTentar { margin-left:8px; padding:8px 12px; color:var(--txt); background:var(--field); border:1px solid var(--line); border-radius:6px; cursor:pointer; }
+.proposta-documento a:focus-visible { outline:2px solid var(--azul-link); outline-offset:4px; }

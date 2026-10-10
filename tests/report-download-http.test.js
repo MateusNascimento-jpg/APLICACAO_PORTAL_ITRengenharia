@@ -5,7 +5,7 @@ let session=null;const calls=[];const id='recAAAAAAAAAAAAAA';
 const attachments=[{id:'attA',nome:'a.pdf',url:'https://dl.airtable.com/a.pdf'},{id:'attB',nome:'b.pdf',url:'https://dl.airtable.com/b.pdf'}];
 const originalLoad=Module._load;
 Module._load=function(request,parent,isMain){
- if((request==='./db'||request==='../db')&&parent.filename.includes('APLICACAO_PORTAL'))return {query:async()=>[[],[]],verificarBanco:async()=>true};
+ if((request==='./db'||request==='../db')&&parent.filename.startsWith(require('node:path').resolve(__dirname, '..') + require('node:path').sep))return {query:async()=>[[],[]],verificarBanco:async()=>true};
  if(request==='./airtable'&&parent.filename.endsWith('server.js')) return {
   recordIdValido:x=>/^rec[A-Za-z0-9]{14}$/.test(x),
   relatoriosAprovados:async(work,client)=>{calls.push({work,client,list:true});return attachments;},

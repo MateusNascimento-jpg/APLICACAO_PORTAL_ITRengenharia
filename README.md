@@ -1,3 +1,7 @@
+# Atualização Propostas — 3.4.0
+
+Esta entrega acrescenta o fluxo comercial seguro. Consulte `docs/PROPOSTAS_OPERACAO.md` antes da aplicação: migração 003 no Portal, recibos persistentes em Notificações e ativação explícita são necessários. Nenhum `.env` é distribuído ou alterado. Os comandos e textos históricos abaixo são preservados como referência; para Propostas prevalece o guia novo.
+
 > **Portal 3.3.2:** restaura as regras de relatórios anteriores à mudança de login. Consulte [RESTAURACAO_RELATORIOS_3.3.2.md](RESTAURACAO_RELATORIOS_3.3.2.md). Instruções históricas de escopo estrito da 3.3.1 foram revertidas.
 
 > **Versão consolidada 3.3.1:** consulte [RELEASE_CONSOLIDADO.md](RELEASE_CONSOLIDADO.md). Esta referência substitui as instruções antigas de senha pessoal.

@@ -95,7 +95,7 @@ if (!/app\.patch\('\/api\/trabalho\/:id\/aprovacao',\s*sameOriginOnly,\s*autenti
 if (!/HttpOnly|httpOnly\s*:\s*true/.test(read('lib/sessions.js'))) fail('cookie de sessão não está marcado HttpOnly.');
 
 const airtable = read('airtable.js');
-if (!/scopeClientIds/.test(airtable) || !/links\.some\(id => scopeClientIds\.includes\(id\)\)/.test(airtable)) fail('isolamento Airtable por escopo de Record IDs não foi localizado.');
+if (!/scopeClientIds/.test(airtable) || !/links\.every\(id => scopeClientIds\.includes\(id\)\)/.test(airtable)) fail('isolamento Airtable por escopo de Record IDs não foi localizado.');
 if (!/Aprovação[^\n]*!==\s*['"]Aprovado['"]/.test(airtable)) fail('download não valida o estado atual Aprovado.');
 
 const pairs = [

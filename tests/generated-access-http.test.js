@@ -9,7 +9,7 @@ const sent=[],created=[],resets=[],queries=[];let limited=false;
 const mockPool={query:async (...args)=>{queries.push(args);return [[],[]];},verificarBanco:async()=>true,encerrarBanco:async()=>{}};
 const realLoad=Module._load;
 Module._load=function(request,parent,isMain){
- if ((request==='./db'||request==='../db')&&parent.filename.includes('APLICACAO_PORTAL')) return mockPool;
+ if ((request==='./db'||request==='../db')&&parent.filename.startsWith(require('node:path').resolve(__dirname, '..') + require('node:path').sep)) return mockPool;
  if(request==='./airtable'&&parent.filename.endsWith('server.js')) return {buscarIdentidadeAcesso:async d=>d===identity.cnpj?identity:null,recordIdValido:()=>true};
  if(request==='./lib/sessions') return {loadSession:async()=>null,createSession:async(_q,_r,data)=>{created.push(data);return {csrfToken:'test-csrf'};},destroySession:async()=>{},verifyCsrf:()=>false};
  if(request==='./lib/rate-limit') return {consume:async()=>({ok:!limited}),reset:async(...a)=>resets.push(a),defensiveDelay:async()=>{}};

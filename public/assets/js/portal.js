@@ -922,6 +922,7 @@ function ativarViewConta(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function ativarViewRelatorios(){
+  if (!NAVEGACAO_ATUAL.relatorios) return ativarViewInicial();
   ocultarViewsPortal();
   var viewRel = document.getElementById('viewRelatorios');
   if(viewRel) viewRel.hidden = false;
@@ -974,7 +975,7 @@ function fluxoProposta(status){
   '</div>';
 }
 function podeAceitarProposta(status){
-  return !['Aceita','Rejeitada','Expirada'].includes(status);
+  return ['Enviada', 'Em Análise pelo Cliente'].includes(status);
 }
 function documentosProposta(p){
   var docs = Array.isArray(p.documentos) ? p.documentos : [];
@@ -988,12 +989,13 @@ function blocoAceiteProposta(p){
   if(p.status === 'Aceita') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo aprovada"><i class="ti ti-check" aria-hidden="true"></i> Proposta aprovada</div></div>';
   if(p.status === 'Rejeitada') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo rejeitada"><i class="ti ti-x" aria-hidden="true"></i> Proposta rejeitada</div></div>';
   if(!podeAceitarProposta(p.status)) return '<div class="proposta-info proposta-acao"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-info-valor">Nenhuma ação disponível.</div></div>';
-  var seguro = propostasRuntime && propostasRuntime.safeMode;
+  var seguro = (propostasRuntime && propostasRuntime.safeMode) || (PERFIL_ATUAL && PERFIL_ATUAL.visualizacaoDev);
   return '<div class="proposta-info proposta-acao">'+
     '<div class="proposta-info-rotulo">Decisão</div>'+
+    '<div class="proposta-decisao-botoes">'+
     '<button type="button" class="proposta-btn-aceitar" data-acao="aceitar" data-id="'+esc(p.id)+'" '+(seguro?'disabled':'')+'><span class="proposta-btn-icone"><i class="ti ti-check" aria-hidden="true"></i></span><span>Aceitar proposta</span></button>'+
-    (seguro?'<span class="proposta-safe-note">Aceite bloqueado neste ambiente local pelo modo seguro.</span>':'')+
-    '<div class="proposta-confirmacao" data-confirmacao="'+esc(p.id)+'" hidden><p>Confirma o aceite desta proposta? Após a confirmação, o status será atualizado para <strong>Aceita</strong>.</p><div class="proposta-confirmacao-acoes"><button type="button" class="proposta-confirmar" data-acao="confirmar" data-id="'+esc(p.id)+'">Confirmar aceite</button><button type="button" class="proposta-cancelar" data-acao="cancelar" data-id="'+esc(p.id)+'">Cancelar</button></div><div class="proposta-feedback" data-feedback="'+esc(p.id)+'" hidden></div></div>'+
+    '<button type="button" class="proposta-btn-rejeitar" data-acao="rejeitar" data-id="'+esc(p.id)+'" '+(seguro?'disabled':'')+'>Rejeitar proposta</button></div>'+
+    (seguro?'<span class="proposta-safe-note">Decisões indisponíveis neste modo de visualização.</span>':'')+
   '</div>';
 }
 function renderizarPropostas(){
@@ -1065,6 +1067,7 @@ function carregarPropostas(forcar){
   return propostasEmVoo;
 }
 function ativarViewPropostas(){
+  if (!NAVEGACAO_ATUAL.propostas) return ativarViewInicial();
   ocultarViewsPortal();
   var painel = document.getElementById('painelPropostas');
   if(painel) painel.hidden = false;
@@ -1087,32 +1090,10 @@ if(propostasListaEl) propostasListaEl.addEventListener('click', function(e){
     renderizarPropostas();
     return;
   }
-  var confirmacao = document.querySelector('[data-confirmacao="'+CSS.escape(id)+'"]');
-  if(acao === 'aceitar'){
-    if(confirmacao) confirmacao.hidden = false;
-    return;
-  }
-  if(acao === 'cancelar'){
-    if(confirmacao) confirmacao.hidden = true;
-    return;
-  }
-  if(acao === 'confirmar'){
-    var feedback = document.querySelector('[data-feedback="'+CSS.escape(id)+'"]');
-    botao.disabled = true;
-    if(feedback){ feedback.hidden = true; feedback.textContent = ''; }
-    ITR.apiFetch('/api/propostas/'+encodeURIComponent(id)+'/aceitar', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
-      .then(function(resp){ return ITR.jsonSeguro(resp).then(function(dados){ return {resp:resp,dados:dados}; }); })
-      .then(function(r){
-        if(!r.resp.ok || !r.dados || !r.dados.sucesso) throw new Error((r.dados && r.dados.erro) || 'Não foi possível aceitar a proposta.');
-        PROPOSTAS_ATUAIS = PROPOSTAS_ATUAIS.map(function(p){ return p.id === id ? r.dados.proposta : p; });
-        propostasCarregadasEm = Date.now();
-        propostaAbertaId = id;
-        renderizarPropostas();
-      }).catch(function(err){
-        botao.disabled = false;
-        if(feedback){ feedback.textContent = err.message || 'Não foi possível concluir o aceite.'; feedback.hidden = false; }
-      });
-  }
+  var proposta = PROPOSTAS_ATUAIS.find(function (item) { return item.id === id; });
+  if (!proposta || botao.disabled) return;
+  if (acao === 'aceitar') ITRProposals.accept(proposta, botao);
+  if (acao === 'rejeitar') ITRProposals.reject(proposta, botao, function () { carregarPropostas(true); });
 });
 var propostasTentar = document.getElementById('propostasTentar');
 if(propostasTentar) propostasTentar.addEventListener('click', function(){ carregarPropostas(true); });
@@ -1131,6 +1112,46 @@ window.addEventListener('scroll', function(){
 });
 btnTopo.addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
 
+var NAVEGACAO_ATUAL = { propostas: false, relatorios: false };
+var navegacaoEmVoo = null;
+
+function ativarViewInicial() {
+  if (NAVEGACAO_ATUAL.propostas) return ativarViewPropostas();
+  if (NAVEGACAO_ATUAL.relatorios) return ativarViewRelatorios();
+  ativarViewConta();
+}
+
+function carregarNavegacao() {
+  if (navegacaoEmVoo) return navegacaoEmVoo;
+  var estado = document.getElementById('navegacaoEstado');
+  var tentar = document.getElementById('navegacaoTentar');
+  tentar.hidden = true;
+  navegacaoEmVoo = fetch('/api/navegacao', { credentials: 'same-origin', cache: 'no-store' })
+    .then(function(response) {
+      if (!response.ok) throw new Error('Navegação indisponível');
+      return response.json();
+    }).then(function(data) {
+      NAVEGACAO_ATUAL = { propostas: data.propostas === true, relatorios: data.relatorios === true };
+      document.getElementById('navPropostas').hidden = !NAVEGACAO_ATUAL.propostas;
+      document.getElementById('navRelatorios').hidden = !NAVEGACAO_ATUAL.relatorios;
+      estado.hidden = true;
+      if (NAVEGACAO_ATUAL.relatorios) iniciar();
+      ativarViewInicial();
+    }).catch(function() {
+      estado.firstChild.textContent = 'Não foi possível verificar suas funcionalidades. ';
+      estado.hidden = false;
+      tentar.hidden = false;
+      ativarViewConta();
+    }).finally(function() { navegacaoEmVoo = null; });
+  return navegacaoEmVoo;
+}
+
+document.getElementById('navegacaoTentar').addEventListener('click', carregarNavegacao);
+// Ao retornar da confirmação por e-mail, atualizar status e timeline no Portal.
+window.addEventListener('focus', function() {
+  if (PERFIL_ATUAL && !document.getElementById('painelPropostas').hidden) carregarPropostas(true);
+});
+
 /* ---- Start: valida a sessão antes de carregar dados do cliente. ---- */
 ITR.perfil().then(function(perfil){
   if(!perfil || perfil.perfil !== 'Cliente'){
@@ -1140,5 +1161,5 @@ ITR.perfil().then(function(perfil){
   PERFIL_ATUAL = perfil;
   if(document.body.classList.contains('conta-ativa')){ preencherConta(); carregarContatosConta(); }
   document.dispatchEvent(new CustomEvent('itr:perfil-carregado', { detail: perfil }));
-  iniciar();
+  carregarNavegacao();
 }).catch(function(){ window.location.replace('/login.html'); });

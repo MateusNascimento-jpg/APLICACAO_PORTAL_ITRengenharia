@@ -649,7 +649,18 @@ function recordRecente(rec, meses) {
 
 function trabalhoDentroDoEscopo(rec, scopeClientIds) {
     const links = rec?.fields?.Cliente;
-    return Array.isArray(links) && links.some(id => scopeClientIds.includes(id));
+    return Array.isArray(links) && links.length > 0 && links.every(id => scopeClientIds.includes(id));
+}
+
+// Presença real de trabalhos autorizados, incluindo o histórico completo.
+// Cadastro do cliente sozinho não habilita a navegação laboratorial.
+async function temTrabalhosAutorizados(recordIdCliente) {
+    if (!recordIdValido(recordIdCliente)) return false;
+    const snapshot = await carregarScopeSnapshot();
+    const cliente = enriquecerClienteComEscopo(snapshot, clientRecordById(snapshot, recordIdCliente));
+    return Boolean(cliente && snapshot.trabalhos.some(rec =>
+        trabalhoDentroDoEscopo(rec, cliente.scopeClientIds)
+    ));
 }
 
 // ==================== BUSCAR TRABALHOS DO CLIENTE ====================
@@ -706,7 +717,7 @@ async function relatoriosAprovados(recordIdTrabalho, recordIdCliente = null) {
         if (!cliente) return null;
         const scopeClientIds = cliente.scopeClientIds;
         const links = rec.fields?.['Cliente'];
-        if (!Array.isArray(links) || !links.some(id => scopeClientIds.includes(id))) return null;
+        if (!Array.isArray(links) || !links.length || !links.every(id => scopeClientIds.includes(id))) return null;
     }
 
     if (rec.fields?.['Aprovação'] !== 'Aprovado') return [];
@@ -727,7 +738,7 @@ async function trabalhoPertenceAoCliente(recordIdTrabalho, recordIdCliente) {
     const scopeClientIds = cliente.scopeClientIds;
     const rec = await airtableGet(`${API}/${TBL_NOVOS_TRABALHOS}/${encodeURIComponent(recordIdTrabalho)}`);
     const links = rec.fields?.['Cliente'];
-    return Array.isArray(links) && links.some(id => scopeClientIds.includes(id));
+    return Array.isArray(links) && links.length > 0 && links.every(id => scopeClientIds.includes(id));
 }
 
 // ==================== CLIENTE / IDENTIDADE DE ACESSO ====================
@@ -895,6 +906,7 @@ async function verificarAirtable() {
 
 module.exports = {
     buscarTrabalhosDoCliente,
+    temTrabalhosAutorizados,
     buscarClientePorCnpj,
     buscarClientePorId,
     resolverEscopoCliente,

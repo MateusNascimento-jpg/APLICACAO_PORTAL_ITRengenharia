@@ -24,7 +24,7 @@ function env() {
   process.env.PORTAL_SCOPE_PAGE_PACE_MS = '120';
 }
 
-async function runScenario({ clients, works, seedId, modo = 'todos' }) {
+async function runScenario({ clients, works, seedId, modo = 'todos', presence = false }) {
   env();
   const originalFetch = global.fetch;
   global.fetch = async url => {
@@ -37,12 +37,13 @@ async function runScenario({ clients, works, seedId, modo = 'todos' }) {
   };
   try {
     for (const rel of ['../config', '../lib/client-scope', '../airtable']) delete require.cache[require.resolve(rel)];
-    const { buscarTrabalhosDoCliente } = require('../airtable');
+    const { buscarTrabalhosDoCliente, temTrabalhosAutorizados } = require('../airtable');
+    if (presence) return await temTrabalhosAutorizados(seedId);
     return await buscarTrabalhosDoCliente(seedId, null, modo, 3);
   } finally { global.fetch = originalFetch; }
 }
 
-test('escopo empresarial une dois Record IDs e continua excluindo terceiro tenant', async () => {
+test('escopo empresarial mantém filiais distintas isoladas sem vínculo autorizado', async () => {
   const A=`rec${'A'.repeat(14)}`, B=`rec${'B'.repeat(14)}`, C=`rec${'C'.repeat(14)}`;
   const clients=[
     {id:A,fields:{'ID Cliente':'Grupo Aterpa','Nome Cliente':'Grupo Aterpa',CNPJ:'17162983000165','Email Cliente':'a@aterpa.com.br'}},
@@ -54,7 +55,7 @@ test('escopo empresarial une dois Record IDs e continua excluindo terceiro tenan
   for(let i=0;i<4;i++) works.push({id:`rec${('E'+String(i)).padEnd(14,'E')}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[B],'ID Trabalho':`Grupo Aterpa_B-${i}`,'Link Amostras':`Amostra B ${i}`,'Status Cliente':'Amostra Recebida'}});
   works.push({id:`rec${'F'.repeat(14)}`,createdTime:'2026-09-01T12:00:00.000Z',fields:{Cliente:[C],'ID Trabalho':'Outro_X','Link Amostras':'Segredo outro tenant','Status Cliente':'Amostra Recebida'}});
   const result=await runScenario({clients,works,seedId:A});
-  assert.equal(result.trabalhos.length,8);
+  assert.equal(result.trabalhos.length,4);
   assert.ok(result.trabalhos.every(t=>t.id!==`rec${'F'.repeat(14)}`));
 });
 
@@ -198,4 +199,14 @@ test('histórico de 120 trabalhos faz três consultas em lote e ignora IDs invá
   assert.equal(batches,3);assert.equal(result.size,120);
   for(const id of ids) assert.equal(result.get(id).id_trabalho,id);
  }finally{global.fetch=previous;}
+});
+
+
+test('menu exige trabalho efetivo: cadastro, outro CNPJ e co-vínculo ambíguo não bastam', async () => {
+  const A = 'recAAAAAAAAAAAAAA', B = 'recBBBBBBBBBBBBBB';
+  const clients = [{id:A,fields:{CNPJ:'11111111111111','Email Cliente':'igual@example.test'}}, {id:B,fields:{CNPJ:'22222222222222','Email Cliente':'igual@example.test'}}];
+  for (const links of [null, [B], [A,B], [A]]) {
+    const works = links ? [{id:'recCCCCCCCCCCCCCC', fields:{Cliente:links}}] : [];
+    assert.equal(await runScenario({clients,works,seedId:A,presence:true}), links?.length === 1 && links[0] === A);
+  }
 });

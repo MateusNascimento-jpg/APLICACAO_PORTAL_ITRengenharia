@@ -7,6 +7,7 @@ const pool = require('./db');
 const { verificarBanco, encerrarBanco } = require('./db');
 const {
     buscarTrabalhosDoCliente,
+    temTrabalhosAutorizados,
     buscarClientePorCnpj,
     buscarIdentidadeAcesso,
     buscarContatosConta,
@@ -57,7 +58,6 @@ const { sendSecurityNotification } = require('./lib/notifications');
 const {
     habilitado: financeiroHabilitado,
     listarPropostasPorCnpj,
-    aceitarProposta,
     obterDocumentoProposta
 } = require('./finance-airtable');
 
@@ -76,7 +76,13 @@ app.use((req, res, next) => {
     next();
 });
 app.use(applySecurityHeaders);
-app.use(express.json({ limit: '64kb', strict: true }));
+app.use(express.json({
+    limit: '64kb',
+    strict: true,
+    verify(req, res, body) {
+        if (req.path === '/internal/proposals/airtable-webhook') req.proposalsRawBody = body;
+    }
+}));
 app.use(['/api', '/perfil'], (req, res, next) => {
     const rl = apiBurstGuard.consume(req.ip || 'unknown');
     if (!rl.ok) {
@@ -334,6 +340,7 @@ async function registrarDownload(cnpj, recordIdTrabalho) {
 // ---------- Saúde e arquivos públicos ----------
 async function verificarEstruturasCriticas() {
     const obrigatorias = ['portal_sessions', 'portal_rate_limits', 'portal_audit_events', 'portal_director', 'ultimo_acesso_cliente', 'relatorios_baixados'];
+    obrigatorias.push('portal_proposal_state', 'portal_proposal_challenges', 'portal_proposal_outbox', 'portal_proposal_settings', 'portal_proposal_nonces');
     if (config.clientAuth.mode !== 'generated' && config.clientAuth.enabled) obrigatorias.push('portal_client_accounts', 'portal_password_tokens');
     const placeholders = obrigatorias.map(() => '?').join(',');
     const [rows] = await pool.query(
@@ -958,6 +965,19 @@ app.get('/api/perfil', autenticado, async (req, res) => {
     }
 });
 
+// Navegação é apenas apresentação; cada endpoint mantém sua autorização.
+app.get('/api/navegacao', autenticado, somenteClientePortal, async (req, res) => {
+    try {
+        const [relatorios, resultado] = await Promise.all([
+            temTrabalhosAutorizados(req.session.airtableId),
+            financeiroHabilitado() ? listarPropostasPorCnpj(req.session.documento) : { propostas: [] }
+        ]);
+        return res.json({ sucesso: true, relatorios, propostas: resultado.propostas.length > 0 });
+    } catch (_) {
+        return erro(res, 503, 'Não foi possível verificar as funcionalidades disponíveis. Tente novamente.', 'NAVIGATION_UNAVAILABLE');
+    }
+});
+
 // ---------- Propostas (base financeira isolada) ----------
 app.get('/api/propostas', autenticado, somenteClientePortal, async (req, res) => {
     if (!financeiroHabilitado()) {
@@ -976,40 +996,32 @@ app.get('/api/propostas', autenticado, somenteClientePortal, async (req, res) =>
     }
 });
 
-app.post('/api/propostas/:id/aceitar', sameOriginOnly, autenticado, somenteClientePortal, csrfProtegido, escritaHabilitada, async (req, res) => {
-    try {
-        const resultado = await aceitarProposta(req.session.documento, req.params.id);
-        if (!resultado.ok && resultado.code === 'NOT_FOUND') {
-            return erro(res, 404, 'Proposta não encontrada para esta empresa.', 'PROPOSAL_NOT_FOUND');
-        }
-        if (!resultado.ok && resultado.code === 'TERMINAL_STATUS') {
-            return erro(res, 409, `Esta proposta está ${String(resultado.status || '').toLowerCase()} e não pode ser aceita pelo Portal.`, 'PROPOSAL_TERMINAL');
-        }
-        await audit(req, 'client_proposal_accepted', {
-            actorType: 'Cliente',
-            actorId: hmac(req.session.documento),
-            outcome: resultado.idempotente ? 'already_accepted' : 'success',
-            metadata: { proposalId: req.params.id }
-        });
-        return res.json({ sucesso: true, proposta: resultado.proposta, idempotente: Boolean(resultado.idempotente) });
-    } catch (error) {
-        console.error(`[${req.requestId}] [PROPOSTA_ACEITE]`, error.code || error.message);
-        return erro(res, 503, 'Não foi possível registrar o aceite agora. Tente novamente.', 'PROPOSAL_ACCEPT_UNAVAILABLE');
-    }
+// A rota antiga não pode conservar um caminho alternativo de aceite imediato.
+app.post('/api/propostas/:id/aceitar', sameOriginOnly, autenticado, somenteClientePortal, csrfProtegido, escritaHabilitada, (req, res) => {
+    return erro(res, 410, 'Solicite o código de confirmação no Portal.', 'CONFIRMATION_REQUIRED');
+});
+
+const proposalsWorker = require('./lib/proposals').install(app, {
+    pool, config, auth: autenticado, client: somenteClientePortal,
+    csrf: csrfProtegido, origin: sameOriginOnly, write: escritaHabilitada,
+    consume, audit
 });
 
 app.get('/api/propostas/:id/documento/:anexoId', autenticado, somenteClientePortal, async (req, res) => {
     try {
+        const limit = await consume('proposal-pdf', req.ip + ':' + req.session.documento, { limit: 30, windowMs: 60000 });
+        if (!limit.ok) {
+            retryAfter(res, limit);
+            return erro(res, 429, 'Aguarde antes de abrir mais documentos.', 'RATE_LIMITED');
+        }
         const doc = await obterDocumentoProposta(req.session.documento, req.params.id, req.params.anexoId);
         if (!doc) return erro(res, 404, 'Documento da proposta não encontrado.', 'PROPOSAL_DOCUMENT_NOT_FOUND');
-        const upstream = await fetch(doc.url, { redirect: 'follow' });
-        if (!upstream.ok || !upstream.body) return erro(res, 502, 'Documento temporariamente indisponível.', 'PROPOSAL_DOCUMENT_UNAVAILABLE');
-        const nome = String(doc.nome || 'Proposta.pdf').replace(/[\\"\r\n]/g, '_');
-        res.setHeader('Content-Type', upstream.headers.get('content-type') || doc.tipo || 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="${nome}"`);
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-        if (doc.tamanho) res.setHeader('Content-Length', String(doc.tamanho));
-        Readable.fromWeb(upstream.body).on('error', err => res.destroy(err)).pipe(res);
+        const { readPdf, disposition } = require('./lib/proposals/pdf');
+        const document = await readPdf(doc.url);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', disposition(doc.nome));
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(document.bytes);
     } catch (error) {
         console.error(`[${req.requestId}] [PROPOSTA_DOCUMENTO]`, error.code || error.message);
         if (!res.headersSent) return erro(res, 503, 'Não foi possível abrir o documento agora.', 'PROPOSAL_DOCUMENT_UNAVAILABLE');
@@ -1326,6 +1338,7 @@ async function iniciar() {
     await cleanupSessions().catch(() => {});
     await cleanupSecurityState().catch(() => {});
     scheduleMaintenance();
+    proposalsWorker.start();
     server = app.listen(config.port, () => {
         console.log('===================================================');
         console.log(` Portal ITR: http://localhost:${config.port}`);
@@ -1346,6 +1359,7 @@ async function iniciar() {
 
 async function shutdown(signal) {
     console.log(`[SHUTDOWN] ${signal}: encerrando conexões...`);
+    await proposalsWorker.stop();
     if (server) {
         await new Promise(resolve => server.close(resolve));
     }
