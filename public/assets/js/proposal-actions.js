@@ -142,12 +142,13 @@ window.ITRProposals = (function () {
 
     function reject(proposal, trigger, refresh) {
         var view = modal('Rejeição da proposta', trigger);
+        view.dialog.classList.add('proposta-modal-rejeicao');
         view.content.append(
             element(
                 'p',
                 'Proposta ' +
                     proposal.numero +
-                    '. Para que possamos compreender melhor sua decisão e aprimorar nossas condições comerciais, solicitamos que informe o principal motivo da rejeição. Caso deseje, você também poderá acrescentar observações complementares.',
+                    '. Para concluir a rejeição, informe no campo abaixo o principal motivo da sua decisão. Descreva, de forma objetiva, quais condições comerciais ou aspectos do serviço não atenderam às suas necessidades. Sua resposta será registrada para análise da equipe comercial e poderá contribuir para o aperfeiçoamento de futuras propostas.',
             ),
         );
         var form = element('form');
@@ -156,9 +157,6 @@ window.ITRProposals = (function () {
         reason.minLength = 5;
         reason.maxLength = 1000;
         reason.rows = 3;
-        var details = element('textarea');
-        details.maxLength = 3000;
-        details.rows = 3;
         var submit = element(
             'button',
             'Enviar feedback e rejeitar proposta',
@@ -167,7 +165,6 @@ window.ITRProposals = (function () {
         submit.type = 'submit';
         form.append(
             label('Motivo da rejeição (obrigatório)', reason),
-            label('Detalhes adicionais (opcional)', details),
             submit,
         );
         form.addEventListener('submit', async function (event) {
@@ -183,7 +180,6 @@ window.ITRProposals = (function () {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 reason: reason.value.trim(),
-                                details: details.value.trim(),
                             }),
                         },
                     ),

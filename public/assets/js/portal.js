@@ -1003,7 +1003,10 @@ function renderizarPropostas(){
   var estado = document.getElementById('propostasEstado');
   if(!lista) return;
   lista.innerHTML = '';
-  if(estado) estado.hidden = true;
+  if(estado){
+    estado.hidden = true;
+    estado.classList.remove('carregando');
+  }
   if(!PROPOSTAS_ATUAIS.length){
     lista.innerHTML = '<div class="propostas-vazio"><strong>Nenhuma proposta disponível.</strong><span>Quando a ITR enviar uma proposta para sua empresa, ela aparecerá aqui.</span></div>';
     return;
@@ -1038,9 +1041,24 @@ function renderizarPropostas(){
 function mostrarEstadoPropostas(texto, carregando){
   var estado = document.getElementById('propostasEstado');
   if(!estado) return;
+
   estado.hidden = false;
-  estado.innerHTML = (carregando?'<i class="ti ti-loader-2" aria-hidden="true"></i>':'')+'<span>'+esc(texto)+'</span>';
-  aplicarIcones(estado);
+  estado.classList.toggle('carregando', Boolean(carregando));
+
+  if(carregando){
+    estado.setAttribute('aria-label', 'Carregando propostas');
+    estado.innerHTML =
+      '<span class="visualmente-oculto">Carregando propostas…</span>'+
+      '<div class="propostas-skeleton" aria-hidden="true">'+
+        '<span class="portal-skeleton-linha portal-skeleton-nome"></span>'+
+        '<span class="portal-skeleton-linha portal-skeleton-data"></span>'+
+        '<span class="portal-skeleton-linha portal-skeleton-conteudo"></span>'+
+      '</div>';
+    return;
+  }
+
+  estado.removeAttribute('aria-label');
+  estado.textContent = texto;
 }
 function carregarPropostas(forcar){
   if(propostasEmVoo) return propostasEmVoo;
@@ -1121,11 +1139,26 @@ function ativarViewInicial() {
   ativarViewConta();
 }
 
+function concluirCarregamentoNavegacao() {
+  var skeleton = document.getElementById('portalSkeleton');
+  if(skeleton) skeleton.hidden = true;
+  document.body.classList.remove('portal-carregando');
+}
+
 function carregarNavegacao() {
   if (navegacaoEmVoo) return navegacaoEmVoo;
+
   var estado = document.getElementById('navegacaoEstado');
   var tentar = document.getElementById('navegacaoTentar');
   tentar.hidden = true;
+  estado.hidden = true;
+
+  // O retry usa o mesmo estado de carregamento da abertura inicial.
+  document.body.classList.add('portal-carregando');
+  document.getElementById('portalSkeleton').hidden = false;
+  ocultarViewsPortal();
+  limparNavAtiva();
+
   navegacaoEmVoo = fetch('/api/navegacao', { credentials: 'same-origin', cache: 'no-store' })
     .then(function(response) {
       if (!response.ok) throw new Error('Navegação indisponível');
@@ -1134,11 +1167,18 @@ function carregarNavegacao() {
       NAVEGACAO_ATUAL = { propostas: data.propostas === true, relatorios: data.relatorios === true };
       document.getElementById('navPropostas').hidden = !NAVEGACAO_ATUAL.propostas;
       document.getElementById('navRelatorios').hidden = !NAVEGACAO_ATUAL.relatorios;
-      estado.hidden = true;
+
+      concluirCarregamentoNavegacao();
       if (NAVEGACAO_ATUAL.relatorios) iniciar();
       ativarViewInicial();
     }).catch(function() {
-      estado.firstChild.textContent = 'Não foi possível verificar suas funcionalidades. ';
+      // Em caso de falha, mantém os módulos condicionais ocultos.
+      NAVEGACAO_ATUAL = { propostas: false, relatorios: false };
+      document.getElementById('navPropostas').hidden = true;
+      document.getElementById('navRelatorios').hidden = true;
+      document.getElementById('navegacaoMensagem').textContent = 'Não foi possível carregar o portal.';
+
+      concluirCarregamentoNavegacao();
       estado.hidden = false;
       tentar.hidden = false;
       ativarViewConta();
