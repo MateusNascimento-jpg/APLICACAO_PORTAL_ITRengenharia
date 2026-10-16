@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="assets/css/original-portal.css">
     <link rel="stylesheet" href="/assets/css/proposals-actions.css">
 </head>
-<body>
+<body class="portal-carregando">
 <canvas id="campo" aria-hidden="true"></canvas>
 <div id="vinheta" aria-hidden="true"></div>
 
@@ -42,8 +42,6 @@
   <div class="conteudo-wrap">
 <div class="conteudo">
 
-  <div id="navegacaoEstado" role="status">Verificando funcionalidades disponíveis… <button id="navegacaoTentar" type="button" hidden>Tentar novamente</button></div>
-
   <!-- Cabeçalho -->
   <header class="topo">
     <a href="#" class="logo-link" id="logoLink" aria-label="Início do portal">
@@ -56,6 +54,33 @@
       <button class="btn-sair" id="btnSair">Sair <i class="ti ti-logout" aria-hidden="true"></i></button>
     </div>
   </header>
+
+  <!-- Carregamento inicial: exibido até a API definir os módulos autorizados. -->
+  <section class="portal-skeleton" id="portalSkeleton" role="status" aria-label="Carregando o portal">
+    <span class="visualmente-oculto">Carregando o portal…</span>
+    <div class="portal-skeleton-cabecalho" aria-hidden="true">
+      <span class="portal-skeleton-linha portal-skeleton-titulo"></span>
+      <span class="portal-skeleton-linha portal-skeleton-subtitulo"></span>
+    </div>
+    <div class="portal-skeleton-card" aria-hidden="true">
+      <div class="portal-skeleton-card-topo">
+        <span class="portal-skeleton-linha portal-skeleton-icone"></span>
+        <div class="portal-skeleton-card-textos">
+          <span class="portal-skeleton-linha portal-skeleton-nome"></span>
+          <span class="portal-skeleton-linha portal-skeleton-data"></span>
+        </div>
+        <span class="portal-skeleton-linha portal-skeleton-valor"></span>
+      </div>
+      <span class="portal-skeleton-linha portal-skeleton-conteudo"></span>
+      <span class="portal-skeleton-linha portal-skeleton-conteudo-curto"></span>
+    </div>
+  </section>
+
+  <!-- Erros de carregamento ficam acessíveis sem expor informações de permissões. -->
+  <div id="navegacaoEstado" class="navegacao-estado" role="alert" hidden>
+    <span id="navegacaoMensagem">Não foi possível carregar o portal.</span>
+    <button id="navegacaoTentar" type="button" hidden>Tentar novamente</button>
+  </div>
 
   <!-- Tela "Relatórios" (ETAPA 2 — aditivo: envolve o conteúdo existente para permitir alternar com a aba Conta, sem alterar nada por dentro) -->
   <div id="viewRelatorios" hidden>
@@ -228,9 +253,7 @@
         <p>Acompanhe o andamento, consulte as condições comerciais e visualize os documentos enviados pela ITR.</p>
       </div>
     </div>
-    <div class="propostas-estado" id="propostasEstado" role="status" aria-live="polite">
-      <i class="ti ti-loader-2" aria-hidden="true"></i><span>Carregando propostas…</span>
-    </div>
+    <div class="propostas-estado" id="propostasEstado" role="status" aria-live="polite" hidden></div>
     <div class="propostas-lista" id="propostasLista" aria-live="polite"></div>
     <button type="button" class="btn-sec propostas-tentar" id="propostasTentar" hidden>Tentar novamente</button>
   </section>

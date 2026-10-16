@@ -33,6 +33,15 @@
     box-shadow: 0 18px 70px #0003;
 }
 
+.proposta-modal.proposta-modal-rejeicao {
+    position: fixed;
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    transform: translate(-50%, -50%);
+}
+
 .proposta-modal::backdrop {
     background: #13223799;
 }
@@ -123,4 +132,83 @@
         align-items: stretch;
         flex-direction: column;
     }
+}
+
+/* ITR_MODAL_CENTER_FINAL_20261016 */
+.proposta-modal {
+    position: fixed;
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 28px));
+    max-height: calc(100dvh - 28px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.proposta-modal-conteudo > p {
+    margin: 0 0 16px;
+}
+
+.proposta-modal .proposta-modal-mensagem:empty {
+    display: none;
+}
+
+.proposta-modal .proposta-codigo {
+    display: block;
+    background: #f7f9fc;
+    color: #23354b;
+    font-size: clamp(21px, 5vw, 30px);
+    letter-spacing: 0.12em;
+}
+
+.proposta-modal button {
+    max-width: 100%;
+}
+
+.proposta-modal-rejeicao h2::after {
+    content: '✳';
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.88em;
+    font-weight: 400;
+    line-height: 1;
+    color: #a52a38;
+    vertical-align: baseline;
+}
+
+[data-tema='escuro'] .proposta-modal .proposta-codigo {
+    background: #1e3149;
+    color: #e8edf4;
+    border-color: #506075;
+}
+
+[data-tema='escuro'] .proposta-modal-rejeicao h2::after {
+    color: #ef8795;
+}
+
+@media (max-width: 600px) {
+    .proposta-modal {
+        width: calc(100vw - 24px);
+        max-height: calc(100dvh - 24px);
+        padding: 20px;
+    }
+}
+
+/* ITR_ACEITE_ASTERISCO_20261016 */
+dialog.proposta-modal:not(.proposta-modal-rejeicao) > h2::after {
+    content: '✳';
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.88em;
+    font-weight: 400;
+    line-height: 1;
+    color: #3676c9;
+    vertical-align: baseline;
+}
+
+[data-tema='escuro'] dialog.proposta-modal:not(.proposta-modal-rejeicao) > h2::after {
+    color: #91bfff;
 }
