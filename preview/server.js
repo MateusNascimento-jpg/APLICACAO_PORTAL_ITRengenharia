@@ -28,7 +28,7 @@ function createApp() {
     let html = fs.readFileSync(path.join(publicDir, name), 'utf8');
     html = html.replace(/href="https:\/\/portal\.itr\.eng\.br\/"/g, 'href="/login.html"');
     html = html.replace(/href="(?:https?:\/\/|mailto:|tel:)[^"]*"/g, 'href="#" data-preview-blocked="true"');
-    html = html.replace(/<head([^>]*)>/i, '<head$1><script src="/__preview/adapter.js"></script>');
+    html = html.replace(/<head([^>]*)>/i, '<head$1><link rel="stylesheet" href="/__preview/style.css"><script src="/__preview/adapter.js"></script>');
     html = html.replace(/<title>/i, '<title>[Prévia demonstrativa] ');
     res.type('html').send(html);
   });
