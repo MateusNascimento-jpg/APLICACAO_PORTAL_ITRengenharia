@@ -10,6 +10,7 @@
 
 <link rel="stylesheet" href="assets/css/original-portal.css">
     <link rel="stylesheet" href="/assets/css/proposals-actions.css">
+    <link rel="stylesheet" href="/assets/css/financeiro.css">
 </head>
 <body class="portal-carregando">
 <canvas id="campo" aria-hidden="true"></canvas>
@@ -24,6 +25,9 @@
     </button>
     <button class="sidebar-item" id="navPropostas" type="button" data-view="propostas" title="Propostas" hidden>
       <i class="ti ti-file-description" aria-hidden="true"></i><span>Propostas</span>
+    </button>
+    <button class="sidebar-item" id="navFinanceiro" type="button" data-view="financeiro" title="Financeiro" hidden>
+      <i class="ti ti-file-invoice" aria-hidden="true"></i><span>Financeiro</span>
     </button>
     <button class="sidebar-item" id="navRelatorios" hidden type="button" data-view="relatorios" title="Relatórios">
       <i class="ti ti-clipboard-text" aria-hidden="true"></i><span>Relatórios</span>
@@ -258,6 +262,35 @@
     <button type="button" class="btn-sec propostas-tentar" id="propostasTentar" hidden>Tentar novamente</button>
   </section>
 
+  <!-- Aba Financeiro — contratos e faturas, somente consulta (base financeira isolada) -->
+  <section class="financeiro-painel" id="painelFinanceiro" hidden aria-labelledby="financeiroTitulo">
+    <div class="propostas-cabecalho financeiro-cabecalho">
+      <div>
+        <div class="propostas-kicker">Contratos e faturas</div>
+        <h2 id="financeiroTitulo">Financeiro</h2>
+        <p>Acompanhe suas faturas e consulte seus documentos financeiros.</p>
+      </div>
+      <p class="financeiro-atualizado" id="financeiroAtualizado" hidden></p>
+    </div>
+
+    <div class="busca financeiro-busca" id="financeiroBuscaCaixa" hidden>
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input type="search" id="financeiroBusca" placeholder="Buscar por contrato ou proposta" aria-label="Buscar por contrato ou proposta" autocomplete="off" maxlength="60">
+    </div>
+
+    <div class="financeiro-avisos" id="financeiroAvisos" hidden></div>
+
+    <div class="financeiro-abas" id="financeiroAbas" role="tablist" aria-label="Situação das faturas" hidden>
+      <button type="button" class="financeiro-aba" id="finAbaProximas" role="tab" data-aba="proximas" aria-selected="true" aria-controls="financeiroTabela">Próximas <span class="financeiro-aba-total" id="finTotalProximas"></span></button>
+      <button type="button" class="financeiro-aba" id="finAbaAPagar" role="tab" data-aba="a-pagar" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">A pagar <span class="financeiro-aba-total" id="finTotalAPagar"></span></button>
+      <button type="button" class="financeiro-aba" id="finAbaPagas" role="tab" data-aba="pagas" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">Pagas <span class="financeiro-aba-total" id="finTotalPagas"></span></button>
+      <button type="button" class="financeiro-aba" id="finAbaCanceladas" role="tab" data-aba="canceladas" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">Canceladas <span class="financeiro-aba-total" id="finTotalCanceladas"></span></button>
+    </div>
+    <div class="financeiro-tabela" id="financeiroTabela" role="tabpanel" aria-labelledby="finAbaProximas" tabindex="0" hidden></div>
+
+    <div class="financeiro-estado" id="financeiroEstado" role="status" aria-live="polite" hidden></div>
+  </section>
+
   <!-- Rodapé institucional (ETAPA 2 — aditivo) -->
   <footer class="rodape-instit">
     <div class="rodape-col">
@@ -321,6 +354,7 @@
 <script src="assets/js/common.js" defer></script>
 <script src="assets/js/proposal-actions.js" defer></script>
 <script src="assets/js/portal.js" defer></script>
+<script src="assets/js/financeiro.js" defer></script>
 <script src="assets/js/account-security.js" defer></script>
 <script src="assets/js/onboarding.js" defer></script>
 </body>

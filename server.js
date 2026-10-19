@@ -60,6 +60,7 @@ const {
     listarPropostasPorCnpj,
     obterDocumentoProposta
 } = require('./finance-airtable');
+const { financeiroVisivel } = require('./lib/financeiro');
 
 const app = express();
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -972,7 +973,12 @@ app.get('/api/navegacao', autenticado, somenteClientePortal, async (req, res) =>
             temTrabalhosAutorizados(req.session.airtableId),
             financeiroHabilitado() ? listarPropostasPorCnpj(req.session.documento) : { propostas: [] }
         ]);
-        return res.json({ sucesso: true, relatorios, propostas: resultado.propostas.length > 0 });
+        return res.json({
+            sucesso: true,
+            relatorios,
+            propostas: resultado.propostas.length > 0,
+            financeiro: financeiroVisivel(req.session, resultado.propostas)
+        });
     } catch (_) {
         return erro(res, 503, 'Não foi possível verificar as funcionalidades disponíveis. Tente novamente.', 'NAVIGATION_UNAVAILABLE');
     }
@@ -1028,6 +1034,17 @@ app.get('/api/propostas/:id/documento/:anexoId', autenticado, somenteClientePort
         res.destroy(error);
     }
 });
+
+// ---------- Financeiro: contratos e faturas (somente leitura) ----------
+require('./lib/financeiro').install(app, {
+    airtable: require('./finance-airtable'),
+    auth: autenticado,
+    client: somenteClientePortal,
+    consume,
+    audit,
+    hmac
+});
+
 // Alias legado: carrega a sessão explicitamente porque está fora do prefixo /api.
 app.get('/perfil', (req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); }, carregarSessao, autenticado, async (req, res) => {
     try {

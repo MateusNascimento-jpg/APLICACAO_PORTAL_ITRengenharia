@@ -17,6 +17,7 @@ Object.assign(process.env, {
 });
 let reports = false;
 let proposals = false;
+let proposalStatus = undefined;
 let failed = false;
 const calls = [];
 const realLoad = Module._load;
@@ -46,7 +47,7 @@ Module._load = function (request, parent, isMain) {
             habilitado: () => true,
             listarPropostasPorCnpj: async (cnpj) => {
                 calls.push(cnpj);
-                return { propostas: proposals ? [{ id: 'recP' }] : [] };
+                return { propostas: proposals ? [{ id: 'recP', status: proposalStatus }] : [] };
             },
         };
     return realLoad.call(this, request, parent, isMain);
@@ -74,7 +75,23 @@ test('navegação: quatro cenários, sessão obrigatória, CNPJ da sessão e fal
             sucesso: true,
             relatorios: reports,
             propostas: proposals,
+            financeiro: false,
         });
+    }
+    // Financeiro: somente proposta com Status exatamente "Aceita" e conta real da empresa.
+    proposals = true;
+    for (const [status, role, esperado] of [
+        ['Aceita', 'GeneratedClient', true],
+        ['Aceita', 'Cliente', true],
+        ['Aceita', 'DevViewer', false],
+        ['Em Análise pelo Cliente', 'GeneratedClient', false],
+        ['Rejeitada', 'GeneratedClient', false],
+        ['aceita', 'GeneratedClient', false],
+    ]) {
+        proposalStatus = status;
+        const response = await get(role);
+        assert.equal(response.status, 200);
+        assert.equal((await response.json()).financeiro, esperado, `${status}/${role}`);
     }
     assert.deepEqual([...new Set(calls)].sort(), ['12345678000190', 'recAAAAAAAAAAAAAA'].sort());
     assert.equal((await get('')).status, 401);

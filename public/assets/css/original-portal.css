@@ -1140,3 +1140,73 @@ body.portal-carregando .marca-rodape {
 @media (prefers-reduced-motion: reduce) {
   .portal-skeleton-linha { animation: none; }
 }
+
+/* ITR_STATUS_CORNER_TAB_V2_20261019 */
+/* Etiqueta discreta, integrada ao canto do card; apenas visual. */
+.proposta-card.com-faixa .proposta-resumo {
+  padding-top: 30px;
+}
+.proposta-faixa {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 25px;
+  min-width: 89px;
+  max-width: calc(100% - 72px);
+  padding: 0 13px;
+  border: 0;
+  border-left: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-radius: 0 16px 0 9px;
+  clip-path: none;
+  background: var(--field);
+  color: var(--txt-3);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .015em;
+  line-height: 1;
+  text-align: center;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.proposta-faixa.aprovada {
+  color: var(--verde-tx);
+  background: var(--verde-bg);
+  border-color: var(--verde-bd);
+}
+.proposta-faixa.rejeitada {
+  color: var(--erro-tx);
+  background: var(--erro-bg);
+  border-color: var(--erro-bd);
+}
+.proposta-faixa.analise {
+  color: var(--amarelo-tx);
+  background: var(--amarelo-bg);
+  border-color: var(--amarelo-bd);
+}
+.proposta-faixa.expirada {
+  color: var(--txt-3);
+  background: var(--cinza-bg);
+  border-color: var(--line-soft);
+}
+@media (max-width: 460px) {
+  .proposta-card.com-faixa .proposta-resumo {
+    padding-top: 32px;
+  }
+  .proposta-faixa {
+    height: 24px;
+    min-width: 82px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+}

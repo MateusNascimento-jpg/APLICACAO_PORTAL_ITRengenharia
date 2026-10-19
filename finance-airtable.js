@@ -300,11 +300,26 @@ async function listarCandidatas(cutoff) {
     return listarTodos(TBL_PROPOSTAS, [F_CLIENTE, F_STATUS, F_PDF], `IS_AFTER(CREATED_TIME(), DATETIME_PARSE('${timestamp}'))`);
 }
 
+// Leitura de um registro pelo Record ID, usada pelo módulo Financeiro
+// (lib/financeiro). Somente GET; registro inexistente retorna null.
+async function obterRegistro(tableId, recordId) {
+    if (!recordIdValido(recordId)) return null;
+    try {
+        return await request(`${api(tableId)}/${recordId}?returnFieldsByFieldId=true`);
+    } catch (error) {
+        if (error.status === 404) return null;
+        throw error;
+    }
+}
+
 module.exports = {
     habilitado,
     listarPropostasPorCnpj,
     carregarPropostaAtual,
     atualizarDecisao,
     listarCandidatas,
-    obterDocumentoProposta
+    obterDocumentoProposta,
+    // Financeiro (somente leitura): reaproveita paginação, retries e timeout.
+    listarRegistros: listarTodos,
+    obterRegistro
 };
