@@ -2,6 +2,10 @@
   'use strict';
   const persona = location.pathname === '/painel.html' ? 'director' : 'client';
   const message = 'Ação indisponível na prévia. Nenhum dado foi enviado ou alterado.';
+  const demoRoutes = new Map([
+    ['formLogin', '/portal.html'],
+    ['formDiretor', '/painel.html']
+  ]);
   const notify = () => {
     window.alert(message);
   };
@@ -24,7 +28,7 @@
   };
   document.addEventListener('submit', event => {
     event.preventDefault(); event.stopImmediatePropagation();
-    const destination = { formLogin: '/portal.html', formDiretor: '/painel.html' }[event.target.id];
+    const destination = demoRoutes.get(event.target.id);
     if (destination) { location.assign(destination); return; }
     notify();
   }, true);
