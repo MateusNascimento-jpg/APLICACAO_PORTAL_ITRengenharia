@@ -1,0 +1,6 @@
+#itr-preview-bar { position: relative; z-index: 99999; width: 100%; box-sizing: border-box; padding: 10px 20px; background: #15392f; color: #fff; font: 12px/1.5 system-ui, sans-serif; text-align: center; flex: 0 0 auto; }
+#itr-preview-bar div { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin-top: 4px; }
+#itr-preview-bar a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+#itr-preview-bar a:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+#itr-preview-message:not(:empty) { display: block; margin-top: 6px; }
+body:has(#itr-preview-bar) { padding-top: 0; }

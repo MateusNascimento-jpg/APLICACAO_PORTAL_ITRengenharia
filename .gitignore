@@ -26,3 +26,6 @@ REJEITADO_PORTAL_ITR_*/
 
 # Metadado do pacote local de release
 .itr-release.json
+
+# Autorização exclusiva deste sandbox; nunca publicar
+.itr-preview-local.json

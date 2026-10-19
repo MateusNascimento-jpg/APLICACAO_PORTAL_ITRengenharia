@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "node scripts/dev.js",
     "migrate": "node scripts/migrate.js",
     "bootstrap:director": "node scripts/bootstrap-director.js",
     "preflight": "node scripts/preflight.js",
