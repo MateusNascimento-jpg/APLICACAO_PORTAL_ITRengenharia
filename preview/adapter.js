@@ -3,8 +3,7 @@
   const persona = location.pathname === '/painel.html' ? 'director' : 'client';
   const message = 'Ação indisponível na prévia. Nenhum dado foi enviado ou alterado.';
   const notify = () => {
-    const el = document.getElementById('itr-preview-message');
-    if (el) el.textContent = message;
+    window.alert(message);
   };
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, options = {}) => {
@@ -23,7 +22,12 @@
     if (!url || new URL(url, location.href).origin !== location.origin) { notify(); return null; }
     return originalOpen(url, ...args);
   };
-  document.addEventListener('submit', event => { event.preventDefault(); event.stopImmediatePropagation(); notify(); }, true);
+  document.addEventListener('submit', event => {
+    event.preventDefault(); event.stopImmediatePropagation();
+    const destination = { formLogin: '/portal.html', formDiretor: '/painel.html' }[event.target.id];
+    if (destination) { location.assign(destination); return; }
+    notify();
+  }, true);
   document.addEventListener('click', event => {
     if (event.target.closest('#btnSair')) {
       event.preventDefault(); event.stopImmediatePropagation(); location.assign('/login.html'); return;
@@ -36,6 +40,13 @@
     if (action) { event.preventDefault(); event.stopImmediatePropagation(); notify(); }
   }, true);
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('form input').forEach(input => { input.readOnly = true; input.title = 'Use a navegação da prévia; não informe credenciais reais.'; });
+    const examples = { documento: '00.000.000/0000-00', senha: 'demonstracao', diretorUsuario: 'visitante', diretorSenha: 'demonstracao' };
+    document.querySelectorAll('form input').forEach(input => {
+      if (['checkbox', 'radio', 'submit', 'button'].includes(input.type)) return;
+      input.readOnly = true;
+      input.autocomplete = 'off';
+      input.title = 'Dados fictícios. Não informe credenciais reais nesta prévia.';
+      if (Object.hasOwn(examples, input.id)) input.value = examples[input.id];
+    });
   });
 })();

@@ -28,8 +28,8 @@ function createApp() {
     let html = fs.readFileSync(path.join(publicDir, name), 'utf8');
     html = html.replace(/href="https:\/\/portal\.itr\.eng\.br\/"/g, 'href="/login.html"');
     html = html.replace(/href="(?:https?:\/\/|mailto:|tel:)[^"]*"/g, 'href="#" data-preview-blocked="true"');
-    html = html.replace(/<head([^>]*)>/i, '<head$1><script src="/__preview/adapter.js"></script><link rel="stylesheet" href="/__preview/style.css">');
-    html = html.replace(/<body([^>]*)>/i, '<body$1><nav id="itr-preview-bar" aria-label="Navegação da prévia"><strong>Prévia visual — dados demonstrativos — sem operações reais</strong><div><a href="/login.html">Login</a><a href="/portal.html">Cliente</a><a href="/painel.html">Diretor</a><a href="/como-funciona.html">Como funciona</a><a href="/recuperar-senha.html">Recuperar acesso</a><a href="/privacidade.html">Privacidade</a></div><span id="itr-preview-message" role="status"></span></nav>');
+    html = html.replace(/<head([^>]*)>/i, '<head$1><script src="/__preview/adapter.js"></script>');
+    html = html.replace(/<title>/i, '<title>[Prévia demonstrativa] ');
     res.type('html').send(html);
   });
   // HTML must always pass through the adapter injection above.
