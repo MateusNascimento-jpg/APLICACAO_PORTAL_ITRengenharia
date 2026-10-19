@@ -9,17 +9,37 @@
   const notify = () => {
     window.alert(message);
   };
+  const sessionKey = 'itr-preview-session';
+  const session = () => { try { return JSON.parse(sessionStorage.getItem(sessionKey) || 'null'); } catch { return null; } };
+  const startSession = profile => {
+    const value = { profile, issuedAt: Date.now() };
+    sessionStorage.setItem(sessionKey, JSON.stringify(value));
+    document.cookie = `itr_preview_session=${profile}; Path=/; SameSite=Strict`;
+  };
+  const endSession = () => {
+    sessionStorage.removeItem(sessionKey);
+    document.cookie = 'itr_preview_session=; Path=/; Max-Age=0; SameSite=Strict';
+  };
+  const loginResponse = profile => new Response(JSON.stringify({ sucesso: true, redirectTo: profile === 'director' ? '/painel.html' : '/portal.html', usuario: { perfil: profile === 'director' ? 'Director' : 'Cliente', visualizacaoDev: true } }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, options = {}) => {
     const url = new URL(input instanceof Request ? input.url : input, location.href);
     const method = String(options.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+    if (url.pathname === '/api/login' && method === 'POST') {
+      startSession('client');
+      return Promise.resolve(loginResponse('client'));
+    }
+    if (url.pathname === '/api/login-diretor' && method === 'POST') {
+      startSession('director');
+      return Promise.resolve(loginResponse('director'));
+    }
     if (url.origin !== location.origin || !['GET', 'HEAD'].includes(method)) {
       notify();
       return Promise.resolve(new Response(JSON.stringify({ sucesso: false, erro: message }), { status: 423, headers: { 'Content-Type': 'application/json' } }));
     }
     const headers = new Headers(options.headers || (input instanceof Request ? input.headers : undefined));
-    headers.set('X-ITR-Preview-Persona', persona);
-    return originalFetch(input, { ...options, headers, credentials: 'omit' });
+    headers.set('X-ITR-Preview-Persona', session()?.profile || persona);
+    return originalFetch(input, { ...options, headers, credentials: 'same-origin' });
   };
   const originalOpen = window.open.bind(window);
   window.open = (url, ...args) => {
@@ -29,12 +49,16 @@
   document.addEventListener('submit', event => {
     event.preventDefault(); event.stopImmediatePropagation();
     const destination = demoRoutes.get(event.target.id);
-    if (destination) { location.assign(destination); return; }
+    if (destination) {
+      startSession(event.target.id === 'formDiretor' ? 'director' : 'client');
+      location.assign(destination);
+      return;
+    }
     notify();
   }, true);
   document.addEventListener('click', event => {
     if (event.target.closest('#btnSair')) {
-      event.preventDefault(); event.stopImmediatePropagation(); location.assign('/login.html'); return;
+      event.preventDefault(); event.stopImmediatePropagation(); endSession(); location.assign('/login.html'); return;
     }
     const anchor = event.target.closest('a');
     if (anchor && (anchor.hasAttribute('data-preview-blocked') || new URL(anchor.href, location.href).origin !== location.origin)) {
