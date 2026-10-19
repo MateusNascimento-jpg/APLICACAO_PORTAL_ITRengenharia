@@ -45,7 +45,11 @@ var TI_SVG = {
   'hourglass':'<path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3c0 5 8 5 8 9s-8 4-8 9"/>',
   'circle-check':'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3l5 -6"/>',
   'circle-x':'<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/>',
-  'clock-x':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5"/><path d="M15 15l3 3"/><path d="M18 15l-3 3"/>'
+  'clock-x':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5"/><path d="M15 15l3 3"/><path d="M18 15l-3 3"/>',
+  /* Financeiro (nav e documentos) */
+  'file-invoice':'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 7l1 0"/><path d="M9 13l6 0"/><path d="M13 17l2 0"/>',
+  'barcode':'<path d="M4 7v-1a2 2 0 0 1 2 -2h2"/><path d="M4 17v1a2 2 0 0 0 2 2h2"/><path d="M16 4h2a2 2 0 0 1 2 2v1"/><path d="M16 20h2a2 2 0 0 0 2 -2v-1"/><path d="M5 11h1v2h-1z"/><path d="M10 11l0 2"/><path d="M14 11h1v2h-1z"/><path d="M19 11l0 2"/>',
+  'download':'<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>'
 };
 function svgIcone(nome){
   var corpo = TI_SVG[nome];
@@ -896,7 +900,7 @@ function carregarContatosConta(){
 document.getElementById('contaTentar').addEventListener('click', carregarContatosConta);
 
 function limparNavAtiva(){
-  ['navRelatorios','navConta','navPropostas'].forEach(function(id){
+  ['navRelatorios','navConta','navPropostas','navFinanceiro'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.classList.remove('ativo');
   });
@@ -905,9 +909,11 @@ function ocultarViewsPortal(){
   var viewRel = document.getElementById('viewRelatorios');
   var painelConta = document.getElementById('painelConta');
   var painelPropostas = document.getElementById('painelPropostas');
+  var painelFinanceiro = document.getElementById('painelFinanceiro');
   if(viewRel) viewRel.hidden = true;
   if(painelConta) painelConta.hidden = true;
   if(painelPropostas) painelPropostas.hidden = true;
+  if(painelFinanceiro) painelFinanceiro.hidden = true;
 }
 function ativarViewConta(){
   ocultarViewsPortal();
@@ -955,6 +961,13 @@ function statusRotuloProposta(status){
   if(status === 'Aceita') return '✓ PROPOSTA APROVADA';
   if(status === 'Rejeitada') return '✕ PROPOSTA REJEITADA';
   return status || 'Pendente';
+}
+function statusFaixaTextoProposta(status){
+  if(status === 'Aceita') return 'Aprovada';
+  if(status === 'Rejeitada') return 'Rejeitada';
+  if(status === 'Em Análise pelo Cliente') return 'Em análise';
+  if(status === 'Expirada') return 'Expirada';
+  return '';
 }
 function fluxoProposta(status){
   var analise = ['Em Análise pelo Cliente','Aceita','Rejeitada','Expirada'].includes(status);
@@ -1014,15 +1027,19 @@ function renderizarPropostas(){
   PROPOSTAS_ATUAIS.forEach(function(p){
     var classe = statusClasseProposta(p.status);
     var aberta = propostaAbertaId === p.id;
+    var rotuloFaixa = statusFaixaTextoProposta(p.status);
     var artigo = document.createElement('article');
-    artigo.className = 'proposta-card '+classe+(aberta?' aberta':'');
+    artigo.className = 'proposta-card '+classe+(aberta?' aberta':'')+(rotuloFaixa?' com-faixa':'');
     artigo.setAttribute('data-proposta-id', p.id);
     artigo.innerHTML =
       '<button class="proposta-resumo" type="button" data-acao="toggle" data-id="'+esc(p.id)+'" aria-expanded="'+(aberta?'true':'false')+'">'+
+      (rotuloFaixa ? '<span class="proposta-faixa '+classe+'">'+esc(rotuloFaixa)+'</span>' : '')+
         '<span class="proposta-resumo-icone" aria-hidden="true"><i class="ti ti-mail"></i></span>'+
         '<div class="proposta-identificacao"><div class="proposta-numero">Proposta '+esc(p.numero || '—')+'</div><div class="proposta-meta"><span><i class="ti ti-calendar" aria-hidden="true"></i> Enviada em '+esc(formatarData(p.dataEnvio))+'</span></div></div>'+
         '<div class="proposta-valor-resumo">'+esc(moedaBR(p.valor))+'</div>'+
-        '<div class="proposta-direita"><span class="proposta-status '+classe+'">'+esc(statusRotuloProposta(p.status))+'</span><span class="proposta-chevron"><i class="ti ti-chevron-down" aria-hidden="true"></i></span></div>'+
+        '<div class="proposta-direita">'+
+          (rotuloFaixa ? '' : '<span class="proposta-status '+classe+'">'+esc(statusRotuloProposta(p.status))+'</span>')+
+          '<span class="proposta-chevron"><i class="ti ti-chevron-down" aria-hidden="true"></i></span></div>'+
       '</button>'+
       '<div class="proposta-detalhes" '+(aberta?'':'hidden')+'>'+
         '<div class="proposta-fluxo-wrap">'+fluxoProposta(p.status)+'</div>'+
@@ -1164,9 +1181,10 @@ function carregarNavegacao() {
       if (!response.ok) throw new Error('Navegação indisponível');
       return response.json();
     }).then(function(data) {
-      NAVEGACAO_ATUAL = { propostas: data.propostas === true, relatorios: data.relatorios === true };
+      NAVEGACAO_ATUAL = { propostas: data.propostas === true, relatorios: data.relatorios === true, financeiro: data.financeiro === true };
       document.getElementById('navPropostas').hidden = !NAVEGACAO_ATUAL.propostas;
       document.getElementById('navRelatorios').hidden = !NAVEGACAO_ATUAL.relatorios;
+      document.getElementById('navFinanceiro').hidden = !NAVEGACAO_ATUAL.financeiro;
 
       concluirCarregamentoNavegacao();
       if (NAVEGACAO_ATUAL.relatorios) iniciar();
@@ -1176,6 +1194,7 @@ function carregarNavegacao() {
       NAVEGACAO_ATUAL = { propostas: false, relatorios: false };
       document.getElementById('navPropostas').hidden = true;
       document.getElementById('navRelatorios').hidden = true;
+      document.getElementById('navFinanceiro').hidden = true;
       document.getElementById('navegacaoMensagem').textContent = 'Não foi possível carregar o portal.';
 
       concluirCarregamentoNavegacao();
