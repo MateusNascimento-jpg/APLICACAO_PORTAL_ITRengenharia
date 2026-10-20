@@ -808,18 +808,10 @@ document.getElementById('btnTema').addEventListener('click', function(){ ITR.alt
   }
 })();
 
-/* ---- Rodapé institucional (ETAPA 2 — aditivo) ---- */
+/* Ano do rodapé compacto; links institucionais agora são HTML sem controle JS. */
 (function(){
   var ano = document.getElementById('rodapeAno');
   if(ano) ano.textContent = new Date().getFullYear();
-  var rodapeRelatorios = document.getElementById('rodapeRelatorios');
-  if(rodapeRelatorios) rodapeRelatorios.addEventListener('click', function(e){
-    e.preventDefault();
-    ativarViewRelatorios();
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
-  var rodapeConta = document.getElementById('rodapeConta');
-  if(rodapeConta) rodapeConta.addEventListener('click', function(){ ativarViewConta(); });
 })();
 
 /* ---- Aba Conta: contatos carregados sob demanda, sem atrasar os relatórios. ---- */
@@ -943,7 +935,26 @@ var PROPOSTAS_ATUAIS = [];
 var propostasCarregadasEm = 0;
 var propostasEmVoo = null;
 var propostasRuntime = null;
-var propostaAbertaId = null;
+// Cada proposta pode ser recolhida individualmente. O padrão de abertura é aplicado uma única vez.
+var propostasAbertasIds = new Set();
+var propostasAberturaInicialAplicada = false;
+function inicializarAberturaPropostas(propostas){
+  var ids = new Set(propostas.map(function(p){ return p.id; }));
+  propostasAbertasIds.forEach(function(id){ if(!ids.has(id)) propostasAbertasIds.delete(id); });
+  if(propostasAberturaInicialAplicada) return;
+  propostasAberturaInicialAplicada = true;
+  if(propostas.length <= 3){
+    propostas.forEach(function(p){ propostasAbertasIds.add(p.id); });
+  } else {
+    // Data de envio determina a mais recente; a ordem original da lista não muda.
+    var recente = propostas.reduce(function(atual, p){
+      var dataP = Date.parse(p.dataEnvio || '') || 0;
+      var dataAtual = Date.parse(atual.dataEnvio || '') || 0;
+      return dataP > dataAtual ? p : atual;
+    }, propostas[0]);
+    propostasAbertasIds.add(recente.id);
+  }
+}
 
 function moedaBR(valor){
   if(typeof valor !== 'number' || !isFinite(valor)) return '—';
@@ -1020,13 +1031,15 @@ function renderizarPropostas(){
     estado.hidden = true;
     estado.classList.remove('carregando');
   }
+  var contador = document.getElementById('propostasContagem');
+  if(contador) contador.textContent = PROPOSTAS_ATUAIS.length + (PROPOSTAS_ATUAIS.length === 1 ? ' proposta' : ' propostas');
   if(!PROPOSTAS_ATUAIS.length){
     lista.innerHTML = '<div class="propostas-vazio"><strong>Nenhuma proposta disponível.</strong><span>Quando a ITR enviar uma proposta para sua empresa, ela aparecerá aqui.</span></div>';
     return;
   }
   PROPOSTAS_ATUAIS.forEach(function(p){
     var classe = statusClasseProposta(p.status);
-    var aberta = propostaAbertaId === p.id;
+    var aberta = propostasAbertasIds.has(p.id);
     var rotuloFaixa = statusFaixaTextoProposta(p.status);
     var artigo = document.createElement('article');
     artigo.className = 'proposta-card '+classe+(aberta?' aberta':'')+(rotuloFaixa?' com-faixa':'');
@@ -1092,10 +1105,13 @@ function carregarPropostas(forcar){
     return ITR.jsonSeguro(resp).then(function(dados){
       if(!resp.ok || !dados || !dados.sucesso) throw new Error((dados && dados.erro) || 'Propostas indisponíveis');
       PROPOSTAS_ATUAIS = Array.isArray(dados.propostas) ? dados.propostas : [];
+      if(PROPOSTAS_ATUAIS.length) inicializarAberturaPropostas(PROPOSTAS_ATUAIS);
       propostasCarregadasEm = Date.now();
       renderizarPropostas();
     });
   }).catch(function(err){
+    var contador = document.getElementById('propostasContagem');
+    if(contador) contador.textContent = 'Consulta indisponível';
     mostrarEstadoPropostas(err.message || 'Não foi possível carregar as propostas. Tente novamente.', false);
     if(tentar) tentar.hidden = false;
   }).finally(function(){ propostasEmVoo = null; });
@@ -1121,8 +1137,19 @@ if(propostasListaEl) propostasListaEl.addEventListener('click', function(e){
   var acao = botao.getAttribute('data-acao');
   var id = botao.getAttribute('data-id');
   if(acao === 'toggle'){
-    propostaAbertaId = propostaAbertaId === id ? null : id;
-    renderizarPropostas();
+    var aberta = !propostasAbertasIds.has(id);
+    if(aberta) propostasAbertasIds.add(id);
+    else propostasAbertasIds.delete(id);
+    // Mantém foco e posição do teclado; não recria os botões e links.
+    var card = botao.closest('.proposta-card');
+    var detalhes = card && card.querySelector('.proposta-detalhes');
+    if(card && detalhes){
+      card.classList.toggle('aberta', aberta);
+      detalhes.hidden = !aberta;
+      botao.setAttribute('aria-expanded', aberta ? 'true' : 'false');
+    } else {
+      renderizarPropostas();
+    }
     return;
   }
   var proposta = PROPOSTAS_ATUAIS.find(function (item) { return item.id === id; });
