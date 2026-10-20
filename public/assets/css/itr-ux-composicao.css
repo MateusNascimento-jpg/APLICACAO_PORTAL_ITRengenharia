@@ -1,0 +1,197 @@
+/*
+ * ITR Engenharia — Composição das áreas autenticadas (20/10/2026)
+ * Camada exclusivamente visual. Mantém seletores, IDs, controles e APIs originais.
+ * Princípios: superfícies sólidas, hierarquia editorial, densidade funcional e zero glow.
+ */
+:root {
+  --bg: #111821;
+  --bg-deep: #0e151d;
+  --card: #1b2530;
+  --card-2: #222e3a;
+  --field: #151f29;
+  --line: #43505d;
+  --line-soft: #34404c;
+  --azul: #4a85d7;
+  --azul-claro: #8bb6ee;
+  --azul-link: #a2c6f7;
+  --txt: #edf2f7;
+  --txt-2: #d0d9e2;
+  --txt-3: #9eacbc;
+  --txt-4: #8999a9;
+  --ux-rail: #151e27;
+  --ux-heading: #1d2a37;
+  --ux-ink: #edf2f7;
+  --ux-focus: #8bb6ee;
+  --ux-accent: #4a85d7;
+}
+:root[data-tema="claro"] {
+  --bg: #f3f5f7;
+  --bg-deep: #e9edf2;
+  --card: #ffffff;
+  --card-2: #f6f8fa;
+  --field: #ffffff;
+  --line: #d0d9e3;
+  --line-soft: #e1e7ed;
+  --azul: #2563ad;
+  --azul-claro: #2767b3;
+  --azul-link: #225ea8;
+  --txt: #172534;
+  --txt-2: #3b4c5d;
+  --txt-3: #5c6e81;
+  --txt-4: #697c90;
+  --ux-rail: #ffffff;
+  --ux-heading: #e8eef5;
+  --ux-ink: #172534;
+  --ux-focus: #2767b3;
+  --ux-accent: #2868b7;
+}
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--txt); padding-bottom: 0; transition: none; }
+/* Desativamos a vinheta e os efeitos de fundo nas áreas internas. */
+#campo, #vinheta { display: none !important; }
+.layout-shell { min-height: 100vh; align-items: stretch; }
+.conteudo-wrap { display: flex; align-items: stretch; justify-content: stretch; }
+.conteudo-wrap > .conteudo { width: 100%; max-width: 1450px; min-height: 100vh; margin: 0 auto; padding: 0 clamp(22px, 3.2vw, 54px); display: flex; flex-direction: column; }
+/* A navegação é uma peça fixa e opaca, não um painel translúcido. */
+.sidebar { width: 224px; padding: 30px 13px; background: var(--ux-rail); border-right: 1px solid var(--line-soft); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sidebar-toggle { margin-bottom: 14px; }
+.sidebar-item { border-radius: 7px; min-height: 46px; padding: 11px 13px; }
+.sidebar-item.ativo { background: var(--ux-heading); color: var(--txt); border-color: var(--line); border-left: 3px solid var(--ux-accent); padding-left: 11px; }
+.sidebar-item:hover { background: var(--ux-heading); }
+.topo { min-height: 86px; margin-bottom: 23px; padding: 14px 0 16px; border-bottom: 1px solid var(--line-soft); }
+.topo .logo-link:hover { transform: none; filter: none; }
+.topo .logo-link img { width: 151px; }
+.btn-sair, .btn-tema { background: var(--card); border: 1px solid var(--line); border-radius: 7px; box-shadow: none; }
+.btn-tema:hover, .btn-sair:hover { background: var(--card-2); transform: none; }
+.btn-menu-mobile { box-shadow: none; }
+/* Cabeçalhos de módulo têm presença por layout e tipografia, não por badges ou halo. */
+.propostas-painel, .financeiro-painel, #viewRelatorios { min-width: 0; }
+.propostas-cabecalho {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 16px 22px; margin: 0 0 20px; padding: 24px clamp(20px, 2vw, 32px);
+  background: var(--ux-heading); border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--ux-accent); border-radius: 2px;
+}
+.propostas-cabecalho h2 { font-size: clamp(27px, 2.2vw, 36px); line-height: 1.14; font-weight: 700; letter-spacing: -.035em; }
+.propostas-cabecalho p { margin-top: 8px; max-width: 690px; font-size: 14px; line-height: 1.5; color: var(--txt-3); letter-spacing: 0; }
+.propostas-total { color: var(--txt-2); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; padding: 7px 0; }
+/* “Minha conta”: mesma hierarquia tipográfica das telas Propostas e Relatórios. */
+.conta-titulo {
+  font-size: clamp(27px, 2.2vw, 36px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.035em;
+  margin-bottom: 20px;
+}
+/* Propostas: cartões que se leem como documentos, não janelas flutuantes. */
+.propostas-lista { gap: 12px; }
+.proposta-card, .proposta-card.aberta, .proposta-card.aberta:hover, .proposta-card:hover {
+  background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+  box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+  transform: none; transition: border-color .15s ease;
+}
+.proposta-card::before { display: none; }
+.proposta-card.aprovada { border-left: 3px solid var(--verde-tx); }
+.proposta-card.rejeitada { border-left: 3px solid var(--erro-tx); }
+.proposta-resumo { min-height: 78px; padding: 18px 21px; }
+.proposta-card.com-faixa .proposta-resumo { padding-top: 27px; }
+.proposta-numero { font-weight: 700; font-size: 17px; }
+.proposta-resumo-icone { border-radius: 6px; background: var(--ux-heading); border: 1px solid var(--line-soft); }
+.proposta-detalhes { padding: 17px 21px 20px; border-top: 1px solid var(--line-soft); }
+.proposta-fluxo-wrap { padding: 8px 6px 14px; margin-bottom: 9px; }
+.proposta-etapa-marca, .proposta-etapa.concluida .proposta-etapa-marca { box-shadow: none; }
+.proposta-etapa:not(:last-child)::after { box-shadow: none; }
+.proposta-documento-destaque, .proposta-documento { box-shadow: none; }
+.proposta-info-grid { margin-top: 15px; }
+.proposta-faixa { border-radius: 0 7px 0 6px; }
+/* Relatórios: saudação extensa vira cabeçalho técnico e identificamos a empresa. */
+.saudacao { margin: 0 0 14px; }
+.saudacao-principal {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; padding: 5px 0 14px; border-bottom: 1px solid var(--line-soft);
+}
+.saudacao h1 { font-size: clamp(27px, 2.2vw, 36px); line-height: 1.15; letter-spacing: -.035em; font-weight: 700; }
+.saudacao-empresa { color: var(--txt-3); margin-top: 8px; font-size: 13px; }
+.nome-empresa { color: var(--txt); border-bottom: 0; font-weight: 650; padding-bottom: 0; }
+.saudacao .sub { margin-top: 7px; color: var(--txt-3); font-size: 14px; letter-spacing: 0; }
+.freshness { margin: 0 0 3px; white-space: nowrap; font-size: 12px; }
+/* Os quatro resumos são filtros reais: sem bolhas, brilhos ou ornamentos. */
+.resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 16px 0 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.kpi, .kpi:hover {
+  background: var(--card); border: 0; border-right: 1px solid var(--line-soft);
+  border-radius: 0; backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: none; transform: none; padding: 17px 16px;
+}
+.kpi:last-child { border-right: 0; }
+.kpi::after { display: none; }
+.kpi:hover { background: var(--card-2); }
+.kpi .ico { border-radius: 6px; }
+.kpi:focus-visible { outline: 2px solid var(--ux-focus); outline-offset: -3px; }
+/* Ferramentas e lista fazem parte da mesma área de trabalho. */
+.barra { margin: 0 0 14px; }
+.busca, .btn-sec, .ordenar select { background: var(--card); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.contagem-lista { font-size: 12px; margin: 0 0 6px; }
+#areaHistorico { margin-bottom: 12px !important; }
+#areaHistorico .aviso-recente { background: none; border: 0; border-radius: 0; padding: 0; }
+.lista { gap: 11px; }
+.work, .work:hover { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 20px 22px; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; transform: none; }
+.work .cab { padding-bottom: 13px; border-bottom: 1px solid var(--line-soft); }
+.work .amostra-titulo { font-weight: 700; font-size: 17px; }
+/* Destaque de conclusão: restaura a pulsação original somente em “Relatório Disponível”.
+   Outras etapas seguem sem efeitos decorativos, conforme a identidade aprovada. */
+.tl .et.atual .bolha { animation: none; box-shadow: none; }
+.tl .et.atual:last-child .bolha { animation: pulsar 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tl .et.atual:last-child .bolha { animation: none; }
+}
+.btn-baixar, .btn-baixar:hover { box-shadow: none; transform: none; border-radius: 6px; }
+/* Financeiro compartilha a mesma linguagem; abas continuam abas, sem cards adicionais. */
+.financeiro-cabecalho { align-items: center; }
+.financeiro-busca { max-width: 490px; }
+.financeiro-abas { margin-top: 8px; }
+.financeiro-aba { border-radius: 0; }
+.financeiro-tabela { background: var(--card); border: 1px solid var(--line); border-radius: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.financeiro-linha:hover > td { background: var(--card-2); }
+/* Rodapé compacto, sem nova marca grande nem navegação duplicada. */
+.rodape-compacto {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px 24px; padding: 17px 0 20px;
+  margin-top: auto; border-top: 1px solid var(--line-soft);
+  color: var(--txt-4); font-size: 12px;
+}
+.rodape-compacto nav { display: flex; gap: 10px 21px; flex-wrap: wrap; }
+.rodape-compacto a { color: var(--txt-3); text-decoration: none; }
+.rodape-compacto a:hover { color: var(--azul-link); text-decoration: underline; }
+body.portal-carregando .rodape-compacto { display: none; }
+/* A barra final do template era uma terceira repetição institucional. */
+.marca-rodape { display: none; }
+/* Foco e acessibilidade permanecem perceptíveis nos dois temas. */
+:where(.proposta-resumo, .rodape-compacto a, .sidebar-item, .kpi, .btn-sec):focus-visible { outline: 2px solid var(--ux-focus); outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .conteudo-wrap > .conteudo { padding: 0 23px; }
+  .sidebar { width: 208px; }
+}
+@media (max-width: 900px) {
+  .sidebar { width: 240px; box-shadow: none; }
+  .conteudo-wrap > .conteudo { padding: 0 20px; }
+  .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:nth-child(2) { border-right: 0; }
+  .kpi:nth-child(-n+2) { border-bottom: 1px solid var(--line-soft); }
+}
+@media (max-width: 600px) {
+  .conteudo-wrap > .conteudo { padding: 0 15px; }
+  .topo { min-height: 74px; margin-bottom: 15px; }
+  .topo .logo-link img { width: 126px; }
+  .propostas-cabecalho { padding: 18px; }
+  .propostas-cabecalho h2 { font-size: 27px; }
+  .proposta-resumo { min-height: 0; }
+  .proposta-detalhes { padding: 14px 14px 17px; }
+  .saudacao-principal { align-items: flex-start; }
+  .freshness { white-space: normal; }
+  .kpi { padding: 11px; }
+  .work { padding: 15px; }
+  .rodape-compacto { margin-top: 24px; padding-bottom: 80px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proposta-card, .sidebar-item, .kpi { transition: none; }
+}

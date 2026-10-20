@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="assets/css/original-portal.css">
     <link rel="stylesheet" href="/assets/css/proposals-actions.css">
     <link rel="stylesheet" href="/assets/css/financeiro.css">
+    <link rel="stylesheet" href="/assets/css/itr-ux-composicao.css">
 </head>
 <body class="portal-carregando">
 <canvas id="campo" aria-hidden="true"></canvas>
@@ -89,21 +90,20 @@
   <!-- Tela "Relatórios" (ETAPA 2 — aditivo: envolve o conteúdo existente para permitir alternar com a aba Conta, sem alterar nada por dentro) -->
   <div id="viewRelatorios" hidden>
 
-  <!-- Saudação -->
-  <div class="saudacao">
-  <h1 id="saudacao">
-    Olá, seja muito bem-vindo(a) 
-    <span id="nomeCliente" class="nome-empresa">
-      <i class="ti ti-building" aria-hidden="true"></i>
-      <span id="nomeTexto">Sua empresa</span><span style="color: rgb(72, 131, 214);">!</span>
-    </span>
-  </h1>
-  <div class="sub">Acompanhe aqui o andamento dos seus ensaios e baixe os relatórios aprovados.</div>
-  <div class="freshness" id="freshness">
-    <i class="ti ti-refresh" aria-hidden="true"></i>
-    <span id="freshnessTxt">Atualizado a alguns minutos atrás</span>
-  </div>
-</div>
+  <!-- Cabeçalho de relatórios: conteúdo operacional e empresa, sem frase de saudação genérica. -->
+  <section class="saudacao" aria-label="Visão de relatórios">
+    <div class="saudacao-principal">
+      <div class="saudacao-textos">
+        <h1 id="saudacao">Relatórios de ensaios</h1>
+        <div class="saudacao-empresa">Empresa: <span id="nomeCliente" class="nome-empresa"><span id="nomeTexto">Sua empresa</span></span></div>
+        <p class="sub">Acompanhe as etapas dos ensaios e acesse os relatórios aprovados.</p>
+      </div>
+      <div class="freshness" id="freshness">
+        <i class="ti ti-refresh" aria-hidden="true"></i>
+        <span id="freshnessTxt">Atualizado a alguns minutos atrás</span>
+      </div>
+    </div>
+  </section>
 
   <!-- Contadores (também funcionam como filtros ao clicar dentro do portal do cliente) -->
   <section class="resumo" id="resumo" aria-label="Resumo dos seus ensaios">
@@ -252,10 +252,10 @@
   <section class="propostas-painel" id="painelPropostas" hidden aria-label="Propostas comerciais">
     <div class="propostas-cabecalho">
       <div>
-        <div class="propostas-kicker">Comercial</div>
         <h2>Minhas propostas</h2>
-        <p>Acompanhe o andamento, consulte as condições comerciais e visualize os documentos enviados pela ITR.</p>
+        <p>Documentos, condições de pagamento e decisões comerciais.</p>
       </div>
+      <span class="propostas-total" id="propostasContagem" aria-live="polite">Consultando propostas…</span>
     </div>
     <div class="propostas-estado" id="propostasEstado" role="status" aria-live="polite" hidden></div>
     <div class="propostas-lista" id="propostasLista" aria-live="polite"></div>
@@ -266,9 +266,8 @@
   <section class="financeiro-painel" id="painelFinanceiro" hidden aria-labelledby="financeiroTitulo">
     <div class="propostas-cabecalho financeiro-cabecalho">
       <div>
-        <div class="propostas-kicker">Contratos e faturas</div>
         <h2 id="financeiroTitulo">Financeiro</h2>
-        <p>Acompanhe suas faturas e consulte seus documentos financeiros.</p>
+        <p>Contratos, parcelas e documentos financeiros da sua empresa.</p>
       </div>
       <p class="financeiro-atualizado" id="financeiroAtualizado" hidden></p>
     </div>
@@ -291,45 +290,16 @@
     <div class="financeiro-estado" id="financeiroEstado" role="status" aria-live="polite" hidden></div>
   </section>
 
-  <!-- Rodapé institucional (ETAPA 2 — aditivo) -->
-  <footer class="rodape-instit">
-    <div class="rodape-col">
-      <img src="IMG/logo.png" alt="ITR Engenharia" class="rodape-logo">
-      <p class="rodape-desc">Laboratório de ensaios geotécnicos em Brasília/DF. Acompanhe seus ensaios com rastreabilidade e transparência em cada etapa do processo.</p>
-      <div class="rodape-redes">
-        <a href="https://www.instagram.com/itr_engenharia/" target="_blank" rel="noopener" aria-label="Instagram da ITR Engenharia"><i class="ti ti-brand-instagram" aria-hidden="true"></i></a>
-        <a href="https://www.linkedin.com/company/itr-engenharia" target="_blank" rel="noopener" aria-label="LinkedIn da ITR Engenharia"><i class="ti ti-brand-linkedin" aria-hidden="true"></i></a>
-      </div>
-    </div>
-    <div class="rodape-col">
-      <div class="rodape-titulo">Portal</div>
-      <nav class="rodape-links">
-        <a href="#" id="rodapeRelatorios">Relatórios</a>
-        <button type="button" id="rodapeConta">Conta</button>
-        <a href="como-funciona.html">Ajuda</a>
-        <a href="https://itr.eng.br" target="_blank" rel="noopener">Site ITR</a>
-      </nav>
-    </div>
-    <div class="rodape-col">
-      <div class="rodape-titulo">Contato</div>
-      <div class="rodape-contato">
-        <div><svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M12 2C8.14 2 5 5.14 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.86-3.14-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><a href="https://www.google.com/maps?um=1&amp;ie=UTF-8&amp;fb=1&amp;gl=br&amp;sa=X&amp;geocode=KWHpKNRcMVqTMV2ry_YNiQn5&amp;daddr=SCIA+Quadra+14+Conjunto+6+Lote+05+%E2%80%93+Parte+B+-+Zona+Industrial,+Bras%C3%ADlia+-+DF,+71250-130" target="_blank" rel="noopener noreferrer">SCIA Quadra 14 Conjunto 6 Lote 05 – Parte A, Zona Industrial, Brasília-DF, 71250-130</a></div>
-        <div><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><a href="https://wa.me/5561995648450" target="_blank" rel="noopener">+55 61 99564-8450</a></div>
-        <div><i class="ti ti-mail" aria-hidden="true"></i><a href="mailto:comercial@itr.eng.br">comercial@itr.eng.br</a></div>
-        <div><i class="ti ti-clock" aria-hidden="true"></i><span>Segunda a Sexta, 08:00–18:00</span></div>
-      </div>
-    </div>
-  </footer>
-  <div class="rodape-linha">
+  <!-- Rodapé enxuto nas áreas autenticadas: sem repetir logo ou navegação lateral. -->
+  <footer class="rodape-compacto" aria-label="Informações institucionais">
     <span>© <span id="rodapeAno">2026</span> ITR Engenharia</span>
-    <span class="rodape-sep">·</span>
-    <a href="#">Sobre</a>
-    <span class="rodape-sep">·</span>
-    <a href="#">Política de Privacidade (LGPD)</a>
-  </div>
-
-  <!-- Rodapé -->
-  <div class="marca-rodape">ITR Engenharia · Laboratório de Ensaios Geotécnicos</div>
+    <nav aria-label="Links institucionais">
+      <a href="https://itr.eng.br" target="_blank" rel="noopener noreferrer">Site institucional</a>
+      <a href="privacidade.html">Privacidade (LGPD)</a>
+      <a href="como-funciona.html">Ajuda</a>
+      <a href="mailto:comercial@itr.eng.br">Contato</a>
+    </nav>
+  </footer>
 </div>
   </div>
 </div>

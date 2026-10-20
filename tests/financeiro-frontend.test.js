@@ -33,7 +33,7 @@ test('portal.html: menu e painel ocultos por padrão, abas acessíveis e scripts
         assert.match(html, botao, id);
     }
     assert.match(html, /id="financeiroTabela" role="tabpanel"/);
-    assert.match(html, /Acompanhe suas faturas e consulte seus documentos financeiros\./);
+    assert.match(html, /Contratos, parcelas e documentos financeiros da sua empresa\./);
     const ordem = ['common.js', 'proposal-actions.js', 'portal.js', 'financeiro.js', 'account-security.js'].map(nome => html.indexOf(`assets/js/${nome}" defer`));
     assert.ok(ordem.every(i => i > 0), 'scripts com defer');
     assert.deepEqual([...ordem].sort((a, b) => a - b), ordem, 'financeiro.js carrega depois de portal.js');
