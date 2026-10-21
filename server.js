@@ -41,12 +41,6 @@ const { scryptVerify, hmac, sha256, safeEqualHex } = require('./lib/security-cry
 const {
     PURPOSE_ACTIVATE,
     PURPOSE_RESET,
-    getAccount,
-    verifyPassword,
-    findScopeAccount,
-    verifyPasswordInScope,
-    touchLogin,
-    createPasswordToken,
     peekPasswordToken,
     activateAccount,
     resetPasswordWithToken,
@@ -54,7 +48,7 @@ const {
     onboardingState,
     markOnboarding
 } = require('./lib/client-auth');
-const { sendSecurityNotification } = require('./lib/notifications');
+const { sendSecurityNotification, probeNotifications } = require('./lib/notifications');
 const {
     habilitado: financeiroHabilitado,
     listarPropostasPorCnpj,
@@ -100,15 +94,6 @@ app.use('/api', (req, res, next) => {
 
 function limparDocumento(doc) {
     return String(doc || '').replace(/\D/g, '');
-}
-
-function normalizarEmail(email) {
-    return String(email || '').trim().toLowerCase();
-}
-
-function emailValido(email) {
-    const valor = String(email || '').trim();
-    return valor.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
 }
 
 function erro(res, status, mensagem, codigo = null) {
@@ -279,32 +264,6 @@ function respostaRecuperacaoGenerica(res) {
     return res.status(202).json({
         sucesso: true,
         mensagem: 'Solicitação recebida. Se o CNPJ estiver cadastrado com e-mails válidos, enviaremos os dados de acesso para esses contatos. Confira sua caixa de entrada e a pasta de spam ou lixo eletrônico. O envio pode levar alguns minutos. Se não receber, confira o CNPJ informado ou entre em contato com a ITR. Sua senha atual continua a mesma.'
-    });
-}
-
-function senhaInformada(req) {
-    return String(req.body?.senha ?? req.body?.password ?? req.body?.email ?? '');
-}
-
-function credenciaisDevValidas(username, password) {
-    if (!config.devViewer.enabled) return false;
-    const userOk = safeEqualHex(sha256(String(username || '').trim().toLowerCase()), sha256(config.devViewer.username));
-    const passwordOk = safeEqualHex(sha256(String(password || '')), sha256(config.devViewer.password));
-    return userOk && passwordOk;
-}
-
-async function consumirLimiteDiretor(req, username) {
-    const windowMs = 20 * 60 * 1000;
-    const ip = await consume('director-login-ip', req.ip || 'unknown', {
-        limit: config.security.directorLoginLimit,
-        windowMs,
-        blockMs: windowMs
-    });
-    if (!ip.ok) return ip;
-    return consume('director-login-account', username, {
-        limit: config.security.directorLoginLimit,
-        windowMs,
-        blockMs: windowMs
     });
 }
 
@@ -486,8 +445,7 @@ app.post('/api/dev/login', sameOriginOnly, async (req, res) => {
 });
 
 // Contrato único de acesso gerado. Endpoints de senha pessoal estão aposentados.
-app.post('/api/login', sameOriginOnly, async (req, res, next) => {
-    if (config.clientAuth.mode !== 'generated') return next();
+app.post('/api/login', sameOriginOnly, async (req, res) => {
     const documento = limparDocumento(req.body?.documento);
     const senha = String(req.body?.senha ?? req.body?.password ?? '');
     try {
@@ -513,8 +471,7 @@ app.post('/api/login', sameOriginOnly, async (req, res, next) => {
         return erro(res, 503, 'Não foi possível concluir o acesso. Entre em contato com a ITR se o problema persistir.', 'LOGIN_UNAVAILABLE');
     }
 });
-app.post('/api/auth/password-reset/request', sameOriginOnly, async (req, res, next) => {
-    if (config.clientAuth.mode !== 'generated') return next();
+app.post('/api/auth/password-reset/request', sameOriginOnly, async (req, res) => {
     const documento = limparDocumento(req.body?.documento);
     try {
         const rl = await consumirLimitesRecuperacao(req, documento || 'invalid');
@@ -535,227 +492,9 @@ app.post('/api/auth/password-reset/request', sameOriginOnly, async (req, res, ne
     }
 });
 
-// ---------- Login do cliente ----------
-// Migração segura: com CLIENT_PASSWORDS_ENABLED=false, preserva CNPJ + e-mail.
-// Quando habilitado, clientes sem senha usam o e-mail apenas como credencial
-// inicial para receber um link de ativação. Depois, o login é CNPJ + senha.
-app.post('/api/login', sameOriginOnly, async (req, res) => {
-    const cheapRl = loginBurstGuard.consume(req.ip || 'unknown');
-    if (!cheapRl.ok) {
-        res.setHeader('Retry-After', String(Math.max(1, Math.ceil(cheapRl.retryAfterMs / 1000))));
-        return erro(res, 429, 'Muitas tentativas de acesso. Aguarde alguns instantes.', 'RATE_LIMITED');
-    }
-    const documento = limparDocumento(req.body?.documento);
-    const segredo = senhaInformada(req);
-    const remember = Boolean(req.body?.remember || req.body?.lembrar);
-
-    if (documento.length !== 14 || segredo.length < 5 || segredo.length > 256) {
-        await defensiveDelay();
-        return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
-    }
-
-    try {
-        const rl = await consumirLimitesCliente(req, documento);
-        if (!rl.ok) {
-            retryAfter(res, rl);
-            await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'rate_limited' });
-            return erro(res, 429, 'Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.', 'RATE_LIMITED');
-        }
-
-        const cliente = await buscarClientePorCnpj(documento);
-        if (!cliente) {
-            await defensiveDelay();
-            await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
-            return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
-        }
-
-        // Compatibilidade controlada para implantação gradual da 3.1.0.
-        if (!config.clientAuth.enabled) {
-            const email = normalizarEmail(segredo);
-            const valido = emailValido(email) && (cliente.emails || []).includes(email);
-            if (!valido) {
-                await defensiveDelay();
-                await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
-                return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
-            }
-
-            if (req.session) await destroySession(req, res);
-            const sessao = await createSession(req, res, {
-                role: 'Cliente',
-                airtableId: cliente.id,
-                documento: cliente.cnpj,
-                email: cliente.emailLogin,
-                nomeEmpresa: cliente.idCliente || cliente.nome || null
-            }, { remember });
-
-            await Promise.allSettled([
-                reset('client-login-account', documento),
-                // Limite do IP não é zerado por um login válido.
-                registrarUltimoAcesso(cliente),
-                audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'success_legacy' })
-            ]);
-
-            return res.json({
-                sucesso: true,
-                perfil: 'Cliente',
-                usuario: usuarioPublico({
-                    role: 'Cliente', documento: cliente.cnpj, airtableId: cliente.id,
-                    email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
-                }),
-                csrfToken: sessao.csrfToken,
-                redirectTo: '/portal.html'
-            });
-        }
-
-        const verificacao = await verifyPasswordInScope(cliente.scopeClientIds || [cliente.id], segredo, cliente.id);
-        if (verificacao.exists) {
-            if (!verificacao.ok) {
-                await defensiveDelay();
-                await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
-                return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
-            }
-
-            if (req.session) await destroySession(req, res);
-            const sessao = await createSession(req, res, {
-                role: 'Cliente',
-                airtableId: verificacao.accountId || cliente.id,
-                documento: cliente.cnpj,
-                email: cliente.emailLogin,
-                nomeEmpresa: cliente.idCliente || cliente.nome || null
-            }, { remember });
-
-            await Promise.allSettled([
-                reset('client-login-account', documento),
-                // Limite do IP não é zerado por um login válido.
-                touchLogin(verificacao.accountId || cliente.id),
-                registrarUltimoAcesso(cliente),
-                audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'success' })
-            ]);
-
-            return res.json({
-                sucesso: true,
-                perfil: 'Cliente',
-                usuario: usuarioPublico({
-                    role: 'Cliente', documento: cliente.cnpj, airtableId: verificacao.accountId || cliente.id,
-                    email: cliente.emailLogin, nomeEmpresa: cliente.idCliente || cliente.nome || null
-                }),
-                csrfToken: sessao.csrfToken,
-                redirectTo: '/portal.html'
-            });
-        }
-
-        // Primeiro acesso: o e-mail é apenas a credencial inicial. O acesso ao
-        // Portal só é liberado depois que o dono do e-mail abre o link recebido.
-        const emailInicial = normalizarEmail(segredo);
-        const emailConfere = emailValido(emailInicial)
-            && (cliente.emails || []).includes(emailInicial);
-        if (!emailConfere) {
-            await defensiveDelay();
-            await audit(req, 'client_login', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'denied' });
-            return erro(res, 401, 'Não foi possível validar os dados informados.', 'INVALID_CREDENTIALS');
-        }
-
-        const ativacaoRl = await consumirLimitesRecuperacao(req, documento);
-        if (!ativacaoRl.ok) {
-            retryAfter(res, ativacaoRl);
-            return erro(res, 429, 'Muitas solicitações. Aguarde alguns minutos e tente novamente.', 'RATE_LIMITED');
-        }
-
-        if (req.session) await destroySession(req, res);
-        const token = await createPasswordToken({ airtableId: cliente.id, purpose: PURPOSE_ACTIVATE, req });
-        const clienteNotificacao = { ...cliente, emailLogin: emailInicial };
-        const actionUrl = `${config.publicOrigin}/criar-senha.html#token=${encodeURIComponent(token.raw)}`;
-
-        try {
-            await sendSecurityNotification('FIRST_ACCESS', { client: clienteNotificacao, actionUrl });
-        } catch (notifyError) {
-            console.error(`[${req.requestId}] [FIRST_ACCESS_NOTIFY]`, notifyError.message);
-            await audit(req, 'client_first_access', {
-                actorType: 'Cliente', actorId: hmac(documento), outcome: 'notification_error'
-            });
-            return erro(res, 503, 'Não foi possível enviar o link de primeiro acesso agora. Tente novamente em instantes.', 'NOTIFICATION_UNAVAILABLE');
-        }
-
-        await audit(req, 'client_first_access', {
-            actorType: 'Cliente', actorId: hmac(documento), outcome: 'link_sent'
-        });
-        return res.status(202).json({
-            sucesso: true,
-            primeiroAcesso: true,
-            mensagem: 'Primeiro acesso identificado. Enviamos um link ao e-mail cadastrado para você criar sua senha pessoal.'
-        });
-    } catch (error) {
-        console.error(`[${req.requestId}] [LOGIN_CLIENTE]`, error.message);
-        return erro(res, 503, 'Não foi possível concluir o acesso agora. Tente novamente em instantes.', 'LOGIN_UNAVAILABLE');
-    }
-});
-
-// ---------- Recuperação / ativação de senha do cliente ----------
-app.post('/api/auth/password-reset/request', sameOriginOnly, senhasClientesHabilitadas, async (req, res) => {
-    const documento = limparDocumento(req.body?.documento);
-    const email = normalizarEmail(req.body?.email);
-
-    try {
-        const rl = await consumirLimitesRecuperacao(req, documento || 'invalid');
-        if (!rl.ok) {
-            retryAfter(res, rl);
-            return erro(res, 429, 'Muitas solicitações. Aguarde alguns minutos e tente novamente.', 'RATE_LIMITED');
-        }
-
-        // Resposta externa é deliberadamente igual para cadastro inexistente,
-        // e-mail divergente e conta válida: evita enumeração de clientes.
-        if (documento.length !== 14 || !emailValido(email)) {
-            await defensiveDelay();
-            return respostaRecuperacaoGenerica(res);
-        }
-
-        const cliente = await buscarClientePorCnpj(documento);
-        const corresponde = cliente && (cliente.emails || []).includes(email);
-        if (!corresponde) {
-            await defensiveDelay();
-            await audit(req, 'client_password_request', { actorType: 'Cliente', actorId: hmac(documento), outcome: 'ignored' });
-            return respostaRecuperacaoGenerica(res);
-        }
-
-        const account = await findScopeAccount(cliente.scopeClientIds || [cliente.id], cliente.id);
-        const accountId = account?.airtable_client_id || cliente.id;
-        const purpose = account ? PURPOSE_RESET : PURPOSE_ACTIVATE;
-        const token = await createPasswordToken({ airtableId: accountId, purpose, req });
-        const clienteNotificacao = { ...cliente, id: accountId, emailLogin: email };
-        const tipo = account ? 'PASSWORD_RESET' : 'FIRST_ACCESS';
-        const actionUrl = account
-            ? `${config.publicOrigin}/redefinir-senha.html#token=${encodeURIComponent(token.raw)}`
-            : `${config.publicOrigin}/criar-senha.html#token=${encodeURIComponent(token.raw)}`;
-
-        // O envio é disparado depois da resposta para que tempo de SMTP não revele
-        // se o CNPJ/e-mail corresponde a uma conta existente (anti-enumeração).
-        const requestId = req.requestId;
-        setImmediate(() => {
-            sendSecurityNotification(tipo, { client: clienteNotificacao, actionUrl })
-                .then(() => {
-                    console.info(`[${requestId}] [PASSWORD_NOTIFY] Serviço de notificações confirmou o processamento (${tipo}).`);
-                    return audit(req, 'client_password_request', {
-                        actorType: 'Cliente', actorId: hmac(documento), outcome: account ? 'reset_sent' : 'activation_sent'
-                    });
-                })
-                .catch(async notifyError => {
-                    console.error(`[${requestId}] [PASSWORD_NOTIFY]`, notifyError.message);
-                    try {
-                        await audit(req, 'client_password_request', {
-                            actorType: 'Cliente', actorId: hmac(documento), outcome: 'notification_error'
-                        });
-                    } catch (_) {}
-                });
-        });
-        await defensiveDelay();
-        return respostaRecuperacaoGenerica(res);
-    } catch (error) {
-        console.error(`[${req.requestId}] [PASSWORD_REQUEST]`, error.message);
-        // Também não diferenciamos indisponibilidade interna de cadastro inexistente.
-        return respostaRecuperacaoGenerica(res);
-    }
-});
-
+// Os endpoints de senha pessoal retornam 410 no modo generated por
+// senhasClientesHabilitadas. Não reintroduzir login por e-mail nem tokens
+// sem uma migração coordenada de autenticação e de todos os clientes.
 app.post('/api/auth/password/activate', sameOriginOnly, senhasClientesHabilitadas, async (req, res) => {
     const tokenRaw = String(req.body?.token || '');
     const password = String(req.body?.password || '');
@@ -1372,6 +1111,12 @@ async function iniciar() {
     setImmediate(() => carregarScopeSnapshot().catch(error => {
         console.warn('[AIRTABLE_SCOPE] prewarm falhou:', error.message);
     }));
+    // Diagnóstico assinado, sem SMTP: alerta sobre divergência antes do primeiro pedido.
+    // Falha de Notificações nunca impede o Portal de atender e de apresentar relatórios.
+    setImmediate(() => probeNotifications()
+        .then(() => console.info('[CONFLUENCIA] HMAC, relógio e Airtable alinhados.'))
+        .catch(error => console.error('[CONFLUENCIA] Falha no diagnóstico interno:', error.message)));
+
 }
 
 async function shutdown(signal) {
