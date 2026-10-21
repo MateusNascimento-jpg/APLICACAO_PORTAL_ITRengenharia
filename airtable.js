@@ -9,7 +9,7 @@ const TOKEN = config.airtable.token;
 const BASE = config.airtable.baseId;
 const API = `https://api.airtable.com/v0/${BASE}`;
 
-const TBL_CLIENTES = 'tblkQxQ6q7cBKXZ3C';
+const TBL_CLIENTES = config.airtable.clientsTableId;
 const TBL_NOVOS_TRABALHOS = 'tblJAP4Av9sWm8SmL';
 const TBL_ENSAIOS = 'tblYtVM2crMxpxHgG';
 

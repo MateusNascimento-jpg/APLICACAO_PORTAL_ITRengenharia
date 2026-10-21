@@ -96,6 +96,7 @@ const config = {
         retries: inteiro('AIRTABLE_RETRIES', 3, 0, 6),
         cacheTtlMs: inteiro('AIRTABLE_CACHE_TTL_MS', 300000, 5000, 3600000),
         clientSiglaField: require('./lib/portal-access').campoSigla(),
+        clientsTableId: require('./lib/confluence-contract').parametrosAcesso().clientesTable,
         clientEmailField: String(process.env.AIRTABLE_CLIENT_EMAIL_FIELD || 'Email Cliente').trim(),
         clientWhatsappField: String(process.env.AIRTABLE_CLIENT_WHATSAPP_FIELD || 'WhatsApp do Cliente').trim()
     },

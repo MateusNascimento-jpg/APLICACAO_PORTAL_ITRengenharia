@@ -92,15 +92,24 @@
 
   <!-- Cabeçalho de relatórios: conteúdo operacional e empresa, sem frase de saudação genérica. -->
   <section class="saudacao" aria-label="Visão de relatórios">
-    <div class="saudacao-principal">
-      <div class="saudacao-textos">
+    <div class="saudacao-principal itr-header itr-header--relatorios">
+      <div class="saudacao-textos itr-header-content">
+        <span class="itr-header-kicker">Portal ITR · Ensaios</span>
         <h1 id="saudacao">Relatórios de ensaios</h1>
-        <div class="saudacao-empresa">Empresa: <span id="nomeCliente" class="nome-empresa"><span id="nomeTexto">Sua empresa</span></span></div>
         <p class="sub">Acompanhe as etapas dos ensaios e acesse os relatórios aprovados.</p>
       </div>
-      <div class="freshness" id="freshness">
-        <i class="ti ti-refresh" aria-hidden="true"></i>
-        <span id="freshnessTxt">Atualizado a alguns minutos atrás</span>
+      <div class="itr-header-aside" aria-label="Contexto dos relatórios">
+        <div class="itr-header-info">
+          <span class="itr-header-label">Empresa</span>
+          <div class="saudacao-empresa"><span id="nomeCliente" class="nome-empresa"><span id="nomeTexto">Sua empresa</span></span></div>
+        </div>
+        <div class="itr-header-info">
+          <span class="itr-header-label">Última atualização</span>
+          <div class="freshness" id="freshness">
+            <i class="ti ti-refresh" aria-hidden="true"></i>
+            <span id="freshnessTxt">Atualizado a alguns minutos atrás</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -209,7 +218,19 @@
 
   <!-- Aba Conta -->
   <section class="conta-painel" id="painelConta" hidden aria-label="Dados da conta">
-    <h2 class="conta-titulo">Minha conta</h2>
+    <div class="itr-header itr-header--conta">
+      <div class="itr-header-content">
+        <span class="itr-header-kicker">Portal ITR · Cadastro</span>
+        <h2 class="conta-titulo">Minha conta</h2>
+        <p class="itr-header-description">Dados cadastrais, acesso ao portal e canais de atendimento.</p>
+      </div>
+      <div class="itr-header-aside" aria-label="Área da conta">
+        <div class="itr-header-info">
+          <span class="itr-header-label">Área do cliente</span>
+          <strong>Cadastro e acesso</strong>
+        </div>
+      </div>
+    </div>
     <div class="conta-card">
       <div class="conta-campo">
         <div class="conta-rotulo">Empresa</div>
@@ -250,12 +271,18 @@
 
   <!-- Aba Propostas — integração financeira isolada -->
   <section class="propostas-painel" id="painelPropostas" hidden aria-label="Propostas comerciais">
-    <div class="propostas-cabecalho">
-      <div>
+    <div class="propostas-cabecalho itr-header itr-header--propostas">
+      <div class="itr-header-content">
+        <span class="itr-header-kicker">Portal ITR · Propostas</span>
         <h2>Minhas propostas</h2>
         <p>Documentos, condições de pagamento e decisões comerciais.</p>
       </div>
-      <span class="propostas-total" id="propostasContagem" aria-live="polite">Consultando propostas…</span>
+      <div class="itr-header-aside">
+        <div class="itr-header-info">
+          <span class="itr-header-label">Propostas cadastradas</span>
+          <span class="propostas-total" id="propostasContagem" aria-live="polite">Consultando propostas…</span>
+        </div>
+      </div>
     </div>
     <div class="propostas-estado" id="propostasEstado" role="status" aria-live="polite" hidden></div>
     <div class="propostas-lista" id="propostasLista" aria-live="polite"></div>
@@ -264,12 +291,19 @@
 
   <!-- Aba Financeiro — contratos e faturas, somente consulta (base financeira isolada) -->
   <section class="financeiro-painel" id="painelFinanceiro" hidden aria-labelledby="financeiroTitulo">
-    <div class="propostas-cabecalho financeiro-cabecalho">
-      <div>
+    <div class="propostas-cabecalho financeiro-cabecalho itr-header itr-header--financeiro">
+      <div class="itr-header-content">
+        <span class="itr-header-kicker">Portal ITR · Financeiro</span>
         <h2 id="financeiroTitulo">Financeiro</h2>
         <p>Contratos, parcelas e documentos financeiros da sua empresa.</p>
       </div>
-      <p class="financeiro-atualizado" id="financeiroAtualizado" hidden></p>
+      <div class="itr-header-aside">
+        <div class="itr-header-info">
+          <span class="itr-header-label">Área de consulta</span>
+          <strong>Contratos e parcelas</strong>
+          <p class="financeiro-atualizado" id="financeiroAtualizado" hidden></p>
+        </div>
+      </div>
     </div>
 
     <div class="busca financeiro-busca" id="financeiroBuscaCaixa" hidden>

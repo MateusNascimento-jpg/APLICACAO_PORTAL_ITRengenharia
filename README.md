@@ -1,3 +1,7 @@
+# Manutenção de confluência — 3.4.1
+
+Ver `docs/CONFLUENCIA_ATUAL.md`. Correções de confluência compatíveis com a release 3.4.0. **Adendo visual de 21/10/2026:** cabeçalhos de Relatórios, Conta, Propostas e Financeiro e ajuste de tokens do tema escuro em `public/portal.html` e `public/assets/css/itr-ux-composicao.css`, sem alterações de lógica de frontend/backend.
+
 # Atualização Propostas — 3.4.0
 
 Esta entrega acrescenta o fluxo comercial seguro. Consulte `docs/PROPOSTAS_OPERACAO.md` antes da aplicação: migração 003 no Portal, recibos persistentes em Notificações e ativação explícita são necessários. Nenhum `.env` é distribuído ou alterado. Os comandos e textos históricos abaixo são preservados como referência; para Propostas prevalece o guia novo (ao entrar no site).
@@ -8,7 +12,20 @@ Esta entrega acrescenta o fluxo comercial seguro. Consulte `docs/PROPOSTAS_OPERA
 
 > **Versão 3.3.0:** consulte [RELEASE_3.3.0.md](RELEASE_3.3.0.md). O acesso atual é CNPJ + senha gerada; instruções antigas de ativação/e-mail como senha não se aplicam.
 
-# Portal ITR Engenharia — 3.1.0 final
+## Estado vigente de autenticação e confluência — 3.4.0
+
+- **Único login de cliente ativo:** `CLIENT_AUTH_MODE=generated`, CNPJ + senha calculada por `trim(Sigla Cliente) + seis primeiros dígitos do CNPJ`, obtidos no Airtable. O e-mail não autentica. Os demais fluxos de senha pessoal descritos abaixo são históricos/desativados.
+- **Recuperação vigente:** `POST /api/auth/password-reset/request` solicita o envio de `ACCESS_REQUEST` pelo serviço de notificações. Não altera a senha; a resposta é genérica para evitar enumeração.
+- As rotas descontinuadas de ativação, reset e mudança de senha permanecem respondendo HTTP 410 por compatibilidade, mas **não estão ativas**.
+- **Configuração compartilhada:** `AIRTABLE_BASE_ID`, `AIRTABLE_CLIENTES_TABLE_ID` e `AIRTABLE_CLIENT_SIGLA_FIELD` devem corresponder ao serviço de notificações. `PORTAL_NOTIFICATIONS_HMAC_SECRET` e `PORTAL_INTERNAL_HMAC_SECRET` devem conter o **mesmo segredo Base64**, apesar dos nomes distintos. Ambos precisam de relógios sincronizados (NTP).
+- **Verificação sem envio:** `npm run diagnose:notifications`. O Portal verifica HMAC, resposta, contrato e relógio de forma não bloqueante ao iniciar. Uma falha no diagnóstico deve gerar alerta operacional, mas não derruba a área de relatórios.
+- **Risco residual de autenticação:** essa fórmula é previsível; rate limit não substitui uma credencial robusta. Não trocar unilateralmente a fórmula: a atualização exige migração coordenada, canais de distribuição, revogação de sessões e planejamento com a ITR.
+- O frontend, rotas de propostas, arquivos PDF, diretor e relatórios não foram alterados nesta correção. Procedimento: `docs/CONFLUENCIA_ATUAL.md`.
+
+---
+
+# Portal ITR Engenharia — 3.1.0 final (documentação histórica, NÃO vigente)
+
 
 Esta versão preserva o **design original** e mantém o hardening da 3.0.1. A 3.1 adiciona, atrás de feature flag, senha pessoal para clientes, recuperação segura e onboarding guiado opcional.
 
