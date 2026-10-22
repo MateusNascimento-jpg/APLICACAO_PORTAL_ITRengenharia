@@ -58,8 +58,7 @@ function fixture() {
     const service = createService(params);
     const payloads = () => [...store.events.values()].map((row) => secrets.open(row.payload));
     async function request() {
-        const contacts = await service.options(proposal.cnpj, proposal.id);
-        const result = await service.request(proposal.cnpj, proposal.id, contacts[0].key, {
+        const result = await service.request(proposal.cnpj, proposal.id, {
             role: 'GeneratedClient',
         });
         const verification = payloads()
@@ -145,12 +144,12 @@ test('reenviar substitui desafio; reinício preserva código válido sem armazen
     assert.ok(!rows.includes(new URL(f.payloads().at(-1).actionUrl).hash.slice(1)));
 });
 
-test('não aceita outro CNPJ, contato livre, PDF ambíguo, status Pendente ou Safe Mode', async () => {
+test('não aceita outro CNPJ, PDF ambíguo, status Pendente ou Safe Mode', async () => {
     const f = fixture();
     await assert.rejects(f.service.options('99999999000199', f.proposal.id), /PROPOSAL_NOT_FOUND/);
     await assert.rejects(
-        f.service.request(f.proposal.cnpj, f.proposal.id, 'attacker', {}),
-        /RECIPIENT_INVALID/,
+        f.service.request('99999999000199', f.proposal.id, {}),
+        /PROPOSAL_NOT_FOUND/,
     );
     f.proposal.anexos.push({ id: 'another' });
     await assert.rejects(f.request(), /PDF_AMBIGUOUS/);
@@ -254,4 +253,109 @@ test('fila e desafio são atômicos em falha de persistência', async () => {
     await assert.rejects(f.request(), /DISK/);
     assert.equal(f.store.challenges.size, 0);
     assert.equal(f.store.states.size, 0);
+});
+
+
+test('solicitação enfileira um link único por endereço autorizado com código único no Portal', async () => {
+    const f = fixture();
+    const flow = await f.request();
+    const events = f.payloads().filter((item) => item.type === 'VERIFY');
+    assert.equal(flow.recipientsCount, 2);
+    assert.deepEqual(events.map((item) => item.recipient).sort(), f.proposal.emails);
+    assert.equal(new Set(events.map((item) => item.actionUrl)).size, 2);
+    assert.equal(new Set(events.map((item) => item.challengeId)).size, 2);
+    assert.equal(new Set(events.map((item) => item.expiresAt)).size, 1);
+    const state = await f.store.state(f.proposal.id);
+    assert.equal(state.activeChallenges.length, 2);
+    // Either authorized recipient can validate using the same code shown in the Portal.
+    for (const event of events) {
+        const link = await f.service.open(new URL(event.actionUrl).hash.slice(1));
+        await f.service.validate(link.cookie, link.csrf, flow.code);
+    }
+    assert.equal(f.writes.length, 0);
+});
+
+test('revogação de apenas um contato invalida somente seu link, não o dos demais', async () => {
+    const f = fixture();
+    const flow = await f.request();
+    const events = f.payloads().filter((item) => item.type === 'VERIFY');
+    const original = events.find((event) => event.recipient === 'a@example.test');
+    const permitted = events.find((event) => event.recipient === 'b@example.test');
+    const revokedLink = await f.service.open(new URL(original.actionUrl).hash.slice(1));
+    const permittedLink = await f.service.open(new URL(permitted.actionUrl).hash.slice(1));
+    await f.service.validate(revokedLink.cookie, revokedLink.csrf, flow.code);
+    await f.service.validate(permittedLink.cookie, permittedLink.csrf, flow.code);
+    f.proposal.emails = ['b@example.test'];
+    await assert.rejects(f.service.confirm(revokedLink.cookie, revokedLink.csrf, true, {}), /RECIPIENT_INVALID/);
+    assert.equal(f.writes.length, 0);
+    const result = await f.service.confirm(permittedLink.cookie, permittedLink.csrf, true, {});
+    assert.equal(result.status, 'Aceita');
+    assert.equal(f.writes.length, 1);
+    const final = f.payloads().filter((item) => item.type === 'ACCEPTED');
+    assert.deepEqual(final.map((item) => item.recipient), ['b@example.test']);
+});
+
+test('nova solicitação invalida todos os links anteriores sem afetar os novos', async () => {
+    const f = fixture();
+    const initial = await f.request();
+    const oldTokens = f.payloads().filter((item) => item.type === 'VERIFY').map((item) => item.actionUrl);
+    f.advance(61000);
+    const recent = await f.request();
+    for (const url of oldTokens)
+        await assert.rejects(f.service.open(new URL(url).hash.slice(1)), /CHALLENGE_INVALID/);
+    const newTokens = f.payloads().filter((item) => item.type === 'VERIFY').slice(-2);
+    assert.equal(recent.recipientsCount, 2);
+    assert.equal(initial.recipientsCount, 2);
+    for (const item of newTokens) {
+        const session = await f.service.open(new URL(item.actionUrl).hash.slice(1));
+        await f.service.validate(session.cookie, session.csrf, recent.code);
+    }
+});
+
+test('sem destinatários comerciais a solicitação é recusada sem enfileirar e-mails', async () => {
+    const f = fixture();
+    f.proposal.emails = [];
+    await assert.rejects(f.service.request(f.proposal.cnpj, f.proposal.id, {}), /RECIPIENT_MISSING/);
+    assert.equal(f.payloads().length, 0);
+});
+
+
+test('lista de e-mails separada por ponto e vírgula ignora espaços e duplicados', () => {
+    const { emails } = require('../lib/portal-access');
+    assert.deepEqual(
+        emails('COMERCIAL@Exemplo.com; financeiro@exemplo.com ; comercial@exemplo.com; inválido ; juridico@exemplo.com'),
+        ['comercial@exemplo.com', 'financeiro@exemplo.com', 'juridico@exemplo.com'],
+    );
+});
+
+test('falha no enfileiramento do segundo e-mail desfaz toda a solicitação', async () => {
+    const f = fixture();
+    const originalEnqueue = f.store.enqueue;
+    let called = 0;
+    f.store.enqueue = async (item) => {
+        called += 1;
+        if (called === 2) throw new Error('INTERNAL_ENQUEUE_FAILED');
+        return originalEnqueue(item);
+    };
+    await assert.rejects(f.request(), /INTERNAL_ENQUEUE_FAILED/);
+    assert.equal(f.store.events.size, 0);
+    assert.equal(f.store.challenges.size, 0);
+    assert.equal(f.store.states.size, 0);
+});
+
+test('após primeiro aceite explícito, demais links deixam de autorizar nova decisão', async () => {
+    const f = fixture();
+    const flow = await f.request();
+    const events = f.payloads().filter((item) => item.type === 'VERIFY');
+    const links = [];
+    for (const event of events) {
+        const link = await f.service.open(new URL(event.actionUrl).hash.slice(1));
+        await f.service.validate(link.cookie, link.csrf, flow.code);
+        links.push(link);
+    }
+    await f.service.confirm(links[0].cookie, links[0].csrf, true, {});
+    assert.equal(f.writes.length, 1);
+    await assert.rejects(f.service.context(links[1].cookie), /CHALLENGE_INVALID|DECISION_EXISTS/);
+    await assert.rejects(f.service.confirm(links[1].cookie, links[1].csrf, true, {}), /CHALLENGE_INVALID|DECISION_EXISTS/);
+    assert.equal(f.writes.length, 1);
 });
