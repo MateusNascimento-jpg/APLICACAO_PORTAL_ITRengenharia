@@ -195,3 +195,46 @@ body.portal-carregando .rodape-compacto { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .proposta-card, .sidebar-item, .kpi { transition: none; }
 }
+
+/* ITR-HEADER-OFFWHITE-2026-10-22:BEGIN
+ * Somente cabeçalhos internos do Portal do Cliente. Não muda outros componentes.
+ * Aplicável sobre a versão local vigente mesmo que contenha alterações recentes.
+ */
+:root {
+  --itr-topo-claro-bg: #eceeec;
+  --itr-topo-claro-borda: #d3d8d5;
+  --itr-topo-claro-marca: #a8b3ad;
+  --itr-topo-claro-titulo: #222c30;
+  --itr-topo-claro-texto: #536067;
+}
+.propostas-cabecalho,
+.saudacao-principal,
+.conta-titulo {
+  background: var(--itr-topo-claro-bg);
+  border: 1px solid var(--itr-topo-claro-borda);
+  border-left: 4px solid var(--itr-topo-claro-marca);
+  border-radius: 2px;
+  color: var(--itr-topo-claro-titulo);
+}
+.propostas-cabecalho h2,
+.saudacao-principal h1,
+.conta-titulo,
+.saudacao-principal .nome-empresa {
+  color: var(--itr-topo-claro-titulo);
+}
+.propostas-cabecalho p,
+.propostas-cabecalho .propostas-total,
+.propostas-cabecalho .financeiro-atualizado,
+.propostas-cabecalho .propostas-kicker,
+.saudacao-principal .saudacao-empresa,
+.saudacao-principal .sub,
+.saudacao-principal .freshness {
+  color: var(--itr-topo-claro-texto);
+}
+.propostas-cabecalho .propostas-kicker::before {
+  background: var(--itr-topo-claro-marca);
+  box-shadow: none;
+}
+.saudacao-principal .freshness i { color: #406b58; }
+.saudacao-principal .nome-empresa { border-bottom-color: transparent; }
+/* ITR-HEADER-OFFWHITE-2026-10-22:END */
