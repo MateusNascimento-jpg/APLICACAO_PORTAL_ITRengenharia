@@ -52,7 +52,7 @@ window.ITRProposals = (function () {
                 'p',
                 'Proposta ' +
                     proposal.numero +
-                    '. Escolha o contato cadastrado que receberá o link de confirmação.',
+                    '. Todos os contatos comerciais cadastrados receberão um link individual de confirmação.',
             ),
         );
         try {
@@ -63,19 +63,22 @@ window.ITRProposals = (function () {
                 ),
             );
             if (!view.dialog.isConnected) return;
-            var select = element('select');
+            var recipients = element('div', '', 'proposta-modal-destinatarios');
+            recipients.appendChild(
+                element('p', data.contacts.length + ' contato(s) autorizado(s) receberão o e-mail:'),
+            );
+            var recipientsList = element('ul');
             data.contacts.forEach(function (contact) {
-                var option = element('option', contact.label);
-                option.value = contact.key;
-                select.appendChild(option);
+                recipientsList.appendChild(element('li', contact.label));
             });
+            recipients.appendChild(recipientsList);
             var submit = element(
                 'button',
-                'Gerar código e solicitar e-mail',
+                'Gerar código e enviar a todos',
                 'proposta-modal-primario',
             );
             submit.type = 'button';
-            view.content.append(label('Contato autorizado', select), submit);
+            view.content.append(recipients, submit);
             submit.addEventListener('click', async function () {
                 submit.disabled = true;
                 view.message.textContent = 'Registrando solicitação…';
@@ -88,7 +91,7 @@ window.ITRProposals = (function () {
                             {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ recipientKey: select.value }),
+                                body: JSON.stringify({}),
                             },
                         ),
                     );
@@ -96,7 +99,7 @@ window.ITRProposals = (function () {
                     view.content.append(
                         element(
                             'p',
-                            'Copie o código abaixo. Abra o link recebido por e-mail, informe o código e confirme o aceite naquela página.',
+                            'Copie o código abaixo. Cada contato cadastrado receberá seu próprio link por e-mail. Abra um desses links, informe o código e confirme expressamente o aceite.',
                         ),
                     );
                     var code = element('input', '', 'proposta-codigo');
@@ -129,7 +132,7 @@ window.ITRProposals = (function () {
                         ),
                     );
                     view.message.textContent =
-                        'Solicitação registrada. O e-mail será enviado em seguida; confira também o spam. A proposta ainda não foi aceita.';
+                        'Solicitação registrada para ' + result.recipientsCount + ' contato(s). Os e-mails serão processados pela fila; confira também o spam. A proposta ainda não foi aceita.';
                 } catch (error) {
                     view.message.textContent = error.message;
                     submit.disabled = false;
