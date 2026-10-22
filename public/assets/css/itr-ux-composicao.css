@@ -331,3 +331,23 @@ body.portal-carregando .rodape-compacto { display: none; }
   .itr-header-info { flex: 1 1 145px; padding: 0; }
   .itr-header-info + .itr-header-info { border-left: 0; }
 }
+
+/* ITR-HEADER-OFFWHITE-2026-10-22:BEGIN
+ * Compatibilidade com o cabecalho global atual (.itr-header).
+ * Somente cores; preserva a arquitetura, os espacos e a responsividade da main.
+ */
+:root,
+:root[data-tema="claro"] {
+  --itr-header-bg: #eceeec;
+  --itr-header-border: #d3d8d5;
+  --itr-header-text: #222c30;
+  --itr-header-muted: #536067;
+  --itr-header-accent: #a8b3ad;
+}
+.itr-header,
+.saudacao-principal.itr-header,
+.propostas-cabecalho.itr-header {
+  box-shadow: none;
+}
+.itr-header-kicker::before { box-shadow: none; }
+/* ITR-HEADER-OFFWHITE-2026-10-22:END */
