@@ -87,11 +87,11 @@ test('schema legado preserva hashes; o modo gerado é obrigatório', () => {
 test('artefatos legados de ativação mantêm token fora da query; endpoints foram aposentados', () => {
   const server = read('server.js');
   const shared = read('public/assets/js/auth-shared.js');
-  assert.match(server, /criar-senha\.html#token=/);
-  assert.match(server, /redefinir-senha\.html#token=/);
-  assert.match(shared, /location\.hash/);
+  assert.match(server, /senhasClientesHabilitadas/);
+  assert.match(server, /config\.clientAuth\.mode === 'generated'/);
+  assert.doesNotMatch(server, /criar-senha\.html[#?]token=|redefinir-senha\.html[#?]token=/);
+  assert.match(shared, /location\.hash/); // código de páginas legadas não deve vazar token
   assert.match(shared, /history\.replaceState/);
-  assert.doesNotMatch(server, /criar-senha\.html\?token=|redefinir-senha\.html\?token=/);
 });
 
 test('alteração de senha autenticada exige origem, cliente e CSRF', () => {

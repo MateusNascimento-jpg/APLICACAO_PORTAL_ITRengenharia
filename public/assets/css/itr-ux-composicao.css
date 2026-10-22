@@ -4,11 +4,11 @@
  * Princípios: superfícies sólidas, hierarquia editorial, densidade funcional e zero glow.
  */
 :root {
-  --bg: #111821;
-  --bg-deep: #0e151d;
-  --card: #1b2530;
-  --card-2: #222e3a;
-  --field: #151f29;
+  --bg: #0b1017;
+  --bg-deep: #080d13;
+  --card: #141d27;
+  --card-2: #1b2733;
+  --field: #101922;
   --line: #43505d;
   --line-soft: #34404c;
   --azul: #4a85d7;
@@ -18,8 +18,8 @@
   --txt-2: #d0d9e2;
   --txt-3: #9eacbc;
   --txt-4: #8999a9;
-  --ux-rail: #151e27;
-  --ux-heading: #1d2a37;
+  --ux-rail: #101820;
+  --ux-heading: #192431;
   --ux-ink: #edf2f7;
   --ux-focus: #8bb6ee;
   --ux-accent: #4a85d7;
@@ -196,45 +196,158 @@ body.portal-carregando .rodape-compacto { display: none; }
   .proposta-card, .sidebar-item, .kpi { transition: none; }
 }
 
-/* ITR-HEADER-OFFWHITE-2026-10-22:BEGIN
- * Somente cabeçalhos internos do Portal do Cliente. Não muda outros componentes.
- * Aplicável sobre a versão local vigente mesmo que contenha alterações recentes.
- */
+/* Refinamento dos cabeçalhos de módulo — 21/10/2026.
+ * Conteúdo dinâmico continua nos IDs originais. Sem novos indicadores fictícios.
+ * A profundidade do tema escuro vem apenas dos tokens escuros definidos acima. */
 :root {
-  --itr-topo-claro-bg: #eceeec;
-  --itr-topo-claro-borda: #d3d8d5;
-  --itr-topo-claro-marca: #a8b3ad;
-  --itr-topo-claro-titulo: #222c30;
-  --itr-topo-claro-texto: #536067;
+  --itr-header-bg: #101722;
+  --itr-header-border: #273548;
+  --itr-header-text: #f7f9fd;
+  --itr-header-muted: #b7c5d7;
+  --itr-header-accent: #6199ff;
 }
-.propostas-cabecalho,
-.saudacao-principal,
-.conta-titulo {
-  background: var(--itr-topo-claro-bg);
-  border: 1px solid var(--itr-topo-claro-borda);
-  border-left: 4px solid var(--itr-topo-claro-marca);
-  border-radius: 2px;
-  color: var(--itr-topo-claro-titulo);
+:root[data-tema="claro"] {
+  --itr-header-bg: #171e2a;
+  --itr-header-border: #303d51;
+  --itr-header-text: #ffffff;
+  --itr-header-muted: #c0cddd;
+  --itr-header-accent: #76a6ff;
 }
-.propostas-cabecalho h2,
-.saudacao-principal h1,
-.conta-titulo,
-.saudacao-principal .nome-empresa {
-  color: var(--itr-topo-claro-titulo);
+.itr-header,
+.saudacao-principal.itr-header,
+.propostas-cabecalho.itr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: clamp(18px, 3.3vw, 44px);
+  padding: clamp(23px, 2.7vw, 34px) clamp(22px, 3vw, 42px);
+  margin: 0 0 22px;
+  background: var(--itr-header-bg);
+  color: var(--itr-header-text);
+  border: 1px solid var(--itr-header-border);
+  border-bottom: 3px solid var(--itr-header-accent);
+  border-left-width: 1px;
+  border-radius: 3px;
 }
-.propostas-cabecalho p,
-.propostas-cabecalho .propostas-total,
-.propostas-cabecalho .financeiro-atualizado,
-.propostas-cabecalho .propostas-kicker,
-.saudacao-principal .saudacao-empresa,
-.saudacao-principal .sub,
-.saudacao-principal .freshness {
-  color: var(--itr-topo-claro-texto);
+.itr-header-content { flex: 1 1 60%; min-width: 0; }
+.itr-header-kicker {
+  display: flex; align-items: center; gap: 11px;
+  margin-bottom: 13px;
+  color: var(--itr-header-accent);
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .14em;
 }
-.propostas-cabecalho .propostas-kicker::before {
-  background: var(--itr-topo-claro-marca);
+.itr-header-kicker::before {
+  content: ""; width: 22px; height: 1px; flex: 0 0 22px;
+  background: currentColor;
+}
+.itr-header h1, .itr-header h2, .conta-painel .itr-header .conta-titulo {
+  margin: 0;
+  color: var(--itr-header-text);
+  font-size: clamp(28px, 2.7vw, 40px);
+  line-height: 1.14;
+  font-weight: 750;
+  letter-spacing: -.038em;
+}
+.itr-header .sub, .itr-header p:not(.financeiro-atualizado),
+.itr-header .itr-header-description {
+  margin: 10px 0 0;
+  color: var(--itr-header-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: 0;
+}
+.itr-header-aside {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 165px;
+  max-width: 49%;
+  align-items: stretch;
+  gap: 0;
+  padding-left: clamp(16px, 2vw, 27px);
+  border-left: 1px solid var(--itr-header-border);
+}
+.itr-header-info {
+  min-width: 0;
+  padding: 0 clamp(9px, 1.5vw, 20px);
+  color: var(--itr-header-text);
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.itr-header-info:first-child { padding-left: 0; }
+.itr-header-info + .itr-header-info { border-left: 1px solid var(--itr-header-border); }
+.itr-header-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--itr-header-muted);
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.itr-header-info strong, .itr-header .nome-empresa, .itr-header .propostas-total {
+  display: block;
+  padding: 0;
+  color: var(--itr-header-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.itr-header .saudacao-empresa { margin: 0; color: var(--itr-header-text); font-size: 14px; }
+.itr-header .freshness {
+  margin: 0;
+  color: var(--itr-header-text);
+  white-space: normal;
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.itr-header .freshness i { flex: 0 0 auto; }
+.itr-header .financeiro-atualizado {
+  margin: 6px 0 0;
+  color: var(--itr-header-muted);
+  font-size: 11px;
+  white-space: normal;
+}
+.itr-header [hidden] { display: none !important; }
+@media (max-width: 920px) {
+  .itr-header, .saudacao-principal.itr-header, .propostas-cabecalho.itr-header {
+    flex-wrap: wrap; padding: 25px 24px;
+  }
+  .itr-header-aside { max-width: 100%; flex: 1 1 100%; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--itr-header-border); }
+}
+@media (max-width: 600px) {
+  .itr-header, .saudacao-principal.itr-header, .propostas-cabecalho.itr-header {
+    gap: 16px; padding: 23px 18px;
+  }
+  .itr-header h1, .itr-header h2, .conta-painel .itr-header .conta-titulo { font-size: clamp(27px, 7vw, 33px); }
+  .itr-header-aside { flex-wrap: wrap; gap: 14px; }
+  .itr-header-info { flex: 1 1 145px; padding: 0; }
+  .itr-header-info + .itr-header-info { border-left: 0; }
+}
+
+/* ITR-HEADER-OFFWHITE-2026-10-22:BEGIN
+ * Compatibilidade com o cabecalho global atual (.itr-header).
+ * Somente cores; preserva a arquitetura, os espacos e a responsividade da main.
+ */
+:root,
+:root[data-tema="claro"] {
+  --itr-header-bg: #eceeec;
+  --itr-header-border: #d3d8d5;
+  --itr-header-text: #222c30;
+  --itr-header-muted: #536067;
+  --itr-header-accent: #a8b3ad;
+}
+.itr-header,
+.saudacao-principal.itr-header,
+.propostas-cabecalho.itr-header {
   box-shadow: none;
 }
-.saudacao-principal .freshness i { color: #406b58; }
-.saudacao-principal .nome-empresa { border-bottom-color: transparent; }
+.itr-header-kicker::before { box-shadow: none; }
 /* ITR-HEADER-OFFWHITE-2026-10-22:END */

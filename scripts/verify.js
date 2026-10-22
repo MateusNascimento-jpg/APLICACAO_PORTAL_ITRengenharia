@@ -135,7 +135,13 @@ for (const pagina of ['public/criar-senha.html','public/recuperar-senha.html','p
 const clientAuth = read('lib/client-auth.js');
 if (!/token_hash/.test(clientAuth) || !/sha256\(String\(raw/.test(clientAuth)) fail('tokens de senha não estão claramente armazenados apenas como hash.');
 if (/token_raw|raw_token|password_plain/i.test(clientAuth + read('scripts/migrate.js'))) fail('campo sensível em texto puro encontrado no modelo de autenticação.');
-if (!/#token=/.test(server)) fail('links de ativação/reset não usam fragmento de URL para reduzir vazamento em logs/referer.');
+// A autenticação gerada aposentou a emissão de links legados de senha pessoal.
+if (/criar-senha\.html[#?]token=|redefinir-senha\.html[#?]token=/.test(server)) {
+  fail('o servidor voltou a emitir tokens de ativação/reset do fluxo legado.');
+}
+if (!/senhasClientesHabilitadas/.test(server)) fail('rotas legadas não estão explicitamente protegidas.');
+if ((server.match(/app\.post\('\/api\/login'/g) || []).length !== 1) fail('há múltiplas rotas /api/login.');
+if ((server.match(/app\.post\('\/api\/auth\/password-reset\/request'/g) || []).length !== 1) fail('há múltiplas rotas de recuperação.');
 if (!/CLIENT_PASSWORDS_ENABLED/.test(config)) fail('feature flag de senha dos clientes ausente.');
 if (!/PORTAL_NOTIFICATIONS_HMAC_SECRET/.test(config)) fail('segredo HMAC do serviço de notificações não está validado.');
 if (!/verificarEstruturasCriticas/.test(server)) fail('/ready não verifica estruturas críticas do MySQL.');
