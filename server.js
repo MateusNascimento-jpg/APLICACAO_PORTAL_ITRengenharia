@@ -48,7 +48,7 @@ const {
     onboardingState,
     markOnboarding
 } = require('./lib/client-auth');
-const { sendSecurityNotification, probeNotifications } = require('./lib/notifications');
+const { sendSecurityNotification, probeNotifications, PROPOSALS_CONTRACT } = require('./lib/notifications');
 const {
     habilitado: financeiroHabilitado,
     listarPropostasPorCnpj,
@@ -1129,7 +1129,11 @@ async function iniciar() {
     // Diagnóstico assinado, sem SMTP: alerta sobre divergência antes do primeiro pedido.
     // Falha de Notificações nunca impede o Portal de atender e de apresentar relatórios.
     setImmediate(() => probeNotifications()
-        .then(() => console.info('[CONFLUENCIA] HMAC, relógio e Airtable alinhados.'))
+        .then((result) => {
+            console.info('[CONFLUENCIA] HMAC, relógio e Airtable alinhados.');
+            if (result.proposalsContract !== PROPOSALS_CONTRACT)
+                console.error('[CONFLUENCIA] Serviço de e-mails sem o contrato VERIFY v1: códigos de aceite NÃO serão entregues. Publique o serviço de e-mails atualizado.');
+        })
         .catch(error => console.error('[CONFLUENCIA] Falha no diagnóstico interno:', error.message)));
 
 }

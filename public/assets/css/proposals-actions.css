@@ -212,3 +212,35 @@ dialog.proposta-modal:not(.proposta-modal-rejeicao) > h2::after {
 [data-tema='escuro'] dialog.proposta-modal:not(.proposta-modal-rejeicao) > h2::after {
     color: #91bfff;
 }
+
+/* ITR_ACEITE_RETOMADA_20261026: estado do código, espera e nota de reenvio. */
+.proposta-modal .proposta-modal-estado {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid #d9dfe7;
+    border-radius: 8px;
+    background: #f7f9fc;
+    font-size: 14px;
+}
+
+.proposta-modal .proposta-modal-nota,
+.proposta-modal .proposta-modal-espera {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #526071;
+}
+
+.proposta-modal .proposta-modal-espera {
+    margin: 10px 0 0;
+    font-weight: 600;
+}
+
+[data-tema='escuro'] .proposta-modal .proposta-modal-estado {
+    background: #1e3149;
+    border-color: #506075;
+}
+
+[data-tema='escuro'] .proposta-modal .proposta-modal-nota,
+[data-tema='escuro'] .proposta-modal .proposta-modal-espera {
+    color: #b9c6d6;
+}
