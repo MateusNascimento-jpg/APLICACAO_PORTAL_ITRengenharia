@@ -32,9 +32,10 @@ test('HTTP: DevViewer não solicita nem rejeita; cliente exige CSRF; confirmaç�
         consume: async () => ({ ok: true }),
         audit: async () => {},
         service: {
+            // Contrato real de service.request: nunca devolve o código ao navegador.
             request: async (...args) => {
                 calls.push(args);
-                return { code: '12345678' };
+                return { expiresAt: Date.now() + 7200000, recipientsCount: 1 };
             },
             reject: async (...args) => {
                 calls.push(args);
@@ -43,7 +44,7 @@ test('HTTP: DevViewer não solicita nem rejeita; cliente exige CSRF; confirmaç�
             open: async () => ({
                 cookie: 'encrypted',
                 csrf: 'limited',
-                expiresAt: Date.now() + 1800000,
+                expiresAt: Date.now() + 7200000,
             }),
         },
     });
@@ -67,7 +68,9 @@ test('HTTP: DevViewer não solicita nem rejeita; cliente exige CSRF; confirmaç�
     ]) {
         assert.equal((await post(route, 'DevViewer', 'fixture')).status, 403);
         assert.equal((await post(route, 'GeneratedClient', '')).status, 403);
-        assert.equal((await post(route, 'GeneratedClient', 'fixture')).status, 200);
+        const ok = await post(route, 'GeneratedClient', 'fixture');
+        assert.equal(ok.status, 200);
+        assert.equal((await ok.json()).code, undefined);
     }
     assert.equal(calls.length, 2);
     const response = await post('/api/propostas/confirmacao/abrir', '', '');

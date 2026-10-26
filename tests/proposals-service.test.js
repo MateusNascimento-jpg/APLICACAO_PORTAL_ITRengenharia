@@ -323,7 +323,10 @@ test('aceite confirmado só escreve uma vez, sem duplicar efeito comercial', asy
     const proof = await f.validate(flow.code);
     await f.confirm(proof);
     assert.equal(f.writes.length, 1);
-    await assert.rejects(f.confirm(proof), /DECISION_EXISTS|CHALLENGE_INVALID/);
+    // Repetição do MESMO desafio (resposta perdida): resultado gravado, sem novo PATCH.
+    const repeated = await f.confirm(proof);
+    assert.equal(repeated.status, 'Aceita');
+    assert.equal(repeated.repetido, true);
     await assert.rejects(f.validate(flow.code), /DECISION_EXISTS|CHALLENGE_INVALID/);
     assert.equal(f.writes.length, 1);
     assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length, 2);
