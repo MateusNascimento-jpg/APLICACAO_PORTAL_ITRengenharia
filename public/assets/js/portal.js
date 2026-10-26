@@ -48,6 +48,7 @@ var TI_SVG = {
   'clock-x':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5"/><path d="M15 15l3 3"/><path d="M18 15l-3 3"/>',
   /* Financeiro (nav e documentos) */
   'file-invoice':'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 7l1 0"/><path d="M9 13l6 0"/><path d="M13 17l2 0"/>',
+  'file-check':'<path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 15l2 2l4 -4"/>',
   'barcode':'<path d="M4 7v-1a2 2 0 0 1 2 -2h2"/><path d="M4 17v1a2 2 0 0 0 2 2h2"/><path d="M16 4h2a2 2 0 0 1 2 2v1"/><path d="M16 20h2a2 2 0 0 0 2 -2v-1"/><path d="M5 11h1v2h-1z"/><path d="M10 11l0 2"/><path d="M14 11h1v2h-1z"/><path d="M19 11l0 2"/>',
   'download':'<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>'
 };
@@ -943,17 +944,8 @@ function inicializarAberturaPropostas(propostas){
   propostasAbertasIds.forEach(function(id){ if(!ids.has(id)) propostasAbertasIds.delete(id); });
   if(propostasAberturaInicialAplicada) return;
   propostasAberturaInicialAplicada = true;
-  if(propostas.length <= 3){
-    propostas.forEach(function(p){ propostasAbertasIds.add(p.id); });
-  } else {
-    // Data de envio determina a mais recente; a ordem original da lista não muda.
-    var recente = propostas.reduce(function(atual, p){
-      var dataP = Date.parse(p.dataEnvio || '') || 0;
-      var dataAtual = Date.parse(atual.dataEnvio || '') || 0;
-      return dataP > dataAtual ? p : atual;
-    }, propostas[0]);
-    propostasAbertasIds.add(recente.id);
-  }
+  // Todas inicialmente expandidas; recolhimento individual preservado.
+  propostas.forEach(function(p){ propostasAbertasIds.add(p.id); });
 }
 
 function moedaBR(valor){
@@ -1003,12 +995,30 @@ function podeAceitarProposta(status){
 }
 function documentosProposta(p){
   var docs = Array.isArray(p.documentos) ? p.documentos : [];
-  if(!docs.length) return '<div class="proposta-documento-destaque"><div class="proposta-documento-cabecalho"><span class="proposta-documento-kicker">Documento</span></div><div class="proposta-documento-vazio"><i class="ti ti-file-off" aria-hidden="true"></i><span>Documento não disponível.</span></div></div>';
-  return '<div class="proposta-documento-destaque"><div class="proposta-documento-cabecalho"><span class="proposta-documento-kicker">Documento</span></div><div class="proposta-documentos">' + docs.map(function(d){
-    var url = '/api/propostas/'+encodeURIComponent(p.id)+'/documento/'+encodeURIComponent(d.id);
-    return '<div class="proposta-documento"><div class="proposta-documento-nome"><span class="proposta-documento-icone"><i class="ti ti-file-description" aria-hidden="true"></i></span><span>'+esc(d.nome || 'Proposta.pdf')+'</span></div><a href="'+url+'" target="_blank" rel="noopener">Visualizar PDF <i class="ti ti-arrow-up-right" aria-hidden="true"></i></a></div>';
-  }).join('') + '</div></div>';
+  var aceitoComProva = p.status === 'Aceita' && p.temComprovante === true;
+  var titulo = '<div class="proposta-documento-cabecalho"><span class="proposta-documento-kicker">Documentos</span></div>';
+  if(!docs.length && !aceitoComProva)
+    return '<div class="proposta-documento-destaque">'+titulo+'<div class="proposta-documento-vazio"><i class="ti ti-file-off" aria-hidden="true"></i><span>Documento não disponível.</span></div></div>';
+  function linhaDocumento(nome, icone, url){
+    return '<div class="proposta-documento"><div class="proposta-documento-nome"><span class="proposta-documento-icone"><i class="ti ti-'+icone+'" aria-hidden="true"></i></span><span>'+esc(nome)+'</span></div><a href="'+url+'" target="_blank" rel="noopener">Visualizar PDF <i class="ti ti-arrow-up-right" aria-hidden="true"></i></a></div>';
+  }
+  var html = '';
+  if(aceitoComProva){
+    // Uma versão original congelada e seu comprovante: dois documentos em pilha.
+    // A lista original de anexos não gera links duplicados para a mesma versão.
+    html += linhaDocumento(p.nomePropostaAceita || (docs[0] && docs[0].nome) || 'Proposta comercial.pdf', 'file-description',
+      '/api/propostas/'+encodeURIComponent(p.id)+'/proposta-aceita');
+    html += linhaDocumento('Comprovante de Contrato.pdf', 'file-check',
+      '/api/propostas/'+encodeURIComponent(p.id)+'/comprovante');
+  }else{
+    html = docs.map(function(d){
+      return linhaDocumento(d.nome || 'Proposta comercial.pdf', 'file-description',
+        '/api/propostas/'+encodeURIComponent(p.id)+'/documento/'+encodeURIComponent(d.id));
+    }).join('');
+  }
+  return '<div class="proposta-documento-destaque">'+titulo+'<div class="proposta-documentos">'+html+'</div></div>';
 }
+
 function blocoAceiteProposta(p){
   if(p.status === 'Aceita') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo aprovada"><i class="ti ti-check" aria-hidden="true"></i> Proposta aprovada</div></div>';
   if(p.status === 'Rejeitada') return '<div class="proposta-info proposta-acao proposta-acao-final"><div class="proposta-info-rotulo">Decisão</div><div class="proposta-selo rejeitada"><i class="ti ti-x" aria-hidden="true"></i> Proposta rejeitada</div></div>';
@@ -1154,7 +1164,7 @@ if(propostasListaEl) propostasListaEl.addEventListener('click', function(e){
   }
   var proposta = PROPOSTAS_ATUAIS.find(function (item) { return item.id === id; });
   if (!proposta || botao.disabled) return;
-  if (acao === 'aceitar') ITRProposals.accept(proposta, botao);
+  if (acao === 'aceitar') ITRProposals.accept(proposta, botao, function () { return carregarPropostas(true); });
   if (acao === 'rejeitar') ITRProposals.reject(proposta, botao, function () { carregarPropostas(true); });
 });
 var propostasTentar = document.getElementById('propostasTentar');

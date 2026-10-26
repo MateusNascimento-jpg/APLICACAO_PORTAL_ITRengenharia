@@ -256,4 +256,52 @@ function criarBaseFicticia() {
     };
 }
 
-module.exports = { criarBaseFicticia, IDS, ANEXOS, CNPJ_A, CNPJ_B, rid, aid };
+// Cenário do critério de aceitação (handoff 24/10): cliente A com C02
+// (2 parcelas: Pago + A Vencer) e C03 (1 parcela aguardando NF). Opcionalmente
+// C01 concluído e quitado, para a prova visual com três contratos.
+function criarBaseContratosDemo({ incluirC01 = false } = {}) {
+    const base = criarBaseFicticia();
+    const t = base.tabelas;
+    const ids = {
+        prop01: rid('Prop01'), prop02: rid('Prop02'), prop03: rid('Prop03'),
+        c01: rid('Cont01'), c02: rid('Cont02'), c03: rid('Cont03'),
+    };
+    const pdf = (sufixo, nome) => ({ ...anexo(sufixo, nome), size: 20480 });
+    t[S.TABELAS.PROPOSTA] = [
+        { id: ids.prop02, fields: { [P.NUMERO]: '02', [P.STATUS]: 'Aceita', [P.CLIENTE]: [IDS.clienteA],
+            [P.ARQUIVOS]: [pdf('PdfProp02', 'Proposta_02.pdf')], [P.FORMA_PAGAMENTO]: 'Entrada + parcela final',
+            [P.PRAZO_DIAS]: 10, [P.CONTRATOS]: [ids.c02], [P.VALOR]: 24500 } },
+        { id: ids.prop03, fields: { [P.NUMERO]: '03', [P.STATUS]: 'Aceita', [P.CLIENTE]: [IDS.clienteA],
+            [P.ARQUIVOS]: [pdf('PdfProp03', 'Proposta_03.pdf')], [P.FORMA_PAGAMENTO]: 'Parcela única',
+            [P.PRAZO_DIAS]: 10, [P.CONTRATOS]: [ids.c03], [P.VALOR]: 8900 } },
+    ];
+    t[S.TABELAS.CONTRATOS] = [
+        { id: ids.c02, fields: { [C.NOME]: 'C02', [C.PROPOSTA]: [ids.prop02], [C.STATUS]: 'Ativo', [C.PRAZO_DIAS]: [10],
+            [C.PARCELAS]: [rid('Nf0201'), rid('Nf0202')] } },
+        { id: ids.c03, fields: { [C.NOME]: 'C03', [C.PROPOSTA]: [ids.prop03], [C.STATUS]: 'Ativo', [C.PRAZO_DIAS]: [10],
+            [C.PARCELAS]: [rid('Nf0301')] } },
+    ];
+    t[S.TABELAS.NOTAS_FISCAIS] = [
+        { id: rid('Nf0201'), fields: { [N.PARCELA]: 'C02 - Parcela 1', [N.CONTRATO]: [ids.c02], [N.STATUS_PAGAMENTO]: 'Pago',
+            [N.VALOR_PARCELA]: 12250, [N.VALOR_PAGO]: 12250, [N.DATA_EMISSAO_NF]: '2026-10-01',
+            [N.DATA_PAGAMENTO]: '2026-10-10', [N.NFSE]: [pdf('Nfse0201', 'NFSe_0201.pdf')] } },
+        { id: rid('Nf0202'), fields: { [N.PARCELA]: 'C02 - Parcela 2', [N.CONTRATO]: [ids.c02], [N.STATUS_PAGAMENTO]: 'A Vencer',
+            [N.VALOR_PARCELA]: 12250, [N.DATA_EMISSAO_NF]: '2026-10-20', [N.VENCIMENTO]: '2026-10-30T00:00:00.000Z',
+            [N.NFSE]: [pdf('Nfse0202', 'NFSe_0202.pdf')], [N.BOLETO]: [pdf('Bol0202', 'Boleto_0202.pdf')] } },
+        { id: rid('Nf0301'), fields: { [N.PARCELA]: 'C03 - Parcela única', [N.CONTRATO]: [ids.c03],
+            [N.STATUS_PAGAMENTO]: 'Aguardando Emissão da NF', [N.VALOR_PARCELA]: 8900 } },
+    ];
+    if (incluirC01) {
+        t[S.TABELAS.PROPOSTA].unshift({ id: ids.prop01, fields: { [P.NUMERO]: '01', [P.STATUS]: 'Aceita', [P.CLIENTE]: [IDS.clienteA],
+            [P.ARQUIVOS]: [pdf('PdfProp01', 'Proposta_01.pdf')], [P.FORMA_PAGAMENTO]: 'Parcela única',
+            [P.PRAZO_DIAS]: 10, [P.CONTRATOS]: [ids.c01], [P.VALOR]: 8900 } });
+        t[S.TABELAS.CONTRATOS].unshift({ id: ids.c01, fields: { [C.NOME]: 'C01', [C.PROPOSTA]: [ids.prop01], [C.STATUS]: 'Concluído',
+            [C.PRAZO_DIAS]: [10], [C.PARCELAS]: [rid('Nf0101')] } });
+        t[S.TABELAS.NOTAS_FISCAIS].unshift({ id: rid('Nf0101'), fields: { [N.PARCELA]: 'C01 - Parcela única', [N.CONTRATO]: [ids.c01],
+            [N.STATUS_PAGAMENTO]: 'Pago', [N.VALOR_PARCELA]: 8900, [N.VALOR_PAGO]: 8900, [N.DATA_EMISSAO_NF]: '2026-09-25',
+            [N.DATA_PAGAMENTO]: '2026-10-05', [N.NFSE]: [pdf('Nfse0101', 'NFSe_0101.pdf')] } });
+    }
+    return { base, ids };
+}
+
+module.exports = { criarBaseFicticia, criarBaseContratosDemo, IDS, ANEXOS, CNPJ_A, CNPJ_B, rid, aid };

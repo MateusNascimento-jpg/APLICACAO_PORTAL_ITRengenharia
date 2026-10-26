@@ -1,5 +1,9 @@
 'use strict';
 
+// Regressão do serviço de propostas com o contrato de aceite por código
+// enviado exclusivamente ao e-mail expressamente autorizado.
+// Nenhuma chamada a Airtable, SMTP ou MySQL reais.
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createService, TTL } = require('../lib/proposals/service');
@@ -9,7 +13,7 @@ const { memoryStore } = require('./helpers/proposals-memory');
 function fixture() {
     const store = memoryStore();
     const secrets = createSecrets(Buffer.alloc(32, 8).toString('base64'));
-    let clock = Date.now();
+    let clock = Date.parse('2026-10-23T10:00:00Z');
     const proposal = {
         id: 'recAAAAAAAAAAAAAA',
         cnpj: '12345678000190',
@@ -22,14 +26,13 @@ function fixture() {
         prazoPagamentoDias: 30,
         createdTime: new Date(clock).toISOString(),
         emails: ['a@example.test', 'b@example.test'],
-        anexos: [
-            {
-                id: 'attOne',
-                filename: 'proposta.pdf',
-                url: 'https://v5.airtableusercontent.com/pdf',
-            },
-        ],
+        anexos: [{
+            id: 'attAAAAAAAAAAAAAA',
+            filename: 'proposta.pdf',
+            url: 'https://v5.airtableusercontent.com/pdf',
+        }],
     };
+    const permissions = new Set(proposal.emails);
     const writes = [];
     let failure = '';
     const airtable = {
@@ -50,105 +53,115 @@ function fixture() {
         store,
         secrets,
         airtable,
+        authorizedContacts: {
+            async forProposal(p) {
+                // Autorização explícita, restringida aos contatos do mesmo CNPJ.
+                return p.emails.filter((email) => permissions.has(email));
+            },
+        },
         origin: 'https://portal.example.test',
         enabled: () => true,
-        pdf: async () => ({ hash: secrets.hash('pdf-original') }),
+        pdf: async () => ({
+            hash: secrets.hash('pdf-original'),
+            bytes: Buffer.from('%PDF-1.4\n%fixture\n'),
+        }),
         now: () => clock,
     };
     const service = createService(params);
     const payloads = () => [...store.events.values()].map((row) => secrets.open(row.payload));
-    async function request() {
-        const result = await service.request(proposal.cnpj, proposal.id, {
-            role: 'GeneratedClient',
-        });
-        const verification = payloads()
-            .filter((row) => row.type === 'VERIFY')
-            .at(-1);
-        const session = await service.open(new URL(verification.actionUrl).hash.slice(1));
-        return { ...result, ...session };
+
+    async function request(email = 'a@example.test') {
+        const available = await service.options(proposal.cnpj, proposal.id);
+        const key = secrets.codeHash(proposal.id, email);
+        assert.ok(available.some((item) => item.key === key), 'Contato não autorizado no fixture');
+        const result = await service.request(proposal.cnpj, proposal.id, { role: 'Cliente' }, key);
+        const verify = payloads().filter((row) => row.type === 'VERIFY').at(-1);
+        assert.ok(verify, 'Evento VERIFY ausente');
+        assert.equal(verify.recipient, email);
+        assert.match(verify.code, /^\d{8}$/);
+        assert.equal(result.code, undefined, 'Código não pode ser revelado ao navegador');
+        return { ...result, code: verify.code, recipient: email };
     }
+
+    async function validate(code) {
+        return service.validateForClient(proposal.cnpj, proposal.id, code);
+    }
+
+    async function confirm(proof, consent = true) {
+        return service.confirmForClient(
+            proposal.cnpj, proposal.id, proof.confirmation, consent, { role: 'Cliente' },
+        );
+    }
+
     return {
-        store,
-        secrets,
-        proposal,
-        writes,
-        service,
-        params,
-        payloads,
-        request,
-        advance: (milliseconds) => {
-            clock += milliseconds;
-        },
-        failure: (value) => {
-            failure = value;
-        },
+        store, secrets, proposal, permissions, writes, service, params,
+        payloads, request, validate, confirm,
+        advance: (ms) => { clock += ms; },
+        failure: (value) => { failure = value; },
     };
 }
 
-test('link + código + confirmação: só o último passo altera o Airtable; final é individual e idempotente', async () => {
+test('código + consentimento: só a confirmação altera o Airtable e cria comprovante', async () => {
     const f = fixture();
     const flow = await f.request();
+    assert.equal(TTL, 120 * 60 * 1000);
+    assert.equal(flow.recipientsCount, 1);
     assert.equal(f.writes.length, 0);
-    await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, true, {}), /CODE_REQUIRED/);
-    await f.service.validate(flow.cookie, flow.csrf, flow.code);
+    const proof = await f.validate(flow.code);
     assert.equal(f.writes.length, 0);
-    await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, false, {}), /CONSENT_REQUIRED/);
-    const results = await Promise.all([
-        f.service.confirm(flow.cookie, flow.csrf, true, {}),
-        f.service.confirm(flow.cookie, flow.csrf, true, {}),
-    ]);
-    assert.equal(results[0].status, 'Aceita');
+    await assert.rejects(f.confirm(proof, false), /CONSENT_REQUIRED/);
+    assert.equal(f.writes.length, 0);
+    const accepted = await f.confirm(proof);
+    assert.equal(accepted.status, 'Aceita');
     assert.equal(f.writes.length, 1);
-    assert.equal(f.payloads().filter((row) => row.type === 'ACCEPTED').length, 2);
+    assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length, 2);
+    assert.ok(await f.store.artifact(f.proposal.id));
     const state = await f.store.state(f.proposal.id);
     assert.equal(state.decision.state, 'done');
     assert.ok(state.decision.verifiedAt && state.decision.consentAt);
 });
 
-test('expiração cobre a confirmação definitiva, inclusive após código correto', async () => {
+test('a validade de duas horas também cobre a confirmação final', async () => {
     const f = fixture();
     const flow = await f.request();
-    await f.service.validate(flow.cookie, flow.csrf, flow.code);
+    const proof = await f.validate(flow.code);
     f.advance(TTL);
-    await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, true, {}), /CHALLENGE_INVALID/);
+    await assert.rejects(f.confirm(proof), /CHALLENGE_INVALID/);
     assert.equal(f.writes.length, 0);
 });
 
-test('cinco erros bloqueiam; CSRF e cookie adulterados não passam', async () => {
+test('cinco tentativas incorretas bloqueiam o desafio e não gravam aceite', async () => {
     const f = fixture();
     const flow = await f.request();
-    await assert.rejects(f.service.validate(flow.cookie, 'outro', flow.code), /CSRF_INVALID/);
     for (let i = 0; i < 5; i++)
-        await assert.rejects(f.service.validate(flow.cookie, flow.csrf, 'invalid'), /CODE_INVALID/);
-    await assert.rejects(
-        f.service.validate(flow.cookie, flow.csrf, flow.code),
-        /CHALLENGE_INVALID/,
-    );
-    await assert.rejects(f.service.context('tampered'), /CHALLENGE_INVALID/);
+        await assert.rejects(f.validate('invalid'), /CODE_INVALID/);
+    await assert.rejects(f.validate(flow.code), /CHALLENGE_INVALID/);
     assert.equal(f.writes.length, 0);
 });
 
-test('reenviar substitui desafio; reinício preserva código válido sem armazená-lo em claro', async () => {
+test('novo código substitui o anterior sem registrar código em claro nas tabelas', async () => {
     const f = fixture();
-    const first = await f.request();
-    f.advance(61000);
-    const second = await f.request();
-    await assert.rejects(
-        f.service.validate(first.cookie, first.csrf, first.code),
-        /CHALLENGE_INVALID/,
-    );
+    const previous = await f.request();
+    f.advance(61_000);
+    const recent = await f.request();
+    await assert.rejects(f.validate(previous.code), /CODE_INVALID|CHALLENGE_INVALID/);
     const restarted = createService(f.params);
-    await restarted.validate(second.cookie, second.csrf, second.code);
-    const rows = JSON.stringify([...f.store.challenges.values()]);
-    assert.ok(!rows.includes('"code":'));
-    assert.ok(!rows.includes(new URL(f.payloads().at(-1).actionUrl).hash.slice(1)));
+    const proof = await restarted.validateForClient(f.proposal.cnpj, f.proposal.id, recent.code);
+    assert.ok(proof.confirmation);
+    assert.equal(f.store.challenges.size, 2);
+    const challenges = JSON.stringify([...f.store.challenges.values()]);
+    assert.ok(!challenges.includes(previous.code));
+    assert.ok(!challenges.includes(recent.code));
+    const persistedEvents = JSON.stringify([...f.store.events.values()]);
+    assert.ok(!persistedEvents.includes(recent.code));
 });
 
-test('não aceita outro CNPJ, PDF ambíguo, status Pendente ou Safe Mode', async () => {
+test('outro CNPJ, PDF ambíguo, status terminal e Safe Mode são recusados', async () => {
     const f = fixture();
     await assert.rejects(f.service.options('99999999000199', f.proposal.id), /PROPOSAL_NOT_FOUND/);
+    const key = f.secrets.codeHash(f.proposal.id, 'a@example.test');
     await assert.rejects(
-        f.service.request('99999999000199', f.proposal.id, {}),
+        f.service.request('99999999000199', f.proposal.id, {}, key),
         /PROPOSAL_NOT_FOUND/,
     );
     f.proposal.anexos.push({ id: 'another' });
@@ -156,171 +169,138 @@ test('não aceita outro CNPJ, PDF ambíguo, status Pendente ou Safe Mode', async
     f.proposal.status = 'Pendente';
     await assert.rejects(f.request(), /PROPOSAL_TERMINAL/);
     await assert.rejects(
-        createService({ ...f.params, enabled: () => false }).options(
-            f.proposal.cnpj,
-            f.proposal.id,
-        ),
+        createService({ ...f.params, enabled: () => false }).options(f.proposal.cnpj, f.proposal.id),
         /SAFE_MODE/,
     );
 });
 
-test('revogação de contato, transferência ou alteração comercial impedem aceite antigo', async () => {
-    for (const mutation of [
-        (p) => {
-            p.valor++;
-        },
-        (p) => {
-            p.emails = [];
-        },
-        (p) => {
-            p.cnpj = '99999999000199';
-        },
-        (p) => {
-            p.anexos[0].id = 'changed';
-        },
+test('revogação explícita, troca de CNPJ, documento ou valor impedem aceite antigo', async () => {
+    for (const mutate of [
+        (f) => { f.proposal.valor++; },
+        (f) => { f.permissions.delete('a@example.test'); },
+        (f) => { f.proposal.cnpj = '99999999000199'; },
+        (f) => { f.proposal.anexos[0].id = 'changed'; },
     ]) {
         const f = fixture();
         const flow = await f.request();
-        await f.service.validate(flow.cookie, flow.csrf, flow.code);
-        mutation(f.proposal);
-        await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, true, {}));
+        const proof = await f.validate(flow.code);
+        mutate(f);
+        await assert.rejects(f.confirm(proof));
         assert.equal(f.writes.length, 0);
     }
 });
 
-test('rejeição exige feedback, grava os dois campos e invalida aceite pendente', async () => {
+test('rejeição exige justificativa, atualiza campos e bloqueia aceite pendente', async () => {
     const f = fixture();
     const flow = await f.request();
-    await f.service.validate(flow.cookie, flow.csrf, flow.code);
-    await assert.rejects(
-        f.service.reject(f.proposal.cnpj, f.proposal.id, ' ', '', {}),
-        /FEEDBACK_INVALID/,
-    );
-    await f.service.reject(
-        f.proposal.cnpj,
-        f.proposal.id,
-        'Prazo incompatível',
-        'Necessitamos prazo menor.',
-        {},
-    );
+    const proof = await f.validate(flow.code);
+    await assert.rejects(f.service.reject(f.proposal.cnpj, f.proposal.id, ' ', '', {}), /FEEDBACK_INVALID/);
+    await f.service.reject(f.proposal.cnpj, f.proposal.id,
+        'Prazo incompatível', 'Necessitamos prazo menor.', {});
     assert.equal(f.writes[0].status, 'Rejeitada');
     assert.match(f.writes[0].feedback, /Prazo incompatível/);
-    await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, true, {}));
-    assert.equal(f.payloads().filter((row) => row.type === 'ACCEPTED').length, 0);
+    await assert.rejects(f.confirm(proof));
+    assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length, 0);
 });
 
-test('timeout após PATCH é reconciliado após reinício sem repetir escrita; antes do PATCH não gera e-mail final', async () => {
+test('timeout após PATCH pode ser reconciliado sem nova escrita', async () => {
     for (const failure of ['before', 'after']) {
         const f = fixture();
         const flow = await f.request();
-        await f.service.validate(flow.cookie, flow.csrf, flow.code);
+        const proof = await f.validate(flow.code);
         f.failure(failure);
-        await assert.rejects(f.service.confirm(flow.cookie, flow.csrf, true, {}), /NETWORK/);
-        assert.equal(f.payloads().filter((row) => row.type === 'ACCEPTED').length, 0);
+        await assert.rejects(f.confirm(proof), /NETWORK/);
+        assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length, 0);
         const restarted = createService(f.params);
-        if (failure === 'after') await restarted.reconcile(f.proposal.id);
-        else await assert.rejects(restarted.reconcile(f.proposal.id), /DECISION_UNCERTAIN/);
+        if (failure === 'after') {
+            await restarted.reconcile(f.proposal.id);
+        } else {
+            await assert.rejects(restarted.reconcile(f.proposal.id), /DECISION_UNCERTAIN/);
+        }
         assert.equal(f.writes.length, 1);
-        assert.equal(
-            f.payloads().filter((row) => row.type === 'ACCEPTED').length,
-            failure === 'after' ? 2 : 0,
-        );
+        assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length,
+            failure === 'after' ? 2 : 0);
     }
 });
 
-test('nova proposta aguarda PDF, respeita marco inicial e não repete após reinício', async () => {
+test('publicação respeita PDF existente, data de corte e idempotência', async () => {
     const f = fixture();
     f.proposal.anexos = [];
     await assert.rejects(f.service.publish(f.proposal.id), /PDF_AMBIGUOUS/);
     assert.equal(f.store.events.size, 0);
-    f.proposal.anexos = [
-        { id: 'pdf', filename: 'original.pdf', url: 'https://v5.airtableusercontent.com/pdf' },
-    ];
+    f.proposal.anexos = [{ id: 'attCCCCCCCCCCCCCC', filename: 'original.pdf', url: 'https://v5.airtableusercontent.com/pdf' }];
     await f.service.publish(f.proposal.id);
     await createService(f.params).publish(f.proposal.id);
     assert.equal(f.store.events.size, 2);
     const historical = fixture();
-    historical.store.config.cutoff = Date.now() + 1000;
+    historical.store.config.cutoff = Date.parse(historical.proposal.createdTime) + 1000;
     await historical.service.publish(historical.proposal.id);
     assert.equal(historical.store.events.size, 0);
 });
 
-test('fila e desafio são atômicos em falha de persistência', async () => {
+test('persistência de desafio e evento é atômica quando a fila falha', async () => {
     const f = fixture();
-    f.store.enqueue = async () => {
-        throw new Error('DISK');
-    };
+    f.store.enqueue = async () => { throw new Error('DISK'); };
     await assert.rejects(f.request(), /DISK/);
     assert.equal(f.store.challenges.size, 0);
     assert.equal(f.store.states.size, 0);
 });
 
-
-test('solicitação enfileira um link único por endereço autorizado com código único no Portal', async () => {
+test('solicitação envia um código para um único e-mail escolhido entre os autorizados', async () => {
     const f = fixture();
-    const flow = await f.request();
-    const events = f.payloads().filter((item) => item.type === 'VERIFY');
-    assert.equal(flow.recipientsCount, 2);
-    assert.deepEqual(events.map((item) => item.recipient).sort(), f.proposal.emails);
-    assert.equal(new Set(events.map((item) => item.actionUrl)).size, 2);
-    assert.equal(new Set(events.map((item) => item.challengeId)).size, 2);
-    assert.equal(new Set(events.map((item) => item.expiresAt)).size, 1);
-    const state = await f.store.state(f.proposal.id);
-    assert.equal(state.activeChallenges.length, 2);
-    // Either authorized recipient can validate using the same code shown in the Portal.
-    for (const event of events) {
-        const link = await f.service.open(new URL(event.actionUrl).hash.slice(1));
-        await f.service.validate(link.cookie, link.csrf, flow.code);
-    }
+    const list = await f.service.options(f.proposal.cnpj, f.proposal.id);
+    assert.equal(list.length, 2);
+    assert.ok(list.every((contact) => contact.label.includes('***@')));
+    const flow = await f.request('b@example.test');
+    assert.equal(flow.recipientsCount, 1);
+    const verification = f.payloads().filter((e) => e.type === 'VERIFY');
+    assert.equal(verification.length, 1);
+    assert.equal(verification[0].recipient, 'b@example.test');
+    assert.equal(verification[0].expiresAt - Date.parse(f.proposal.createdTime), TTL);
     assert.equal(f.writes.length, 0);
 });
 
-test('revogação de apenas um contato invalida somente seu link, não o dos demais', async () => {
+test('revogar um dos contatos preserva a autorização do outro', async () => {
     const f = fixture();
-    const flow = await f.request();
-    const events = f.payloads().filter((item) => item.type === 'VERIFY');
-    const original = events.find((event) => event.recipient === 'a@example.test');
-    const permitted = events.find((event) => event.recipient === 'b@example.test');
-    const revokedLink = await f.service.open(new URL(original.actionUrl).hash.slice(1));
-    const permittedLink = await f.service.open(new URL(permitted.actionUrl).hash.slice(1));
-    await f.service.validate(revokedLink.cookie, revokedLink.csrf, flow.code);
-    await f.service.validate(permittedLink.cookie, permittedLink.csrf, flow.code);
-    f.proposal.emails = ['b@example.test'];
-    await assert.rejects(f.service.confirm(revokedLink.cookie, revokedLink.csrf, true, {}), /RECIPIENT_INVALID/);
-    assert.equal(f.writes.length, 0);
-    const result = await f.service.confirm(permittedLink.cookie, permittedLink.csrf, true, {});
-    assert.equal(result.status, 'Aceita');
+    f.permissions.delete('a@example.test');
+    const list = await f.service.options(f.proposal.cnpj, f.proposal.id);
+    assert.deepEqual(list.map((item) => item.key), [f.secrets.codeHash(f.proposal.id, 'b@example.test')]);
+    const flow = await f.request('b@example.test');
+    const proof = await f.validate(flow.code);
+    const accepted = await f.confirm(proof);
+    assert.equal(accepted.status, 'Aceita');
     assert.equal(f.writes.length, 1);
-    const final = f.payloads().filter((item) => item.type === 'ACCEPTED');
-    assert.deepEqual(final.map((item) => item.recipient), ['b@example.test']);
 });
 
-test('nova solicitação invalida todos os links anteriores sem afetar os novos', async () => {
+test('reenvio após intervalo mínimo invalida o código anterior', async () => {
     const f = fixture();
-    const initial = await f.request();
-    const oldTokens = f.payloads().filter((item) => item.type === 'VERIFY').map((item) => item.actionUrl);
-    f.advance(61000);
-    const recent = await f.request();
-    for (const url of oldTokens)
-        await assert.rejects(f.service.open(new URL(url).hash.slice(1)), /CHALLENGE_INVALID/);
-    const newTokens = f.payloads().filter((item) => item.type === 'VERIFY').slice(-2);
-    assert.equal(recent.recipientsCount, 2);
-    assert.equal(initial.recipientsCount, 2);
-    for (const item of newTokens) {
-        const session = await f.service.open(new URL(item.actionUrl).hash.slice(1));
-        await f.service.validate(session.cookie, session.csrf, recent.code);
-    }
+    const first = await f.request();
+    await assert.rejects(f.request(), /REQUEST_TOO_SOON/);
+    f.advance(61_000);
+    const second = await f.request('b@example.test');
+    await assert.rejects(f.validate(first.code), /CODE_INVALID|CHALLENGE_INVALID/);
+    const proof = await f.validate(second.code);
+    assert.ok(proof.confirmation);
+    assert.equal(f.payloads().filter((e) => e.type === 'VERIFY').length, 2);
 });
 
-test('sem destinatários comerciais a solicitação é recusada sem enfileirar e-mails', async () => {
+test('sem contato expressamente autorizado o token é bloqueado sem enfileirar', async () => {
     const f = fixture();
-    f.proposal.emails = [];
-    await assert.rejects(f.service.request(f.proposal.cnpj, f.proposal.id, {}), /RECIPIENT_MISSING/);
+    f.permissions.clear();
+    await assert.rejects(f.service.options(f.proposal.cnpj, f.proposal.id), /RECIPIENT_MISSING/);
+    await assert.rejects(
+        f.service.request(f.proposal.cnpj, f.proposal.id, {}, 'invalid'),
+        /RECIPIENT_MISSING/,
+    );
     assert.equal(f.payloads().length, 0);
+    const withoutDirectory = createService({ ...f.params, authorizedContacts: undefined });
+    await assert.rejects(
+        withoutDirectory.options(f.proposal.cnpj, f.proposal.id),
+        /AUTHORIZATIONS_UNAVAILABLE/,
+    );
 });
 
-
-test('lista de e-mails separada por ponto e vírgula ignora espaços e duplicados', () => {
+test('lista comercial separada por ponto e vírgula ignora duplicados e inválidos', () => {
     const { emails } = require('../lib/portal-access');
     assert.deepEqual(
         emails('COMERCIAL@Exemplo.com; financeiro@exemplo.com ; comercial@exemplo.com; inválido ; juridico@exemplo.com'),
@@ -328,34 +308,23 @@ test('lista de e-mails separada por ponto e vírgula ignora espaços e duplicado
     );
 });
 
-test('falha no enfileiramento do segundo e-mail desfaz toda a solicitação', async () => {
+test('falha de enfileiramento cancela integralmente a emissão do código', async () => {
     const f = fixture();
-    const originalEnqueue = f.store.enqueue;
-    let called = 0;
-    f.store.enqueue = async (item) => {
-        called += 1;
-        if (called === 2) throw new Error('INTERNAL_ENQUEUE_FAILED');
-        return originalEnqueue(item);
-    };
+    f.store.enqueue = async () => { throw new Error('INTERNAL_ENQUEUE_FAILED'); };
     await assert.rejects(f.request(), /INTERNAL_ENQUEUE_FAILED/);
     assert.equal(f.store.events.size, 0);
     assert.equal(f.store.challenges.size, 0);
     assert.equal(f.store.states.size, 0);
 });
 
-test('após primeiro aceite explícito, demais links deixam de autorizar nova decisão', async () => {
+test('aceite confirmado só escreve uma vez, sem duplicar efeito comercial', async () => {
     const f = fixture();
     const flow = await f.request();
-    const events = f.payloads().filter((item) => item.type === 'VERIFY');
-    const links = [];
-    for (const event of events) {
-        const link = await f.service.open(new URL(event.actionUrl).hash.slice(1));
-        await f.service.validate(link.cookie, link.csrf, flow.code);
-        links.push(link);
-    }
-    await f.service.confirm(links[0].cookie, links[0].csrf, true, {});
+    const proof = await f.validate(flow.code);
+    await f.confirm(proof);
     assert.equal(f.writes.length, 1);
-    await assert.rejects(f.service.context(links[1].cookie), /CHALLENGE_INVALID|DECISION_EXISTS/);
-    await assert.rejects(f.service.confirm(links[1].cookie, links[1].csrf, true, {}), /CHALLENGE_INVALID|DECISION_EXISTS/);
+    await assert.rejects(f.confirm(proof), /DECISION_EXISTS|CHALLENGE_INVALID/);
+    await assert.rejects(f.validate(flow.code), /DECISION_EXISTS|CHALLENGE_INVALID/);
     assert.equal(f.writes.length, 1);
+    assert.equal(f.payloads().filter((e) => e.type === 'ACCEPTED').length, 2);
 });

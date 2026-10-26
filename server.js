@@ -730,6 +730,20 @@ app.get('/api/propostas', autenticado, somenteClientePortal, async (req, res) =>
     }
     try {
         const resultado = await listarPropostasPorCnpj(req.session.documento);
+        // Só informa que o comprovante existe para aceites efetivados após
+        // a ativação da nova geração. Propostas históricas não exibem link quebrado.
+        const artStore = require('./lib/proposals/store').createStore(pool);
+        await Promise.all(resultado.propostas.filter(p => p.status === 'Aceita').map(async p => {
+            try {
+                const [art, state] = await Promise.all([artStore.artifact(p.id), artStore.state(p.id)]);
+                p.temComprovante = Boolean(art && art.cnpj === req.session.documento &&
+                    state.decision?.state === 'done' && state.decision.status === 'Aceita' &&
+                    art.version === state.decision.snapshot.version);
+                // Nome da versão congelada: o anexo atual do Airtable pode ter
+                // sido substituído depois do aceite.
+                if (p.temComprovante) p.nomePropostaAceita = String(art.original_name || '').slice(0, 160) || null;
+            } catch (_) { p.temComprovante = false; }
+        }));
         return res.json({
             sucesso: true,
             clienteEncontrado: Boolean(resultado.cliente),
@@ -781,7 +795,8 @@ require('./lib/financeiro').install(app, {
     client: somenteClientePortal,
     consume,
     audit,
-    hmac
+    hmac,
+    pool
 });
 
 // Alias legado: carrega a sessão explicitamente porque está fora do prefixo /api.

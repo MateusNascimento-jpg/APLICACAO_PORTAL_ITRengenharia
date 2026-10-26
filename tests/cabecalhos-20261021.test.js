@@ -20,7 +20,8 @@ test('quatro cabeçalhos enriquecidos, sem alterar nomes ou IDs dos módulos', (
   }
   assert.match(html, /<h2 class="conta-titulo">Minha conta<\/h2>/);
   assert.match(html, /data-kpi="todos"/);
-  assert.match(html, /data-aba="proximas"/);
+  // Abas do Financeiro removidas por decisão final (24/10): uma linha por contrato.
+  assert.doesNotMatch(html, /data-aba="proximas"/);
 });
 
 test('CSS usa cabeçalho compacto, responsivo e tema escuro aprofundado', () => {

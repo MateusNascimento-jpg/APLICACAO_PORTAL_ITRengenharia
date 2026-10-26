@@ -57,6 +57,12 @@
     async function start() {
         var token = window.location.hash.slice(1);
         history.replaceState(null, '', window.location.pathname);
+        // Mantém somente a compatibilidade de links antigos já emitidos.
+        // O fluxo novo é feito na área Propostas, sem página externa.
+        if (!token) {
+            message.textContent = 'Para confirmar uma nova proposta, acesse Propostas no Portal do Cliente e informe o código recebido por e-mail. Esta página atende somente links antigos.';
+            return;
+        }
         try {
             var result = token ? await call('abrir', { token: token }) : await call('contexto');
             token = '';
@@ -70,7 +76,7 @@
                 }) +
                 '.';
             message.textContent =
-                'Informe o código de oito dígitos exibido no Portal. A proposta só será aceita após sua confirmação na próxima etapa.';
+                'Este link pertence ao fluxo anterior. Informe o código de oito dígitos associado à solicitação antiga. Para novos aceites, utilize a área de Propostas do Portal.';
             codeForm.hidden = false;
             document.getElementById('code').focus();
         } catch (error) {

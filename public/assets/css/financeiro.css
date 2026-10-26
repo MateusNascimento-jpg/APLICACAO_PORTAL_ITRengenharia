@@ -1,5 +1,5 @@
 /* =========================================================================
-   Financeiro — contratos e faturas (somente consulta)
+   Financeiro — uma linha por contrato (somente consulta)
    Folha isolada: usa os tokens de original-portal.css (--card, --line, --txt…)
    para herdar tema claro/escuro, tipografia e cores institucionais.
    ========================================================================= */
@@ -27,25 +27,6 @@
 .financeiro-avisos li { display: flex; align-items: flex-start; gap: 8px; }
 .financeiro-avisos i { color: var(--azul-claro); font-size: 15px; margin-top: 2px; flex-shrink: 0; }
 
-/* ---- Abas ---- */
-.financeiro-abas { display: flex; gap: 2px; border-bottom: 0.5px solid var(--line); }
-.financeiro-aba {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 14px; margin-bottom: -1px;
-  border: 0; border-bottom: 2px solid transparent; background: transparent;
-  color: var(--txt-3); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
-  transition: color .2s, border-color .2s;
-}
-.financeiro-aba:hover { color: var(--txt); }
-.financeiro-aba.ativa { color: var(--txt); border-bottom-color: var(--azul); }
-.financeiro-aba:focus-visible { outline: 2px solid var(--azul-link); outline-offset: -2px; border-radius: 6px 6px 0 0; }
-.financeiro-aba-total {
-  min-width: 22px; padding: 1px 7px; border-radius: 999px;
-  background: var(--cinza-bg); color: var(--txt-3);
-  font-size: 11.5px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums;
-}
-.financeiro-aba.ativa .financeiro-aba-total { background: rgba(61, 123, 224, .14); color: var(--azul-link); }
-
 /* ---- Tabela ---- */
 .financeiro-tabela {
   margin-top: 12px; overflow-x: auto; overflow-y: hidden;
@@ -65,7 +46,7 @@
 }
 .financeiro-tabela-dados tbody:last-child > tr:last-child > td { border-bottom: 0; }
 .financeiro-tabela-dados td.fin-c-contrato { color: var(--txt); font-weight: 650; white-space: nowrap; }
-.financeiro-tabela-dados td.fin-c-parcela { min-width: 7em; overflow-wrap: anywhere; }
+.financeiro-tabela-dados td.fin-c-condicao { min-width: 7em; overflow-wrap: anywhere; }
 .financeiro-num { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .financeiro-tabela-dados td.financeiro-num { color: var(--txt); font-weight: 600; }
 .financeiro-acao { width: 1%; text-align: right !important; white-space: nowrap; }
@@ -105,23 +86,16 @@
 .financeiro-selo.vencido { color: var(--erro-tx); background: var(--erro-bg); border-color: var(--erro-bd); }
 .financeiro-selo.pago { color: var(--verde-tx); background: var(--verde-bg); border-color: var(--verde-bd); }
 .financeiro-selo.cancelado { color: var(--cinza-tx); background: var(--cinza-bg); }
+.financeiro-selo.preparacao { color: var(--txt-3); background: var(--field); border-color: var(--line); }
 .financeiro-selo.revisao { color: var(--amarelo-tx); background: transparent; border: 1px dashed var(--amarelo-bd); }
 
-/* Canceladas: agrupamento por contrato */
-.financeiro-grupo-cabecalho th {
-  padding: 10px 14px; text-align: left; background: var(--field);
-  color: var(--txt); font-size: 12.5px; font-weight: 700; letter-spacing: .1px; text-transform: none;
-  border-bottom: 0.5px solid var(--line-soft);
-}
-.financeiro-grupo-status { margin-left: 10px; color: var(--txt-4); font-weight: 600; font-size: 12px; }
-
 /* ---- Detalhes expandidos ---- */
-.financeiro-detalhe { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 6px 28px; }
+.financeiro-detalhe { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 6px 28px; align-items: start; }
 .financeiro-detalhe-alerta {
   grid-column: 1 / -1; margin: 8px 0 0; padding: 9px 12px; border-radius: 10px;
   border: 0.5px solid var(--amarelo-bd); background: var(--amarelo-bg); color: var(--txt-2); font-size: 12.5px; line-height: 1.5;
 }
-.financeiro-detalhe-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 22px; margin: 0; }
+.financeiro-detalhe-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0 22px; margin: 0; }
 .financeiro-detalhe-item { min-width: 0; padding: 9px 0; border-bottom: 0.5px solid var(--line-soft); }
 .financeiro-detalhe-item dt {
   margin-bottom: 4px; color: var(--txt-4);
@@ -208,7 +182,7 @@
   .financeiro-detalhe { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* ---- Celular: cada fatura vira um grupo compacto ---- */
+/* ---- Celular: cada contrato vira um grupo compacto ---- */
 @container financeiro (max-width: 600px) {
   .financeiro-busca { max-width: none; }
   .financeiro-tabela { overflow: hidden; }
@@ -220,26 +194,22 @@
   .financeiro-tabela-dados th { display: block; width: 100%; }
   .financeiro-linha {
     display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px;
-    grid-template-areas: "contrato situacao" "parcela valor" "data acao";
+    grid-template-areas: "contrato situacao" "condicao valor" "data acao";
     padding: 13px 14px; border-bottom: 0.5px solid var(--line-soft);
   }
   .financeiro-linha > td { width: auto; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; }
   .financeiro-linha.aberta { background: rgba(61, 123, 224, .055); box-shadow: inset 2px 0 0 rgba(61, 123, 224, .6); border-bottom-color: transparent; }
   .financeiro-tabela-dados td.fin-c-contrato { grid-area: contrato; white-space: normal; }
-  .financeiro-tabela-dados td.fin-c-parcela { grid-area: parcela; }
+  .financeiro-tabela-dados td.fin-c-condicao { grid-area: condicao; }
   .financeiro-tabela-dados td.fin-c-valor { grid-area: valor; }
   .financeiro-tabela-dados td.fin-c-data { grid-area: data; color: var(--txt-3); font-size: 12.5px; }
   .financeiro-tabela-dados td.fin-c-data::before { content: attr(data-rotulo) ": "; color: var(--txt-4); }
   .financeiro-tabela-dados td.fin-c-situacao { grid-area: situacao; justify-self: end; }
   .financeiro-tabela-dados td.fin-c-situacao .financeiro-situacao { align-items: flex-end; text-align: right; }
   .financeiro-tabela-dados td.financeiro-acao { grid-area: acao; justify-self: end; align-self: end; }
-  .financeiro-aba-canceladas .financeiro-linha { grid-template-areas: "parcela situacao" "valor acao"; }
-  .financeiro-aba-canceladas td.fin-c-valor { justify-self: start; align-self: center; }
   .financeiro-detalhes-btn { padding: 6px 10px; }
   .financeiro-detalhes-texto { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
   .financeiro-detalhe-linha > td { padding: 0 14px 14px; border-bottom: 0.5px solid var(--line-soft); }
-  .financeiro-grupo-cabecalho th { padding: 10px 14px; }
-  .financeiro-grupo-status { display: block; margin: 2px 0 0; }
   .financeiro-detalhe-grade { grid-template-columns: minmax(0, 1fr); }
   .financeiro-documento { flex-wrap: wrap; }
   .financeiro-documento-acao { margin-left: 40px; }
@@ -249,18 +219,10 @@
 }
 
 @container financeiro (max-width: 480px) {
-  .financeiro-abas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-bottom: 0; }
-  .financeiro-aba {
-    justify-content: space-between; margin: 0; padding: 9px 12px;
-    border: 0.5px solid var(--line-soft); border-radius: 10px; background: var(--field);
-  }
-  .financeiro-aba.ativa { border-color: rgba(61, 123, 224, .55); background: rgba(61, 123, 224, .10); }
-  .financeiro-aba:focus-visible { border-radius: 10px; }
   .financeiro-atualizado { white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .financeiro-aba,
   .financeiro-linha,
   .financeiro-detalhes-btn,
   .financeiro-detalhes-btn i { transition: none; }
@@ -283,4 +245,22 @@ body.financeiro-documento-erro {
   .financeiro-documento-erro main { background: #26292d; border-color: #3d4652; }
   .financeiro-documento-erro p { color: #c9cdd4; }
   .financeiro-documento-erro a { color: #8fb6ec; }
+}
+
+
+/* Espaço entre CONTRATOS, sem cartões novos nem seções individuais por parcela. */
+.financeiro-lista-unica .financeiro-separador-contratos > td {
+  height: 14px;
+  padding: 0;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--field);
+  box-shadow: none;
+}
+@container financeiro (max-width: 600px) {
+  .financeiro-lista-unica .financeiro-separador-contratos { display: block; height: 13px; }
+  .financeiro-lista-unica .financeiro-separador-contratos > td {
+    display: block; height: 13px; padding: 0; border: 0;
+    border-top: 1px solid var(--line-soft); background: var(--field);
+  }
 }

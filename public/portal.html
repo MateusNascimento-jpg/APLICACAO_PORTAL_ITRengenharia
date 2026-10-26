@@ -289,18 +289,18 @@
     <button type="button" class="btn-sec propostas-tentar" id="propostasTentar" hidden>Tentar novamente</button>
   </section>
 
-  <!-- Aba Financeiro — contratos e faturas, somente consulta (base financeira isolada) -->
+  <!-- Aba Financeiro — uma linha por contrato, somente consulta (base financeira isolada) -->
   <section class="financeiro-painel" id="painelFinanceiro" hidden aria-labelledby="financeiroTitulo">
     <div class="propostas-cabecalho financeiro-cabecalho itr-header itr-header--financeiro">
       <div class="itr-header-content">
         <span class="itr-header-kicker">Portal ITR · Financeiro</span>
         <h2 id="financeiroTitulo">Financeiro</h2>
-        <p>Contratos, parcelas e documentos financeiros da sua empresa.</p>
+        <p>Contratos e documentos financeiros da sua empresa.</p>
       </div>
       <div class="itr-header-aside">
         <div class="itr-header-info">
           <span class="itr-header-label">Área de consulta</span>
-          <strong>Contratos e parcelas</strong>
+          <strong>Contratos e documentos</strong>
           <p class="financeiro-atualizado" id="financeiroAtualizado" hidden></p>
         </div>
       </div>
@@ -313,13 +313,7 @@
 
     <div class="financeiro-avisos" id="financeiroAvisos" hidden></div>
 
-    <div class="financeiro-abas" id="financeiroAbas" role="tablist" aria-label="Situação das faturas" hidden>
-      <button type="button" class="financeiro-aba" id="finAbaProximas" role="tab" data-aba="proximas" aria-selected="true" aria-controls="financeiroTabela">Próximas <span class="financeiro-aba-total" id="finTotalProximas"></span></button>
-      <button type="button" class="financeiro-aba" id="finAbaAPagar" role="tab" data-aba="a-pagar" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">A pagar <span class="financeiro-aba-total" id="finTotalAPagar"></span></button>
-      <button type="button" class="financeiro-aba" id="finAbaPagas" role="tab" data-aba="pagas" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">Pagas <span class="financeiro-aba-total" id="finTotalPagas"></span></button>
-      <button type="button" class="financeiro-aba" id="finAbaCanceladas" role="tab" data-aba="canceladas" aria-selected="false" aria-controls="financeiroTabela" tabindex="-1">Canceladas <span class="financeiro-aba-total" id="finTotalCanceladas"></span></button>
-    </div>
-    <div class="financeiro-tabela" id="financeiroTabela" role="tabpanel" aria-labelledby="finAbaProximas" tabindex="0" hidden></div>
+    <div class="financeiro-tabela" id="financeiroTabela" role="region" aria-label="Contratos da sua empresa" tabindex="0" hidden></div>
 
     <div class="financeiro-estado" id="financeiroEstado" role="status" aria-live="polite" hidden></div>
   </section>

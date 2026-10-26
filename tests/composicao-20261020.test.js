@@ -24,14 +24,17 @@ test('até três propostas iniciam expandidas e podem ser fechadas individualmen
   ctx.inicializarAberturaPropostas([{id:'a'},{id:'b'},{id:'c'}]);
   assert.deepEqual([...ctx.propostasAbertasIds],['a','c']);
 });
-test('com quatro ou mais, inicia somente a proposta de data mais recente',()=>{
+test('com quatro ou mais, todas as propostas iniciam expandidas',()=>{
   const ctx = testarAbertura([
     {id:'velha',dataEnvio:'2026-01-10'},
     {id:'recente',dataEnvio:'2026-10-01'},
     {id:'outra',dataEnvio:'2026-06-01'},
     {id:'quarta',dataEnvio:'2026-09-01'}
   ]);
-  assert.deepEqual([...ctx.propostasAbertasIds],['recente']);
+  assert.deepEqual([...ctx.propostasAbertasIds],['velha','recente','outra','quarta']);
+  ctx.propostasAbertasIds.delete('recente');
+  ctx.inicializarAberturaPropostas([{id:'velha'},{id:'recente'},{id:'outra'},{id:'quarta'}]);
+  assert.deepEqual([...ctx.propostasAbertasIds],['velha','outra','quarta']);
 });
 test('novo layout mantém os contratos de frontend e módulos',()=>{
   assert.match(html,/id="painelPropostas"/);

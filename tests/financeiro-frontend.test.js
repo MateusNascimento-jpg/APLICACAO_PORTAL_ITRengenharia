@@ -1,8 +1,9 @@
 'use strict';
 
 // Contratos estáticos do frontend do Financeiro: integração mínima ao portal,
-// acessibilidade das abas, ausência de innerHTML/armazenamento/polling e
-// textos aprovados no handoff.
+// ausência de abas (decisão final: uma linha por contrato), de innerHTML,
+// armazenamento e polling, e textos aprovados no handoff. O comportamento da
+// tabela é verificado em financeiro-contrato-unico.test.js.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -19,21 +20,13 @@ const js = read('public/assets/js/financeiro.js');
 const portal = read('public/assets/js/portal.js');
 const css = read('public/assets/css/financeiro.css');
 
-test('portal.html: menu e painel ocultos por padrão, abas acessíveis e scripts na ordem correta', () => {
+test('portal.html: menu e painel ocultos por padrão, sem abas e scripts na ordem correta', () => {
     assert.match(html, /id="navFinanceiro"[^>]*hidden/);
     assert.match(html, /id="painelFinanceiro" hidden/);
-    assert.match(html, /role="tablist"[^>]*aria-label="Situação das faturas"/);
-    for (const [id, aba, selecionada] of [
-        ['finAbaProximas', 'proximas', 'true'],
-        ['finAbaAPagar', 'a-pagar', 'false'],
-        ['finAbaPagas', 'pagas', 'false'],
-        ['finAbaCanceladas', 'canceladas', 'false'],
-    ]) {
-        const botao = new RegExp(`id="${id}"[^>]*role="tab"[^>]*data-aba="${aba}"[^>]*aria-selected="${selecionada}"[^>]*aria-controls="financeiroTabela"`);
-        assert.match(html, botao, id);
-    }
-    assert.match(html, /id="financeiroTabela" role="tabpanel"/);
-    assert.match(html, /Contratos, parcelas e documentos financeiros da sua empresa\./);
+    assert.doesNotMatch(html, /financeiroAbas|finAba|role="tablist"|role="tab"|Próximas|A pagar|Canceladas/, 'barra de abas removida do DOM');
+    assert.match(html, /id="financeiroTabela" role="region" aria-label="Contratos da sua empresa"/);
+    assert.match(html, /Contratos e documentos financeiros da sua empresa\./);
+    assert.doesNotMatch(html.slice(html.indexOf('id="painelFinanceiro"'), html.indexOf('rodape-compacto')), /parcela/i, 'cabeçalho não promete parcelas');
     const ordem = ['common.js', 'proposal-actions.js', 'portal.js', 'financeiro.js', 'account-security.js'].map(nome => html.indexOf(`assets/js/${nome}" defer`));
     assert.ok(ordem.every(i => i > 0), 'scripts com defer');
     assert.deepEqual([...ordem].sort((a, b) => a - b), ordem, 'financeiro.js carrega depois de portal.js');
@@ -44,8 +37,7 @@ test('portal.html: menu e painel ocultos por padrão, abas acessíveis e scripts
 test('financeiro.js só usa IDs existentes no portal.html', () => {
     const ids = new Set([...html.matchAll(/\bid=["']([^"']+)/g)].map(m => m[1]));
     const refs = new Set([...js.matchAll(/\$\(['"]([^'"]+)['"]\)|getElementById\(['"]([^'"]+)['"]\)/g)].map(m => m[1] || m[2]));
-    const botoes = [...js.matchAll(/botao: '([^']+)', total: '([^']+)'/g)].flatMap(m => [m[1], m[2]]);
-    for (const id of [...refs, ...botoes]) assert.ok(ids.has(id), `#${id} ausente`);
+    for (const id of refs) assert.ok(ids.has(id), `#${id} ausente`);
 });
 
 test('financeiro.js: sem innerHTML, eval, Web Storage, polling ou URLs externas', () => {
@@ -69,12 +61,10 @@ test('textos aprovados e estados obrigatórios estão presentes', () => {
         'Preparando informações financeiras',
         'Informações em conferência',
         'Algumas informações financeiras estão em conferência pela ITR e aparecerão nesta área assim que forem confirmadas.',
-        'Nenhuma fatura disponível no momento.',
+        'Nenhum contrato disponível no momento.',
         'Sua proposta foi aceita. As informações do contrato e das respectivas faturas estarão disponíveis nesta área após o processamento comercial.',
         'Não foi possível carregar suas informações financeiras. Tente novamente em instantes.',
-        'Nenhuma fatura nesta categoria.',
         'Tentar novamente',
-        'Vencimento não informado',
         'Ainda não há documentos anexados.',
     ]) {
         assert.ok(js.includes(texto), texto);
@@ -82,13 +72,14 @@ test('textos aprovados e estados obrigatórios estão presentes', () => {
     assert.doesNotMatch(js, /Contrato formal|Anexo Contrato/, 'proposta não é rotulada como contrato formal');
     assert.match(js, /aria-expanded/);
     assert.match(js, /aria-controls/);
-    assert.match(js, /ArrowRight[\s\S]*ArrowLeft[\s\S]*Home[\s\S]*End/);
+    const codigo = semComentarios(js);
+    assert.doesNotMatch(codigo, /dados\.faturas|linhasFatura|detalhesFatura|role.*tab|'Parcela'|Valor da parcela|Identificação da parcela/, 'nenhum resquício da tabela por parcela');
     assert.match(js, /estado\.dados = null;\s*mostrarErro\(\)/, 'erro descarta dados anteriores');
     assert.match(js, /Date\.now\(\) - ultimaRevisaoNavegacao < 30000/, 'revalidação da navegação é limitada (sem polling)');
     // Achado 3: cada estado do servidor tem tela própria; estado desconhecido vira erro.
     assert.match(js, /dados\.estado === 'processamento'\) \{ mostrarProcessamento\(\)/);
     assert.match(js, /dados\.estado === 'conferencia'\) \{ mostrarConferencia\(\)/);
-    assert.match(js, /dados\.estado === 'vazio'\) \{ mostrarSemFaturas\(\)/);
+    assert.match(js, /dados\.estado === 'vazio'\) \{ mostrarSemContratos\(\)/);
     assert.match(js, /ESTADOS\.indexOf\(dados\.estado\) >= 0/);
 });
 

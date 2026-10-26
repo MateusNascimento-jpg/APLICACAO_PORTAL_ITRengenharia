@@ -4,6 +4,8 @@ function memoryStore() {
     const states = new Map();
     const challenges = new Map();
     const events = new Map();
+    const artifacts = new Map();
+    const invoices = new Map();
     const locks = new Map();
     const clone = (value) => (value == null ? value : structuredClone(value));
     const store = {
@@ -31,6 +33,20 @@ function memoryStore() {
                     next_at: 0
                 });
         },
+        artifact: async (id) => clone(artifacts.get(id)),
+        saveArtifact: async (data) => {
+            const previous = artifacts.get(data.proposalId);
+            if (previous && (previous.version !== data.version || previous.proofHash !== data.proofHash))
+                throw new Error('ARTIFACT_VERSION_CONFLICT');
+            artifacts.set(data.proposalId, clone({
+                version:data.version,cnpj:data.cnpj,
+                original_sha256:data.originalHash,comprovante_sha256:data.proofHash,
+                original_name:data.filename,original_pdf:data.original,
+                comprovante_pdf:data.proof,proofHash:data.proofHash,
+            }));
+        },
+        invoiceState: async (id) => clone(invoices.get(id) || null),
+        saveInvoiceState: async (id,data) => { invoices.set(id,clone(data)); },
         event: async (id) => clone(events.get(id)),
         eventState: async (id, status, nextAt) => {
             Object.assign(events.get(id), { status, next_at: nextAt });
