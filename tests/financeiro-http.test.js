@@ -224,7 +224,8 @@ test('Achado 1 — GET seguido de GET: vínculo alterado no Airtable some na hor
         contrato.fields[S.CONTRATOS.PROPOSTA] = [IDS.propB1];
         dados = await (await get('/api/financeiro')).json();
         assert.ok(!dados.contratos.some(c => c.id === IDS.contA1), 'contrato reassociado não aparece');
-        assert.ok(!dados.faturas.some(f => f.contratoId === IDS.contA1), 'nem suas faturas');
+        assert.equal(dados.faturas, undefined, 'parcelas nunca são listadas');
+        assert.ok(!dados.contratos.some(c => c.documentos.some(d => d.registroId === IDS.nfA1)), 'nem documentos das suas notas');
         assert.ok(dados.pendencias.itensEmConferencia >= 1);
         assert.equal((await get(doc('nfse', IDS.nfA1, ANEXOS.nfseA1.id))).status, 404);
     } finally {

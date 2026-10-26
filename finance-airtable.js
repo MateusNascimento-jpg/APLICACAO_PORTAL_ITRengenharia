@@ -14,6 +14,7 @@ const F_CLIENTE_NOME = 'fldzpP7zyK4AfGcYL';
 const F_CLIENTE_CNPJ = 'fldb8XcWv0Uooz3Uo';
 const F_CLIENTE_EMAIL = 'fldtqo76edbzzQcNz';
 const F_FEEDBACK = 'fldFMHkwowNMiiPpX';
+const F_DESCRICAO_SERVICO = 'fldUqjrs0ZC46CIUg';
 
 const F_NUMERO = 'fldrervlNmfixboQB';
 const F_DATA_ENVIO = 'fldM5NumvmCwo9LEC';
@@ -122,12 +123,12 @@ function api(tableId) {
     return `https://api.airtable.com/v0/${finance.baseId}/${tableId}`;
 }
 
-async function listarTodos(tableId, fieldIds, filterFormula = null) {
+async function listarTodos(tableId, fieldIds, filterFormula = null, returnIds = true) {
     const registros = [];
     let offset = null;
     const offsets = new Set();
     do {
-        const params = new URLSearchParams({ pageSize: '100', returnFieldsByFieldId: 'true' });
+        const params = new URLSearchParams({ pageSize: '100', returnFieldsByFieldId: String(returnIds) });
         fieldIds.forEach(id => params.append('fields[]', id));
         if (filterFormula) params.set('filterByFormula', filterFormula);
         if (offset) params.set('offset', offset);
@@ -201,6 +202,8 @@ function mapearProposta(rec, categoriasPorId = new Map()) {
         setor: valorSelect(f[F_SETOR]),
         categorias,
         observacoes: f[F_OBSERVACOES] || null,
+        descricao: typeof f[F_DESCRICAO_SERVICO]==='string' ? f[F_DESCRICAO_SERVICO] :
+            (typeof f[F_DESCRICAO_SERVICO]?.value==='string' ? f[F_DESCRICAO_SERVICO].value : null),
         documentos: anexos.map(a => ({ id: a.id, nome: a.filename || 'Proposta.pdf', tipo: a.type || 'application/pdf', tamanho: a.size || null }))
     };
 }
@@ -210,7 +213,7 @@ async function carregarRegistrosPropostas() {
     if (propostasInFlight) return propostasInFlight;
     propostasInFlight = listarTodos(TBL_PROPOSTAS, [
         F_NUMERO, F_DATA_ENVIO, F_STATUS, F_PDF, F_CLIENTE, F_VALOR,
-        F_FORMA_PAGAMENTO, F_PRAZO, F_SETOR, F_CATEGORIA, F_OBSERVACOES
+        F_FORMA_PAGAMENTO, F_PRAZO, F_SETOR, F_CATEGORIA, F_OBSERVACOES, F_DESCRICAO_SERVICO
     ]).then(records => {
         propostasSnapshot = { time: Date.now(), records };
         return records;
@@ -262,6 +265,9 @@ async function carregarPropostaAtual(propostaId, cnpj = null) {
     const cliente = await request(`${api(TBL_CLIENTES)}/${links[0]}?returnFieldsByFieldId=true`);
     const documento = normalizarCnpj(cliente.fields?.[F_CLIENTE_CNPJ]);
     if (!/^\d{14}$/.test(documento || '') || (cnpj && documento !== normalizarCnpj(cnpj))) throw new Error('PROPOSAL_NOT_FOUND');
+    // Evita aceitar um vínculo cadastral duplicado/ambíguo pelo mesmo CNPJ.
+    const unico = await buscarClienteFinanceiroPorCnpj(documento);
+    if (!unico || unico.id !== cliente.id) throw new Error('PROPOSAL_LINK_INVALID');
     const { emails } = require('./lib/portal-access');
     return {
         ...mapearProposta(rec),
@@ -321,5 +327,6 @@ module.exports = {
     obterDocumentoProposta,
     // Financeiro (somente leitura): reaproveita paginação, retries e timeout.
     listarRegistros: listarTodos,
+    listarRegistrosPorNome: (tableId, names) => listarTodos(tableId, names, null, false),
     obterRegistro
 };

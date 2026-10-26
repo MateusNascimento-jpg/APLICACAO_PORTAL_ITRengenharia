@@ -145,11 +145,9 @@ body { background: var(--bg); color: var(--txt); padding-bottom: 0; transition: 
   .tl .et.atual:last-child .bolha { animation: none; }
 }
 .btn-baixar, .btn-baixar:hover { box-shadow: none; transform: none; border-radius: 6px; }
-/* Financeiro compartilha a mesma linguagem; abas continuam abas, sem cards adicionais. */
+/* Financeiro compartilha a mesma linguagem: tabela única por contrato, sem abas nem cards adicionais. */
 .financeiro-cabecalho { align-items: center; }
 .financeiro-busca { max-width: 490px; }
-.financeiro-abas { margin-top: 8px; }
-.financeiro-aba { border-radius: 0; }
 .financeiro-tabela { background: var(--card); border: 1px solid var(--line); border-radius: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .financeiro-linha:hover > td { background: var(--card-2); }
 /* Rodapé compacto, sem nova marca grande nem navegação duplicada. */

@@ -13,17 +13,13 @@ async function main() {
             "SELECT GET_LOCK('itr-proposals-migration', 5) AS acquired",
         );
         if (Number(rows[0].acquired) !== 1) throw new Error('Outra migration está em execução.');
-        const sql = fs.readFileSync(
-            path.join(__dirname, '../migrations/003_proposals.sql'),
-            'utf8',
-        );
-        for (const statement of sql
-            .split(';')
-            .map((item) => item.trim())
-            .filter(Boolean)) {
-            await connection.query(statement);
+        for (const filename of ['003_proposals.sql','004_proposal_artifacts.sql','005_nf_notifications.sql']) {
+            const sql = fs.readFileSync(path.join(__dirname, '../migrations', filename), 'utf8');
+            for (const statement of sql.split(';')
+                .map(item => item.replace(/^--.*$/gm, '').trim())
+                .filter(Boolean)) await connection.query(statement);
         }
-        console.log('Migration de Propostas concluída. Automação permanece desativada.');
+        console.log('Migrations de Propostas, Comprovantes e NF concluídas. Automações não foram ativadas.');
     } finally {
         await connection.query("SELECT RELEASE_LOCK('itr-proposals-migration')").catch(() => {});
         connection.release();

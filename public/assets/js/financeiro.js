@@ -1,8 +1,10 @@
 /* =========================================================================
-   FINANCEIRO — contratos e faturas (somente consulta)
+   FINANCEIRO — uma linha por contrato (somente consulta)
    Usa somente /api/financeiro e o proxy autenticado de documentos. Nada aqui
-   decide autorização: o servidor filtra por CNPJ e classifica as abas. Todo
-   texto vindo da API entra no DOM por textContent (nunca innerHTML).
+   decide autorização: o servidor filtra por CNPJ e consolida a situação de
+   cada contrato. As parcelas ficam no servidor; a tela lista CONTRATOS e não
+   recebe nem exibe parcelas. Todo texto vindo da API entra no DOM por
+   textContent (nunca innerHTML).
    Depende de portal.js: NAVEGACAO_ATUAL, ocultarViewsPortal, limparNavAtiva,
    ativarViewInicial e aplicarIcones.
    ========================================================================= */
@@ -19,72 +21,45 @@
   var TEXTO_ERRO = 'Não foi possível carregar suas informações financeiras. Tente novamente em instantes.';
   var TEXTO_INDISPONIVEL = 'As informações financeiras não estão disponíveis para esta conta.';
   var TEXTO_CONFERENCIA = 'Algumas informações financeiras estão em conferência pela ITR e aparecerão nesta área assim que forem confirmadas.';
-  var TEXTO_SEM_FATURAS = 'Nenhuma fatura disponível no momento.';
+  var TEXTO_SEM_CONTRATOS = 'Nenhum contrato disponível no momento.';
   var ESTADOS = ['disponivel', 'conferencia', 'processamento', 'vazio'];
-  var TEXTO_VAZIO = 'Nenhuma fatura nesta categoria.';
   var TEXTO_SEM_DOCUMENTOS = 'Ainda não há documentos anexados.';
 
-  var STATUS = {
+  // Situação consolidada do contrato (servidor: mapper.situacaoContrato).
+  var SITUACAO = {
     AGUARDANDO: 'Aguardando Emissão da NF',
     A_VENCER: 'A Vencer',
     VENCIDO: 'Vencido',
     PAGO: 'Pago',
-    CANCELADO: 'Cancelado'
+    CANCELADO: 'Cancelado',
+    PREPARACAO: 'Em preparação',
+    CONFERENCIA: 'Em conferência'
   };
-  var CLASSE_STATUS = {};
-  CLASSE_STATUS[STATUS.AGUARDANDO] = 'aguardando';
-  CLASSE_STATUS[STATUS.A_VENCER] = 'a-vencer';
-  CLASSE_STATUS[STATUS.VENCIDO] = 'vencido';
-  CLASSE_STATUS[STATUS.PAGO] = 'pago';
-  CLASSE_STATUS[STATUS.CANCELADO] = 'cancelado';
+  var CLASSE_SITUACAO = {};
+  CLASSE_SITUACAO[SITUACAO.AGUARDANDO] = 'aguardando';
+  CLASSE_SITUACAO[SITUACAO.A_VENCER] = 'a-vencer';
+  CLASSE_SITUACAO[SITUACAO.VENCIDO] = 'vencido';
+  CLASSE_SITUACAO[SITUACAO.PAGO] = 'pago';
+  CLASSE_SITUACAO[SITUACAO.CANCELADO] = 'cancelado';
+  CLASSE_SITUACAO[SITUACAO.PREPARACAO] = 'preparacao';
+  CLASSE_SITUACAO[SITUACAO.CONFERENCIA] = 'revisao';
 
-  var ABAS = [
-    { id: 'proximas', botao: 'finAbaProximas', total: 'finTotalProximas', nome: 'Próximas' },
-    { id: 'a-pagar', botao: 'finAbaAPagar', total: 'finTotalAPagar', nome: 'A pagar' },
-    { id: 'pagas', botao: 'finAbaPagas', total: 'finTotalPagas', nome: 'Pagas' },
-    { id: 'canceladas', botao: 'finAbaCanceladas', total: 'finTotalCanceladas', nome: 'Canceladas' }
+  // Mesma tabela e densidade do layout original; cada linha é um CONTRATO.
+  // "valor" alinha à direita com algarismos tabulares.
+  var COLUNAS = [
+    { rotulo: 'Contrato', classe: 'contrato', valor: nomeContrato },
+    { rotulo: 'Condição de pagamento', classe: 'condicao', valor: condicaoPagamento },
+    { rotulo: 'Valor total', classe: 'valor', valor: function (c) { return moeda(c.valorTotal); }, numero: true },
+    { rotulo: 'Prazo para pagamento', classe: 'data', valor: function (c) { return textoPrazo(c.prazoPagamentoDias, true); } },
+    { rotulo: 'Situação', classe: 'situacao', selo: true }
   ];
-
-  // Colunas por aba (handoff 03). "valor" alinha à direita com algarismos tabulares.
-  var COLUNAS = {
-    'proximas': [
-      { rotulo: 'Contrato', classe: 'contrato', valor: contratoDaFatura },
-      { rotulo: 'Parcela', classe: 'parcela', valor: rotuloParcela },
-      { rotulo: 'Valor da parcela', classe: 'valor', valor: function (f) { return moeda(f.valorParcela); }, numero: true },
-      { rotulo: 'Prazo para pagamento', classe: 'data', valor: function (f) { return textoPrazo(f.prazoPagamentoDias, true); } },
-      { rotulo: 'Situação', classe: 'situacao', selo: true }
-    ],
-    'a-pagar': [
-      { rotulo: 'Contrato', classe: 'contrato', valor: contratoDaFatura },
-      { rotulo: 'Parcela', classe: 'parcela', valor: rotuloParcela },
-      { rotulo: 'Valor da parcela', classe: 'valor', valor: function (f) { return moeda(f.valorParcela); }, numero: true },
-      { rotulo: 'Vencimento', classe: 'data', valor: textoVencimento },
-      { rotulo: 'Situação', classe: 'situacao', selo: true }
-    ],
-    'pagas': [
-      { rotulo: 'Contrato', classe: 'contrato', valor: contratoDaFatura },
-      { rotulo: 'Parcela', classe: 'parcela', valor: rotuloParcela },
-      { rotulo: 'Valor pago', classe: 'valor', valor: function (f) { return moeda(f.valorPago); }, numero: true },
-      { rotulo: 'Data do pagamento', classe: 'data', valor: function (f) { return dataBR(f.dataPagamento) || '—'; } },
-      { rotulo: 'Situação', classe: 'situacao', selo: true }
-    ],
-    // Canceladas é agrupada por contrato: o nome do contrato fica no cabeçalho do grupo.
-    'canceladas': [
-      { rotulo: 'Parcela', classe: 'parcela', valor: rotuloParcela },
-      { rotulo: 'Valor informativo', classe: 'valor', valor: function (f) { return moeda(f.valorParcela); }, numero: true },
-      { rotulo: 'Situação', classe: 'situacao', selo: true }
-    ]
-  };
 
   var estado = {
     dados: null,
     emVoo: null,
-    aba: 'proximas',
-    abaEscolhida: false,
-    aberta: null,
+    abertas: new Set(),
     busca: ''
   };
-  var contratosPorId = {};
 
   function $(id) { return document.getElementById(id); }
 
@@ -105,12 +80,6 @@
     var sufixo = curto ? ' após a NF' : ' após emissão da NF';
     return (dias === 1 ? '1 dia' : dias + ' dias') + sufixo;
   }
-  function textoVencimento(f) {
-    var data = dataBR(f.vencimento);
-    if (data) return data;
-    if (f.status === STATUS.AGUARDANDO) return 'Definido após a emissão da NF';
-    return 'Vencimento não informado';
-  }
   function textoTamanho(bytes) {
     if (typeof bytes !== 'number' || !isFinite(bytes) || bytes <= 0) return '';
     if (bytes < 1024 * 1024) return Math.max(1, Math.round(bytes / 1024)) + ' KB';
@@ -127,17 +96,8 @@
     var numero = contrato.proposta && contrato.proposta.numero;
     return numero ? 'Contrato da proposta ' + numero : 'Contrato';
   }
-  function contratoDaFatura(f) {
-    return f.contratoNome || nomeContrato(contratosPorId[f.contratoId]);
-  }
-  // A fórmula "Parcela" do Airtable repete o contrato no início
-  // ("C105-2026 - Parcela 1/3"). A coluna Contrato já mostra esse dado, então
-  // só o prefixo idêntico é omitido; o texto original aparece nos detalhes.
-  function rotuloParcela(f) {
-    var texto = f.parcela || '';
-    var prefixo = f.contratoNome ? f.contratoNome + ' - ' : '';
-    if (prefixo && texto.indexOf(prefixo) === 0 && texto.length > prefixo.length) texto = texto.slice(prefixo.length);
-    return texto || '—';
+  function condicaoPagamento(contrato) {
+    return (contrato && contrato.proposta && contrato.proposta.formaPagamento) || '—';
   }
 
   /* ---- Construção de DOM sem innerHTML para dados externos ---- */
@@ -162,32 +122,37 @@
     if (typeof aplicarIcones === 'function') aplicarIcones(raiz);
   }
 
-  function seloSituacao(f) {
+  function seloSituacao(contrato) {
     var caixa = el('span', 'financeiro-situacao');
-    if (f.revisao) {
-      caixa.appendChild(el('span', 'financeiro-selo revisao', 'Pendente de revisão'));
-      caixa.appendChild(el('span', 'financeiro-situacao-nota', 'Status de origem: ' + (f.status || '—')));
-      return caixa;
-    }
-    caixa.appendChild(el('span', 'financeiro-selo ' + (CLASSE_STATUS[f.status] || ''), f.status || '—'));
-    var contrato = contratosPorId[f.contratoId];
-    if (f.aba === 'canceladas' && f.status !== STATUS.CANCELADO && contrato && contrato.status === 'Cancelado') {
-      caixa.appendChild(el('span', 'financeiro-situacao-nota', 'Contrato cancelado'));
-    }
+    var situacao = contrato.situacao || SITUACAO.CONFERENCIA;
+    caixa.appendChild(el('span', 'financeiro-selo ' + (CLASSE_SITUACAO[situacao] || ''), situacao));
+    if (contrato.revisao) caixa.appendChild(el('span', 'financeiro-situacao-nota', 'Cobrança em revisão pela ITR'));
     return caixa;
   }
 
   /* ---- Documentos: somente o proxy autenticado, montado a partir de IDs ---- */
-  var TIPOS_DOCUMENTO = { nfse: 'file-invoice', boleto: 'barcode', proposta: 'file-description' };
+  var TIPOS_DOCUMENTO = { nfse: 'file-invoice', boleto: 'barcode', proposta: 'file-description', 'proposta-aceita':'file-description', comprovante:'file-check' };
   function urlDocumento(doc) {
     if (!Object.prototype.hasOwnProperty.call(TIPOS_DOCUMENTO, doc.tipo)) return null;
+    if (doc.tipo === 'proposta-aceita' && /^rec[A-Za-z0-9]{14}$/.test(doc.registroId || '') && doc.anexoId === 'original')
+      return '/api/propostas/' + encodeURIComponent(doc.registroId) + '/proposta-aceita';
+    if (doc.tipo === 'comprovante' && /^rec[A-Za-z0-9]{14}$/.test(doc.registroId || '') && doc.anexoId === 'proof')
+      return '/api/propostas/' + encodeURIComponent(doc.registroId) + '/comprovante';
     if (!/^rec[A-Za-z0-9]{14}$/.test(doc.registroId || '') || !/^att[A-Za-z0-9]{14}$/.test(doc.anexoId || '')) return null;
     return '/api/financeiro/documentos/' + encodeURIComponent(doc.tipo) + '/' + encodeURIComponent(doc.registroId) + '/' + encodeURIComponent(doc.anexoId);
   }
   function listaDocumentos(documentos) {
     var bloco = el('div', 'financeiro-documentos');
     bloco.appendChild(el('h3', 'financeiro-documentos-titulo', 'Documentos'));
-    var validos = documentos.filter(function (doc) { return urlDocumento(doc); });
+    var vistos = new Set();
+    var ordem = {'proposta-aceita': 0, proposta: 0, comprovante: 1, nfse: 2, boleto: 3};
+    var validos = documentos.filter(function (doc) {
+      if (!doc || !urlDocumento(doc)) return false;
+      var chave = urlDocumento(doc);
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    }).sort(function (a, b) { return (ordem[a.tipo] ?? 9) - (ordem[b.tipo] ?? 9); });
     if (!validos.length) {
       bloco.appendChild(el('p', 'financeiro-documentos-vazio', TEXTO_SEM_DOCUMENTOS));
       return bloco;
@@ -227,7 +192,7 @@
     return bloco;
   }
 
-  /* ---- Detalhes expandidos (inline, sem modal) ---- */
+  /* ---- Detalhes expandidos (inline, sem modal): só informações GERAIS ---- */
   function itemDetalhe(grade, rotulo, valor, nota) {
     var item = el('div', 'financeiro-detalhe-item');
     item.appendChild(el('dt', null, rotulo));
@@ -236,46 +201,20 @@
     item.appendChild(dd);
     grade.appendChild(item);
   }
-  function camposContrato(grade, contrato) {
-    itemDetalhe(grade, 'Contrato', nomeContrato(contrato));
-    itemDetalhe(grade, 'Situação do contrato', (contrato && contrato.status) || '—');
-    var numero = contrato && contrato.proposta && contrato.proposta.numero;
-    itemDetalhe(grade, 'Proposta', numero ? 'Proposta ' + numero : '—');
-    itemDetalhe(grade, 'Condição de pagamento', (contrato && contrato.proposta && contrato.proposta.formaPagamento) || '—');
-  }
-  function detalhesFatura(f) {
-    var contrato = contratosPorId[f.contratoId];
-    var caixa = el('div', 'financeiro-detalhe');
-    if (f.revisao) {
-      caixa.appendChild(el('p', 'financeiro-detalhe-alerta', 'Esta cobrança pertence a um contrato cancelado e está em revisão pela ITR. Por isso ela não aparece em “A pagar”.'));
-    }
-    var grade = el('dl', 'financeiro-detalhe-grade');
-    itemDetalhe(grade, 'Identificação da parcela', f.parcela || '—');
-    camposContrato(grade, contrato);
-    itemDetalhe(grade, 'Prazo para pagamento', textoPrazo(f.prazoPagamentoDias));
-    itemDetalhe(grade, 'Emissão da NF', dataBR(f.dataEmissaoNf) || (f.status === STATUS.AGUARDANDO ? 'Ainda não emitida' : '—'));
-    itemDetalhe(grade, 'Vencimento', textoVencimento(f));
-    itemDetalhe(grade, 'Valor da parcela', moeda(f.valorParcela));
-    if (f.status === STATUS.PAGO || (typeof f.valorPago === 'number' && f.valorPago > 0)) {
-      itemDetalhe(grade, 'Valor pago', moeda(f.valorPago));
-    }
-    if (f.dataPagamento) itemDetalhe(grade, 'Data do pagamento', dataBR(f.dataPagamento) || '—');
-    if (typeof f.diferenca === 'number') {
-      itemDetalhe(grade, 'Diferença calculada', moeda(f.diferenca), 'Valor da parcela menos o valor pago. Informativo: a situação oficial da fatura não muda.');
-    }
-    caixa.appendChild(grade);
-    var documentos = (f.documentos || []).concat(contrato && contrato.documentos ? contrato.documentos : []);
-    caixa.appendChild(listaDocumentos(documentos));
-    return caixa;
-  }
   function detalhesContrato(contrato) {
     var caixa = el('div', 'financeiro-detalhe');
+    if (contrato.revisao) {
+      caixa.appendChild(el('p', 'financeiro-detalhe-alerta', 'Este contrato foi cancelado e possui cobrança em revisão pela ITR.'));
+    }
     var grade = el('dl', 'financeiro-detalhe-grade');
-    camposContrato(grade, contrato);
+    var numero = contrato.proposta && contrato.proposta.numero;
+    itemDetalhe(grade, 'Contrato', nomeContrato(contrato));
+    itemDetalhe(grade, 'Proposta', numero ? 'Proposta ' + numero : '—');
+    itemDetalhe(grade, 'Situação do contrato', contrato.status || '—');
+    itemDetalhe(grade, 'Condição de pagamento', condicaoPagamento(contrato));
     itemDetalhe(grade, 'Prazo para pagamento', textoPrazo(contrato.prazoPagamentoDias));
+    itemDetalhe(grade, 'Valor total', moeda(contrato.valorTotal));
     caixa.appendChild(grade);
-    var pagas = (estado.dados.faturas || []).some(function (f) { return f.contratoId === contrato.id && f.aba === 'pagas'; });
-    if (pagas) caixa.appendChild(el('p', 'financeiro-detalhe-nota-bloco', 'As parcelas pagas deste contrato continuam na aba “Pagas”.'));
     caixa.appendChild(listaDocumentos(contrato.documentos || []));
     return caixa;
   }
@@ -287,49 +226,24 @@
     var alvo = normalizarBusca(textos.join(' '));
     return termos.every(function (t) { return alvo.indexOf(t) >= 0; });
   }
-  function textosFatura(f) {
-    var contrato = contratosPorId[f.contratoId];
-    return [f.contratoNome, f.parcela, contrato && contrato.proposta && contrato.proposta.numero];
-  }
   function textosContrato(c) {
     return [c.nome, c.proposta && c.proposta.numero];
-  }
-  function faturasDaAba(aba) {
-    return (estado.dados.faturas || []).filter(function (f) {
-      return f.aba === aba && correspondeBusca(textosFatura(f));
-    });
-  }
-  // Canceladas: agrupadas por contrato. Contrato cancelado aparece mesmo sem
-  // parcelas nesta aba (histórico); parcelas pagas continuam em "Pagas".
-  function gruposCanceladas() {
-    var faturas = faturasDaAba('canceladas');
-    var grupos = [];
-    (estado.dados.contratos || []).forEach(function (c) {
-      var doContrato = faturas.filter(function (f) { return f.contratoId === c.id; });
-      var cancelado = c.status === 'Cancelado' && correspondeBusca(textosContrato(c));
-      if (doContrato.length || cancelado) grupos.push({ contrato: c, faturas: doContrato });
-    });
-    return grupos;
-  }
-  function totalAba(aba) {
-    if (aba !== 'canceladas') return faturasDaAba(aba).length;
-    return gruposCanceladas().reduce(function (soma, g) { return soma + (g.faturas.length || 1); }, 0);
   }
 
   /* ---- Tabela ---- */
   function classeCelula(coluna) {
     return 'fin-c-' + coluna.classe + (coluna.numero ? ' financeiro-num' : '');
   }
-  function celula(coluna, f) {
+  function celula(coluna, contrato) {
     var td = el('td', classeCelula(coluna));
     td.setAttribute('data-rotulo', coluna.rotulo);
-    if (coluna.selo) td.appendChild(seloSituacao(f));
-    else td.textContent = coluna.valor(f);
+    if (coluna.selo) td.appendChild(seloSituacao(contrato));
+    else td.textContent = coluna.valor(contrato);
     return td;
   }
   function botaoDetalhes(id, rotulo) {
     var b = botao('financeiro-detalhes-btn', null, 'detalhes');
-    b.setAttribute('aria-expanded', estado.aberta === id ? 'true' : 'false');
+    b.setAttribute('aria-expanded', estado.abertas.has(id) ? 'true' : 'false');
     b.setAttribute('aria-controls', 'fin-det-' + id);
     b.setAttribute('aria-label', 'Detalhes de ' + rotulo);
     b.setAttribute('data-id', id);
@@ -337,46 +251,30 @@
     b.appendChild(icone('chevron-down'));
     return b;
   }
-  function linhas(id, celulas, rotulo, conteudoDetalhe, totalColunas) {
-    var aberta = estado.aberta === id;
+  // Uma linha de resumo + uma linha de detalhes (oculta até "Detalhes").
+  function linhasContrato(contrato) {
+    var id = contrato.id;
+    var aberta = estado.abertas.has(id);
     var tr = el('tr', 'financeiro-linha' + (aberta ? ' aberta' : ''));
     tr.setAttribute('data-id', id);
-    celulas.forEach(function (td) { tr.appendChild(td); });
+    COLUNAS.forEach(function (coluna) { tr.appendChild(celula(coluna, contrato)); });
     var acao = el('td', 'financeiro-acao');
-    acao.appendChild(botaoDetalhes(id, rotulo));
+    acao.appendChild(botaoDetalhes(id, nomeContrato(contrato).slice(0, 120)));
     tr.appendChild(acao);
 
     var trDetalhe = el('tr', 'financeiro-detalhe-linha');
     trDetalhe.id = 'fin-det-' + id;
     trDetalhe.hidden = !aberta;
     var td = el('td');
-    td.colSpan = totalColunas + 1;
-    td.appendChild(conteudoDetalhe);
+    td.colSpan = COLUNAS.length + 1;
+    td.appendChild(detalhesContrato(contrato));
     trDetalhe.appendChild(td);
     return [tr, trDetalhe];
   }
-  function linhasFatura(f, colunas) {
-    var celulas = colunas.map(function (coluna) { return celula(coluna, f); });
-    var rotulo = contratoDaFatura(f) + ', ' + rotuloParcela(f);
-    if (rotulo.length > 120) rotulo = rotulo.slice(0, 120);
-    return linhas(f.id, celulas, rotulo, detalhesFatura(f), colunas.length);
-  }
-  function linhasContratoCancelado(contrato, colunas) {
-    var celulas = colunas.map(function (coluna) {
-      var td = el('td', classeCelula(coluna));
-      td.setAttribute('data-rotulo', coluna.rotulo);
-      if (coluna.classe === 'contrato') td.textContent = nomeContrato(contrato);
-      else if (coluna.classe === 'parcela') td.textContent = 'Sem parcelas pendentes';
-      else if (coluna.selo) td.appendChild(el('span', 'financeiro-selo cancelado', 'Contrato cancelado'));
-      else td.textContent = '—';
-      return td;
-    });
-    return linhas(contrato.id, celulas, nomeContrato(contrato), detalhesContrato(contrato), colunas.length);
-  }
-  function cabecalhoTabela(colunas) {
+  function cabecalhoTabela() {
     var thead = el('thead');
     var tr = el('tr');
-    colunas.forEach(function (coluna) {
+    COLUNAS.forEach(function (coluna) {
       var th = el('th', coluna.numero ? 'financeiro-num' : null, coluna.rotulo);
       th.scope = 'col';
       tr.appendChild(th);
@@ -388,104 +286,60 @@
     thead.appendChild(tr);
     return thead;
   }
+  function separadorContratos() {
+    var separador = el('tr', 'financeiro-separador-contratos');
+    separador.setAttribute('aria-hidden', 'true');
+    var espaco = el('td');
+    espaco.colSpan = COLUNAS.length + 1;
+    separador.appendChild(espaco);
+    return separador;
+  }
+  // Tabela original: uma linha por CONTRATO, Detalhes embutidos e um pequeno
+  // respiro entre contratos. Sem abas, cartões ou listas de parcelas.
   function renderizarTabela() {
     var area = $('financeiroTabela');
-    var aba = estado.aba;
-    var colunas = COLUNAS[aba];
-    var nomeAba = ABAS.filter(function (a) { return a.id === aba; })[0].nome;
     area.replaceChildren();
-    area.setAttribute('aria-labelledby', ABAS.filter(function (a) { return a.id === aba; })[0].botao);
-
-    var tabela = el('table', 'financeiro-tabela-dados financeiro-aba-' + aba);
-    tabela.appendChild(el('caption', 'visualmente-oculto', 'Faturas — ' + nomeAba));
-    tabela.appendChild(cabecalhoTabela(colunas));
-    var vazio = true;
-
-    if (aba === 'canceladas') {
-      gruposCanceladas().forEach(function (grupo) {
-        vazio = false;
-        var tbody = el('tbody', 'financeiro-grupo');
-        var cab = el('tr', 'financeiro-grupo-cabecalho');
-        var th = el('th');
-        th.scope = 'rowgroup';
-        th.colSpan = colunas.length + 1;
-        th.appendChild(el('span', 'financeiro-grupo-nome', nomeContrato(grupo.contrato)));
-        th.appendChild(el('span', 'financeiro-grupo-status', 'Contrato: ' + (grupo.contrato.status || '—')));
-        cab.appendChild(th);
-        tbody.appendChild(cab);
-        var conjunto = grupo.faturas.length
-          ? grupo.faturas.map(function (f) { return linhasFatura(f, colunas); })
-          : [linhasContratoCancelado(grupo.contrato, colunas)];
-        conjunto.forEach(function (par) { tbody.appendChild(par[0]); tbody.appendChild(par[1]); });
-        tabela.appendChild(tbody);
-      });
-    } else {
-      var tbody = el('tbody');
-      faturasDaAba(aba).forEach(function (f) {
-        vazio = false;
-        var par = linhasFatura(f, colunas);
-        tbody.appendChild(par[0]);
-        tbody.appendChild(par[1]);
-      });
-      tabela.appendChild(tbody);
+    var contratos = (estado.dados.contratos || []).filter(function (c) {
+      return correspondeBusca(textosContrato(c));
+    });
+    if (!contratos.length) {
+      area.appendChild(el('p', 'financeiro-vazio', normalizarBusca(estado.busca)
+        ? 'Nenhum contrato encontrado para esta busca.' : TEXTO_SEM_CONTRATOS));
+      return;
     }
-
-    if (vazio) {
-      var texto = normalizarBusca(estado.busca) ? 'Nenhuma fatura encontrada para esta busca.' : TEXTO_VAZIO;
-      area.appendChild(el('p', 'financeiro-vazio', texto));
-    } else {
-      area.appendChild(tabela);
-    }
+    var tabela = el('table', 'financeiro-tabela-dados financeiro-lista-unica');
+    tabela.appendChild(el('caption', 'visualmente-oculto', 'Contratos da sua empresa'));
+    tabela.appendChild(cabecalhoTabela());
+    var corpo = el('tbody');
+    contratos.forEach(function (contrato, indice) {
+      if (indice > 0) corpo.appendChild(separadorContratos());
+      var par = linhasContrato(contrato);
+      corpo.append(par[0], par[1]);
+    });
+    tabela.appendChild(corpo);
+    area.appendChild(tabela);
     converterIcones(area);
   }
 
   function alternarDetalhe(id) {
-    var anterior = estado.aberta;
-    estado.aberta = anterior === id ? null : id;
-    var linhasTabela = Array.prototype.slice.call($('financeiroTabela').querySelectorAll('tr.financeiro-linha'));
-    [anterior, estado.aberta].forEach(function (alvo) {
-      if (!alvo) return;
-      var linha = linhasTabela.filter(function (tr) { return tr.getAttribute('data-id') === alvo; })[0];
-      var detalhe = $('fin-det-' + alvo);
-      var aberto = estado.aberta === alvo;
-      if (linha) {
-        linha.classList.toggle('aberta', aberto);
-        var b = linha.querySelector('.financeiro-detalhes-btn');
-        if (b) b.setAttribute('aria-expanded', aberto ? 'true' : 'false');
-      }
-      if (detalhe) detalhe.hidden = !aberto;
+    var aberto = estado.abertas.has(id);
+    if (aberto) estado.abertas.delete(id);
+    else estado.abertas.add(id);
+    var detalhe = $('fin-det-' + id);
+    if (detalhe) detalhe.hidden = aberto;
+    var botoes = $('financeiroTabela').querySelectorAll('.financeiro-detalhes-btn');
+    Array.prototype.forEach.call(botoes, function (b) {
+      if (b.getAttribute('data-id') === id) b.setAttribute('aria-expanded', aberto ? 'false' : 'true');
     });
-  }
-
-  /* ---- Abas (WAI-ARIA tabs com ativação automática) ---- */
-  function atualizarAbas() {
-    ABAS.forEach(function (aba) {
-      var b = $(aba.botao);
-      var ativa = aba.id === estado.aba;
-      b.setAttribute('aria-selected', ativa ? 'true' : 'false');
-      b.tabIndex = ativa ? 0 : -1;
-      b.classList.toggle('ativa', ativa);
-      $(aba.total).textContent = String(totalAba(aba.id));
+    var linhas = $('financeiroTabela').querySelectorAll('tr.financeiro-linha');
+    Array.prototype.forEach.call(linhas, function(tr) {
+      if(tr.getAttribute('data-id') === id) tr.classList.toggle('aberta', !aberto);
     });
-  }
-  function selecionarAba(id, focar) {
-    if (!COLUNAS[id]) return;
-    estado.aba = id;
-    estado.abaEscolhida = true;
-    estado.aberta = null;
-    atualizarAbas();
-    renderizarTabela();
-    if (focar) $(ABAS.filter(function (a) { return a.id === id; })[0].botao).focus();
-  }
-  function abaInicial() {
-    if (estado.abaEscolhida) return estado.aba;
-    for (var i = 0; i < ABAS.length; i += 1) if (totalAba(ABAS[i].id) > 0) return ABAS[i].id;
-    return 'proximas';
   }
 
   /* ---- Estados: carregando, processamento, erro, indisponível ---- */
   function ocultarConteudo() {
-    ['financeiroBuscaCaixa', 'financeiroAvisos', 'financeiroAbas', 'financeiroTabela', 'financeiroAtualizado'].forEach(function (id) {
+    ['financeiroBuscaCaixa', 'financeiroAvisos', 'financeiroTabela', 'financeiroAtualizado'].forEach(function (id) {
       $(id).hidden = true;
     });
     $('financeiroTabela').replaceChildren();
@@ -549,9 +403,9 @@
     mostrarMensagem('conferencia', 'clipboard-text', 'Informações em conferência', TEXTO_CONFERENCIA, 'Verificar novamente');
     renderizarAvisos(false);
   }
-  function mostrarSemFaturas() {
+  function mostrarSemContratos() {
     ocultarConteudo();
-    mostrarMensagem('vazio', 'folder-open', null, TEXTO_SEM_FATURAS, 'Verificar novamente');
+    mostrarMensagem('vazio', 'folder-open', null, TEXTO_SEM_CONTRATOS, 'Verificar novamente');
   }
 
   function textoAtualizado(iso) {
@@ -562,16 +416,24 @@
     var mesmoDia = data.toDateString() === hoje.toDateString();
     return mesmoDia ? 'Atualizado às ' + hora : 'Atualizado em ' + data.toLocaleDateString('pt-BR') + ' às ' + hora;
   }
-  // Na tela de conferência, a mensagem principal já cobre a contagem; só a
-  // preparação (proposta/contrato ainda sem dados) continua listada.
+  // Na tela de conferência, a mensagem principal já cobre a contagem. Proposta
+  // aceita cujo contrato ainda não foi cadastrado pela equipe é informada aqui,
+  // sem virar linha da tabela (a tabela só lista contratos).
   function renderizarAvisos(incluirConferencia) {
     var avisos = $('financeiroAvisos');
     var p = estado.dados.pendencias || {};
     var itens = [];
     if (incluirConferencia !== false && p.itensEmConferencia > 0) {
       itens.push(p.itensEmConferencia === 1
-        ? '1 item está em conferência pela ITR e ainda não aparece nas abas.'
-        : p.itensEmConferencia + ' itens estão em conferência pela ITR e ainda não aparecem nas abas.');
+        ? '1 item está em conferência pela ITR e ainda não aparece na lista.'
+        : p.itensEmConferencia + ' itens estão em conferência pela ITR e ainda não aparecem na lista.');
+    }
+    if (incluirConferencia !== false) {
+      (p.propostasEmPreparacao || []).forEach(function (proposta) {
+        if (proposta && proposta.numero) {
+          itens.push('Proposta ' + proposta.numero + ' aceita: o contrato aparecerá nesta lista após o processamento comercial.');
+        }
+      });
     }
     avisos.replaceChildren();
     if (!itens.length) { avisos.hidden = true; return; }
@@ -590,11 +452,9 @@
   function renderizar() {
     var dados = estado.dados;
     if (!dados) return;
-    contratosPorId = {};
-    (dados.contratos || []).forEach(function (c) { contratosPorId[c.id] = c; });
     if (dados.estado === 'processamento') { mostrarProcessamento(); return; }
     if (dados.estado === 'conferencia') { mostrarConferencia(); return; }
-    if (dados.estado === 'vazio') { mostrarSemFaturas(); return; }
+    if (dados.estado === 'vazio') { mostrarSemContratos(); return; }
 
     var caixaEstado = $('financeiroEstado');
     caixaEstado.hidden = true;
@@ -604,12 +464,8 @@
     atualizado.hidden = !atualizado.textContent;
     $('financeiroBuscaCaixa').hidden = false;
     renderizarAvisos();
-    estado.aba = abaInicial();
-    var abertaExiste = (dados.faturas || []).some(function (f) { return f.id === estado.aberta; })
-      || (dados.contratos || []).some(function (c) { return c.id === estado.aberta; });
-    if (!abertaExiste) estado.aberta = null;
-    atualizarAbas();
-    $('financeiroAbas').hidden = false;
+    // Contratos começam recolhidos; "Detalhes" expande cada um.
+    estado.abertas = new Set();
     $('financeiroTabela').hidden = false;
     renderizarTabela();
   }
@@ -634,7 +490,7 @@
         }
         return ITR.jsonSeguro(resp).then(function (dados) {
           var valido = resp.ok && dados && dados.sucesso === true && ESTADOS.indexOf(dados.estado) >= 0
-            && Array.isArray(dados.faturas) && Array.isArray(dados.contratos);
+            && Array.isArray(dados.contratos);
           if (!valido) throw new Error('Resposta financeira inválida');
           estado.dados = dados;
           renderizar();
@@ -668,23 +524,6 @@
   /* ---- Eventos ---- */
   nav.addEventListener('click', ativarViewFinanceiro);
 
-  $('financeiroAbas').addEventListener('click', function (e) {
-    var b = e.target.closest('[role="tab"]');
-    if (b) selecionarAba(b.getAttribute('data-aba'), false);
-  });
-  $('financeiroAbas').addEventListener('keydown', function (e) {
-    var ids = ABAS.map(function (a) { return a.id; });
-    var atual = ids.indexOf(estado.aba);
-    var destino = null;
-    if (e.key === 'ArrowRight') destino = ids[(atual + 1) % ids.length];
-    else if (e.key === 'ArrowLeft') destino = ids[(atual - 1 + ids.length) % ids.length];
-    else if (e.key === 'Home') destino = ids[0];
-    else if (e.key === 'End') destino = ids[ids.length - 1];
-    if (!destino) return;
-    e.preventDefault();
-    selecionarAba(destino, true);
-  });
-
   // Clique na linha também expande; links e botões internos mantêm o próprio comportamento.
   $('financeiroTabela').addEventListener('click', function (e) {
     var b = e.target.closest('.financeiro-detalhes-btn');
@@ -696,9 +535,7 @@
 
   $('financeiroBusca').addEventListener('input', function () {
     estado.busca = this.value.slice(0, 60);
-    estado.aberta = null;
     if (!estado.dados) return;
-    atualizarAbas();
     renderizarTabela();
   });
 

@@ -22,6 +22,8 @@ test('GET individual não envia fields[]; PDF exige o vínculo atual e nunca vol
     let cnpj = '12345678000190';
     global.fetch = async (url, options) => {
         calls.push({ url, options });
+        if (url.includes('tbl8Sw1hYuEvgot8O') && !url.includes('/rec'))
+            return Response.json({ records: [{ id: client, fields: { fldb8XcWv0Uooz3Uo: cnpj } }] });
         if (url.includes('tblTzY3Iggkhydke2'))
             return Response.json({
                 id,
@@ -42,7 +44,8 @@ test('GET individual não envia fields[]; PDF exige o vínculo atual e nunca vol
     });
     const doc = await finance.obterDocumentoProposta(cnpj, id, 'attA');
     assert.equal(doc.nome, 'original.pdf');
-    assert.ok(calls.every((call) => !new URL(call.url).searchParams.has('fields[]')));
+    assert.ok(calls.filter((call) => call.url.includes('/rec')).every((call) =>
+        !new URL(call.url).searchParams.has('fields[]')));
     assert.equal(await finance.obterDocumentoProposta(cnpj, id, 'removed'), null);
     cnpj = '99999999000199';
     await assert.rejects(

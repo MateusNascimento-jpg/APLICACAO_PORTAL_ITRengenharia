@@ -21,13 +21,20 @@ function preparar(opcoes = {}) {
     return { base, service, logs, registrar };
 }
 
-const idsDe = painel => new Set([...painel.contratos.map(c => c.id), ...painel.faturas.map(f => f.id)]);
+// Record IDs alcançáveis pelo navegador: contratos e registros de origem dos
+// documentos (faturas só aparecem como origem de NFSe/boleto, nunca listadas).
+const idsDe = painel => new Set([
+    ...painel.contratos.map(c => c.id),
+    ...painel.contratos.flatMap(c => c.documentos.map(d => d.registroId)),
+]);
+const contratoDe = (painel, id) => painel.contratos.find(c => c.id === id);
 
-test('1. cliente A recebe somente os próprios contratos e faturas', async () => {
+test('1. cliente A recebe somente os próprios contratos, um item por contrato', async () => {
     const { base, service } = preparar();
     const painel = await service.carregarPainel(CNPJ_A);
     assert.deepEqual(painel.contratos.map(c => c.nome), ['C105-2026', 'C118-2026']);
-    assert.equal(painel.faturas.length, 7);
+    assert.equal(painel.faturas, undefined, 'parcelas não são listadas');
+    assert.equal(contratoDe(painel, IDS.contA1).situacao, 'Vencido', 'parcela 2/4 vencida, apesar da 1/4 paga');
     const ids = idsDe(painel);
     for (const alheio of [IDS.contB1, IDS.nfB1, IDS.propB1, IDS.clienteB]) assert.ok(!ids.has(alheio));
     const json = JSON.stringify(painel);
@@ -78,6 +85,7 @@ test('4. IDs misturados: fatura listada no contrato de A mas ligada ao contrato 
     base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA2).fields[N.CONTRATO] = [IDS.contB1];
     const painel = await service.carregarPainel(CNPJ_A, { registrar });
     assert.ok(!idsDe(painel).has(IDS.nfA2));
+    assert.equal(contratoDe(painel, IDS.contA1).situacao, 'Em conferência', 'parcela recusada impede consolidar');
     assert.ok(logs.includes(`FIN_FATURA_VINCULO_INCONSISTENTE ${IDS.nfA2}`));
     assert.equal(await service.localizarDocumento(CNPJ_A, 'boleto', IDS.nfA2, ANEXOS.boletoA2.id), null);
 
@@ -100,7 +108,7 @@ test('6. contrato com propostas de empresas diferentes ou proposta alheia é blo
     base.registro(S.TABELAS.CONTRATOS, IDS.contA1).fields[C.PROPOSTA] = [IDS.propA1, IDS.propB1];
     let painel = await service.carregarPainel(CNPJ_A, { registrar });
     assert.ok(!idsDe(painel).has(IDS.contA1));
-    assert.ok(!painel.faturas.some(f => f.contratoId === IDS.contA1));
+    for (const id of [IDS.nfA1, IDS.nfA2, IDS.nfA3]) assert.ok(!idsDe(painel).has(id), 'nem documentos das suas notas');
     assert.ok(logs.includes(`FIN_CONTRATO_VINCULO_AMBIGUO ${IDS.contA1}`));
     // A proposta 105 TEM contrato, só que inconsistente: conta como conferência, não como preparação.
     assert.deepEqual(painel.pendencias.propostasEmPreparacao.map(p => p.numero), ['131-2026']);
@@ -115,15 +123,15 @@ test('6. contrato com propostas de empresas diferentes ou proposta alheia é blo
     assert.ok(logs.includes(`FIN_CONTRATO_PROPOSTA_NAO_AUTORIZADA ${IDS.contB1}`));
 });
 
-test('7. contrato válido sem nota fiscal: estado de preparação, não “zero faturas”', async () => {
+test('7. contrato válido sem nota fiscal: aparece na lista, em preparação, sem valores inventados', async () => {
     const { base, service } = preparar();
     base.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PARCELAS] = [];
     const painel = await service.carregarPainel(CNPJ_B);
-    assert.equal(painel.estado, 'processamento');
-    assert.equal(painel.emProcessamento, true);
-    assert.deepEqual(painel.pendencias.contratosEmPreparacao, [{ nome: 'C200-2026' }]);
+    assert.equal(painel.estado, 'disponivel');
+    assert.equal(painel.emProcessamento, false);
+    assert.deepEqual(painel.contratos.map(c => [c.nome, c.situacao]), [['C200-2026', 'Em preparação']]);
+    assert.equal(painel.contratos[0].valorTotal, null, 'proposta sem Valor da Proposta: sem valor');
     assert.equal(painel.pendencias.itensEmConferencia, 0);
-    assert.equal(painel.faturas.length, 0);
 });
 
 test('8. proposta não aceita não habilita o Financeiro, inclusive se mudou após o cache da lista', async () => {
@@ -148,20 +156,18 @@ test('8. proposta não aceita não habilita o Financeiro, inclusive se mudou ap�
     assert.equal(await terceiro.service.carregarPainel(CNPJ_B), null);
 });
 
-test('9. contrato cancelado: parcela paga continua em Pagas; cobrança pendente vira revisão', async () => {
+test('9. contrato cancelado: situação Cancelado; cobrança ainda aberta fica em revisão', async () => {
     const { service } = preparar();
     const painel = await service.carregarPainel(CNPJ_A);
-    const porId = Object.fromEntries(painel.faturas.map(f => [f.id, f]));
-    assert.equal(porId[IDS.nfA5].aba, 'pagas');
-    assert.equal(porId[IDS.nfA5].status, 'Pago');
-    assert.equal(porId[IDS.nfA6].aba, 'canceladas');
-    assert.equal(porId[IDS.nfA6].revisao, true);
-    assert.equal(porId[IDS.nfA6].status, 'A Vencer', 'status de origem preservado');
-    assert.ok(!painel.faturas.some(f => f.aba === 'a-pagar' && f.contratoId === IDS.contA2));
-    assert.equal(porId[IDS.nfA7].aba, 'canceladas');
-    assert.equal(porId[IDS.nfA4].aba, 'proximas');
-    assert.equal(porId[IDS.nfA4].vencimento, null, 'sem NF não há vencimento inventado');
-    assert.equal(porId[IDS.nfA2].diferenca, 3000);
+    const cancelado = contratoDe(painel, IDS.contA2);
+    assert.equal(cancelado.status, 'Cancelado');
+    assert.equal(cancelado.situacao, 'Cancelado');
+    assert.equal(cancelado.revisao, true, 'parcela 2/2 A Vencer em contrato cancelado');
+    const ativo = contratoDe(painel, IDS.contA1);
+    assert.equal(ativo.status, 'Ativo', 'status contratual preservado à parte');
+    assert.equal(ativo.revisao, false);
+    // NFSe/boletos das notas válidas acompanham o contrato; parcela cancelada (5/5) não traz documento.
+    assert.deepEqual(ativo.documentos.map(d => d.tipo), ['proposta', 'nfse', 'boleto', 'nfse', 'nfse', 'boleto', 'boleto']);
 });
 
 test('11. falha do Airtable entre duas consultas: erro explícito, nada servido da memória', async () => {
@@ -278,34 +284,36 @@ test('consultas por Record ID são feitas em lotes e só aceitam registros pedid
     assert.ok(lotes.every(l => l.ids.length <= 40));
 });
 
-// Achado 3 da auditoria: "processamento" só quando realmente falta contrato ou
-// parcela; registros recebidos mas inconsistentes aparecem como conferência.
+// Achado 3 da auditoria: "processamento" só quando realmente falta contrato;
+// contrato listado com parcela inconsistente aparece "Em conferência" e
+// contrato recusado leva a área a conferência — nunca a "Pago" ou a processamento.
 test('Achado 3 — estados distintos: processamento, conferência e disponível', async () => {
     const casos = [
-        ['proposta aceita sem contrato', b => { b.registro(S.TABELAS.PROPOSTA, IDS.propB1).fields[P.CONTRATOS] = []; }, 'processamento', null],
-        ['contrato ativo sem parcelas', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PARCELAS] = []; }, 'processamento', null],
-        ['parcela com status fora da lista oficial', b => { b.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfB1).fields[N.STATUS_PAGAMENTO] = 'Em análise'; }, 'conferencia', 'FIN_PARCELA_NAO_CLASSIFICADA'],
+        ['proposta aceita sem contrato', b => { b.registro(S.TABELAS.PROPOSTA, IDS.propB1).fields[P.CONTRATOS] = []; }, 'processamento', null, null],
+        ['contrato ativo sem parcelas', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PARCELAS] = []; }, 'disponivel', null, 'Em preparação'],
+        ['parcela com status fora da lista oficial', b => { b.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfB1).fields[N.STATUS_PAGAMENTO] = 'Em análise'; }, 'disponivel', 'FIN_PARCELA_NAO_CLASSIFICADA', 'Em conferência'],
         ['Aguardando NF em contrato Concluído', b => {
             b.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfB1).fields[N.STATUS_PAGAMENTO] = 'Aguardando Emissão da NF';
             b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.STATUS] = 'Concluído';
-        }, 'conferencia', 'FIN_PARCELA_NAO_CLASSIFICADA'],
-        ['contrato com vínculo ambíguo', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PROPOSTA] = [IDS.propB1, IDS.propA1]; }, 'conferencia', 'FIN_CONTRATO_VINCULO_AMBIGUO'],
-        ['fatura com vínculo inconsistente', b => { b.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfB1).fields[N.CONTRATO] = [IDS.contA1]; }, 'conferencia', 'FIN_FATURA_VINCULO_INCONSISTENTE'],
-        ['fatura listada mas inexistente', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PARCELAS] = [rid('Sumida')]; }, 'conferencia', 'FIN_FATURA_AUSENTE'],
-        ['contrato listado mas inexistente', b => { b.registro(S.TABELAS.PROPOSTA, IDS.propB1).fields[P.CONTRATOS] = [rid('ContSumido')]; }, 'conferencia', 'FIN_CONTRATO_AUSENTE'],
+        }, 'disponivel', null, 'Aguardando Emissão da NF'],
+        ['contrato com vínculo ambíguo', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PROPOSTA] = [IDS.propB1, IDS.propA1]; }, 'conferencia', 'FIN_CONTRATO_VINCULO_AMBIGUO', null],
+        ['fatura com vínculo inconsistente', b => { b.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfB1).fields[N.CONTRATO] = [IDS.contA1]; }, 'disponivel', 'FIN_FATURA_VINCULO_INCONSISTENTE', 'Em conferência'],
+        ['fatura listada mas inexistente', b => { b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields[C.PARCELAS] = [rid('Sumida')]; }, 'disponivel', 'FIN_FATURA_AUSENTE', 'Em conferência'],
+        ['contrato listado mas inexistente', b => { b.registro(S.TABELAS.PROPOSTA, IDS.propB1).fields[P.CONTRATOS] = [rid('ContSumido')]; }, 'conferencia', 'FIN_CONTRATO_AUSENTE', null],
         ['contrato Inadimplente sem parcelas', b => {
             const f = b.registro(S.TABELAS.CONTRATOS, IDS.contB1).fields;
             f[C.STATUS] = 'Inadimplente';
             f[C.PARCELAS] = [];
-        }, 'conferencia', 'FIN_CONTRATO_SEM_PARCELAS_INCONSISTENTE'],
-        ['fatura válida', () => {}, 'disponivel', null],
+        }, 'disponivel', 'FIN_CONTRATO_SEM_PARCELAS_INCONSISTENTE', 'Em conferência'],
+        ['fatura válida', () => {}, 'disponivel', null, 'A Vencer'],
     ];
-    for (const [nome, alterar, estado, codigo] of casos) {
+    for (const [nome, alterar, estado, codigo, situacao] of casos) {
         const { base, service, logs, registrar } = preparar();
         alterar(base);
         const painel = await service.carregarPainel(CNPJ_B, { registrar });
         assert.equal(painel.estado, estado, nome);
         assert.equal(painel.emProcessamento, estado === 'processamento', nome);
+        assert.equal(painel.contratos[0]?.situacao ?? null, situacao, `${nome}: situação do contrato`);
         if (estado === 'conferencia') assert.ok(painel.pendencias.itensEmConferencia >= 1, nome);
         if (estado === 'processamento') assert.equal(painel.pendencias.itensEmConferencia, 0, nome);
         if (codigo) assert.ok(logs.some(l => l.startsWith(codigo + ' rec')), `${nome}: log ${codigo} com Record ID`);
@@ -314,13 +322,25 @@ test('Achado 3 — estados distintos: processamento, conferência e disponível'
     }
 });
 
-test('Achado 3 — conferência convive com dados disponíveis e é avisada (sem detalhes)', async () => {
+test('Achado 3 — conferência convive com dados disponíveis: só o contrato afetado fica em conferência', async () => {
     const { base, service } = preparar();
     base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA3).fields[N.STATUS_PAGAMENTO] = 'Status novo';
     const painel = await service.carregarPainel(CNPJ_A);
     assert.equal(painel.estado, 'disponivel');
+    assert.equal(contratoDe(painel, IDS.contA1).situacao, 'Em conferência');
+    assert.equal(contratoDe(painel, IDS.contA2).situacao, 'Cancelado');
+    assert.equal(painel.pendencias.itensEmConferencia, 0, 'o contrato continua listado; nada some da lista');
+    assert.ok(!idsDe(painel).has(IDS.nfA3), 'documento da nota sem status oficial não é oferecido');
+    assert.doesNotMatch(JSON.stringify(painel), /Status novo/);
+});
+
+test('contrato recusado por vínculo some da lista e é avisado como item em conferência', async () => {
+    const { base, service } = preparar();
+    base.registro(S.TABELAS.CONTRATOS, IDS.contA2).fields[C.PROPOSTA] = [IDS.propA2, IDS.propB1];
+    const painel = await service.carregarPainel(CNPJ_A);
+    assert.equal(painel.estado, 'disponivel');
+    assert.deepEqual(painel.contratos.map(c => c.id), [IDS.contA1]);
     assert.equal(painel.pendencias.itensEmConferencia, 1);
-    assert.ok(!idsDe(painel).has(IDS.nfA3));
 });
 
 test('Achado 1 — lista de propostas desatualizada (cache de 30 s do Portal) só sugere candidatos, nunca autoriza', async () => {

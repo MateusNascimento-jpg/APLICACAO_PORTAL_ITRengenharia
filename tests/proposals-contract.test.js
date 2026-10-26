@@ -62,7 +62,8 @@ test('card de proposta nao exibe setor nem categoria e destaca o PDF antes dos d
     assert.doesNotMatch(js, /proposta-info-rotulo">Categoria/);
     assert.doesNotMatch(js, /p\.setor \|\| 'ITR Engenharia'/);
     assert.match(js, /proposta-documento-destaque/);
-    assert.match(js, /ti-file-description/);
+    assert.match(js, /'file-description'/);
+    assert.match(js, /linhaDocumento\('Comprovante de Contrato\.pdf'/);
 });
 
 test('redesign v0.3 prioriza documento, usa timeline encorpada e decisao verde no grid', () => {
@@ -80,7 +81,7 @@ test('redesign v0.3 prioriza documento, usa timeline encorpada e decisao verde n
     assert.match(css, /height:5px/);
     assert.match(css, /font-size:27px/);
     assert.doesNotMatch(js, /Consulte o documento antes de decidir/);
-    assert.match(js, /proposta-documento-kicker\">Documento<\/span>/);
+    assert.match(js, /proposta-documento-kicker\">Documentos<\/span>/);
     assert.match(js, /ti-mail/);
     assert.match(js, /proposta-ampulheta/);
     assert.match(css, /font-weight:600/);
