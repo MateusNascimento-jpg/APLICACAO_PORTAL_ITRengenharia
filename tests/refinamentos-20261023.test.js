@@ -44,5 +44,5 @@ test('dados institucionais do comprovante permanecem na mesma página',()=>{
     assert.equal(institutional.length,1);
     for(const text of ['Razão Social','CNPJ','Inscrição Estadual','Responsável comercial'])
         assert.ok(institutional[0].includes(text), text+' deve constar na mesma página');
-    assert.match(pdf,/Documentos Integrais/);
+    assert.match(pdf,/Integridade do aceite/);
 });

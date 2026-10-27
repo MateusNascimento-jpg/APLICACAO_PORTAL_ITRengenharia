@@ -39,11 +39,14 @@ test('seções curtas não se dividem entre páginas, com descrição curta ou l
         for (const [titulo, inicio, fim] of [
             ['Atenção', 'Este comprovante registra', 'assinatura eletrônica certificada.'],
             ['Acompanhamento', 'Acesse o Portal do Cliente', 'suas amostras.'],
-            ['Documentos Integrais', 'Proposta comercial original', 'versão efetivamente aceita.'],
         ]) {
             const pagina = lista.find(p => p.includes(`(${titulo}) Tj`));
             assert.ok(pagina, `${titulo} presente`);
             assert.ok(pagina.includes(inicio) && pagina.includes(fim), `${titulo}: título e texto na mesma página`);
         }
+        const ultima=lista.find(p=>p.includes('Integridade do aceite'));
+        assert.ok(ultima, 'seção final de integridade presente');
+        assert.ok(ultima.includes('(Proposta original) Tj'), 'primeiro botão PDF na mesma página');
+        assert.ok(ultima.includes('(Comprovante) Tj'), 'segundo botão PDF na mesma página');
     }
 });
