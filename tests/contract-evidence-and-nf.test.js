@@ -18,9 +18,12 @@ test('comprovante é PDF A4 independente, com link autenticado para proposta e d
     const {bytes,hash:proofHash}=generate(evidence);
     assert.ok(bytes.toString('binary').startsWith('%PDF-1.4'));
     assert.match(bytes.toString('binary'),/Comprovante de contrato comercial/);
-    assert.match(bytes.toString('binary'),/Documentos Integrais/);
+    assert.match(bytes.toString('binary'),/Integridade do aceite/);
+    assert.match(bytes.toString('binary'),/ACEITE DE PROPOSTA REGISTRADO/);
     assert.match(bytes.toString('binary'),/\/Subtype \/Link/);
     assert.match(bytes.toString('binary'),/\/api\/propostas\/recAAAAAAAAAAAAAA\/proposta-aceita/);
+    assert.match(bytes.toString('binary'),/\/api\/propostas\/recAAAAAAAAAAAAAA\/comprovante/);
+    assert.doesNotMatch(bytes.toString('binary'),/SHA-256 do PDF original|Identificador da vers.o/);
     assert.match(bytes.toString('binary'),/Vin.cius S\. Levay/);
     assert.match(proofHash,/^[a-f0-9]{64}$/);
 });
