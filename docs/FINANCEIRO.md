@@ -1,11 +1,11 @@
 # Financeiro — uma linha por contrato (somente leitura)
 
 Área do Portal do Cliente para consultar os contratos gerados a partir de
-propostas aceitas e seus documentos. **Decisão final (24/10/2026, ADR-002): a
-tabela lista UM registro por contrato; nenhuma parcela é listada ao cliente,
-nem dentro de Detalhes.** As parcelas (tabela **Notas Fiscais**) continuam
-sendo lidas e validadas no servidor para consolidar a situação do contrato e
-oferecer NFSe/boleto, mas não saem do servidor como lista.
+propostas aceitas e seus documentos. **A tabela mantém UM registro por
+contrato. Os vencimentos individuais das parcelas aparecem somente nos
+Detalhes expandidos.** As parcelas (tabela **Notas Fiscais**) são lidas e
+validadas no servidor para consolidar a situação do contrato, oferecer
+NFSe/boleto e expor apenas identificação normalizada e vencimento.
 Não há escrita: nenhum endpoint altera Airtable, MySQL ou envia notificações.
 
 ## Arquivos
@@ -55,10 +55,46 @@ Colunas (mesma tabela e densidade do layout original): **Contrato**,
 **Condição de pagamento** (`Proposta.Forma de Pagamento`), **Valor total**
 (`Proposta.Valor da Proposta`, nunca valor ou soma de parcela; ausente = "—"),
 **Prazo para pagamento** (`Contratos.Prazo de pagamento`, senão o da proposta)
-e **Situação**. "Detalhes" expande só informações gerais — Contrato, Proposta,
+e **Situação**. "Detalhes" preserva as informações gerais — Contrato, Proposta,
 Situação do contrato (`Contratos.Status do Contrato`), Condição, Prazo, Valor
-total — e a coluna Documentos. Contratos começam recolhidos e há um pequeno
+total — e a coluna Documentos. Logo abaixo de Prazo/Valor total, os vencimentos
+aparecem em duas colunas no desktop e uma em telas pequenas, com o tema e
+estilo existentes. Contratos começam recolhidos e há um pequeno
 respiro (14 px) entre eles. Contrato válido sem nenhuma nota aparece na lista.
+
+### Parcelas no JSON público
+
+`GET /api/financeiro` preserva os campos existentes e acrescenta
+`contratos[].parcelas`, com apenas `identificacao` e `vencimento` de cada nota
+autorizada com status oficial não cancelado. Não há novos Record IDs,
+valores individuais, URLs de origem ou dados de pagamento. Os identificadores
+que já existiam nos contratos e documentos permanecem para as rotas autenticadas.
+
+```json
+{
+  "parcelas": [
+    { "identificacao": "Parcela de Entrada", "vencimento": "2026-11-20" },
+    { "identificacao": "Parcela 2", "vencimento": null }
+  ]
+}
+```
+
+O vencimento vem exclusivamente de `Notas Fiscais.Vencimento`. Datas ausentes
+ou inválidas viram `null`, exibido como "Vencimento não informado"; nenhuma
+data é calculada a partir do prazo ou da emissão. Datas válidas são de
+calendário (`AAAA-MM-DD` na API, `DD/MM/AAAA` na tela), sem conversão de fuso.
+
+`Notas Fiscais.Parcela` reconhece Entrada, Única e números explícitos, incluindo
+`- Parcela Entrada`, `- Parcela 2`, `- Parcela Única`,
+`C232 - Parcela Única` e `C113-2026 - Parcela Entrada`. Apenas um separador
+inicial válido seguido de "Parcela" é removido. Valores ambíguos, malformados
+ou conflitantes continuam indisponíveis (`identificacao: null`), sem inventar
+numeração pela posição ou pela data.
+
+A ordenação comercial determinística mantém Entrada primeiro, números em ordem
+numérica, Única como categoria própria e identificações desconhecidas ao final.
+Record IDs existentes são usados apenas para desempate interno. A ordenação
+não altera a fatura de origem dos dados ou a ordem consolidada dos documentos.
 
 ### Situação consolidada (`mapper.situacaoContrato`)
 
@@ -79,6 +115,14 @@ Uma nota paga nunca torna o contrato "Pago" (ex.: `Pago` + `A Vencer` = **A Venc
 Uma pilha vertical por contrato, nesta ordem: **Proposta comercial** →
 **Comprovante de Contrato** → NFSe/boletos (cronológicos; notas canceladas ou
 sem status oficial não oferecem documento).
+
+NFSe e boleto recebem identificação normalizada da **mesma Nota Fiscal**
+autorizada que contém o anexo, por exemplo "NFSe - Parcela de Entrada",
+"Boleto - Parcela 2" e "NFSe - Parcela Única". Sem identificação inequívoca,
+o rótulo indica "Parcela não identificada". Nunca se associa um documento por
+posição visual ou apenas pela data. O nome original do arquivo, a ordem dos
+documentos, as rotas autenticadas e a revalidação de autorização a cada download
+permanecem preservados, assim como a proposta aceita e o comprovante imutáveis.
 
 | Tipo | Origem |
 |---|---|

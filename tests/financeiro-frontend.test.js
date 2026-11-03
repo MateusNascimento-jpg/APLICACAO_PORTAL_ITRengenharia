@@ -20,6 +20,15 @@ const js = read('public/assets/js/financeiro.js');
 const portal = read('public/assets/js/portal.js');
 const css = read('public/assets/css/financeiro.css');
 
+test('vencimentos em duas colunas usam os temas existentes e adaptam para celular', () => {
+    assert.match(css, /\.financeiro-vencimentos-lista\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+    assert.match(css, /@container financeiro \(max-width: 600px\)\s*\{\s*\.financeiro-vencimentos-lista\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    assert.match(css, /\.financeiro-vencimento strong\s*\{[^}]*var\(--txt-3\)/);
+    assert.match(css, /\.financeiro-vencimento span\s*\{[^}]*var\(--txt-2\)/);
+    assert.match(js, /dataBR\(parcela\.vencimento\) \|\| 'Vencimento não informado'/);
+    assert.ok(js.indexOf('gerais.appendChild(grade)') < js.indexOf('gerais.appendChild(vencimentos)'));
+});
+
 test('portal.html: menu e painel ocultos por padrão, sem abas e scripts na ordem correta', () => {
     assert.match(html, /id="navFinanceiro"[^>]*hidden/);
     assert.match(html, /id="painelFinanceiro" hidden/);

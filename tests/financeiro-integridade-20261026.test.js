@@ -77,10 +77,12 @@ test('uma proposta pode autorizar dois contratos com vínculos recíprocos coere
 test('cancelamento ou status inválido revoga URLs antigas de NFSe e boleto', async t => {
     const { base, get, documento, consultasArquivo } = await preparar(t);
     assert.equal((await documento('nfse', IDS.nfA1, ANEXOS.nfseA1.id)).status, 200);
+    base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA1).fields[S.NOTAS_FISCAIS.PARCELA] = 'Entrada';
     consultasArquivo.length = 0;
     for (const status of ['Cancelado', 'Estado desconhecido', null]) {
         base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA1).fields[S.NOTAS_FISCAIS.STATUS_PAGAMENTO] = status;
         const painel = await (await get('/api/financeiro')).json();
+        assert.ok(!painel.contratos.flatMap(c => c.parcelas).some(p => p.identificacao === 'Parcela de Entrada'));
         assert.ok(!painel.contratos.flatMap(c => c.documentos).some(d => d.registroId === IDS.nfA1));
         for (const [tipo, anexo] of [['nfse', ANEXOS.nfseA1.id], ['boleto', ANEXOS.boletoA1.id]]) {
             const res = await documento(tipo, IDS.nfA1, anexo);

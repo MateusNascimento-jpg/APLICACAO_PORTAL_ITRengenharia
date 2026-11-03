@@ -14,6 +14,7 @@ const path = require('node:path');
 const express = require('express');
 const { chromium } = require('playwright');
 const { createFinanceiroService } = require('../lib/financeiro/service');
+const S = require('../lib/financeiro/schema');
 const { registerFinanceiroRoutes } = require('../lib/financeiro/routes');
 const { generate: gerarComprovante } = require('../lib/proposals/comprovante');
 const { criarBaseContratosDemo, CNPJ_A, rid, aid } = require('../tests/helpers/financeiro-fixtures');
@@ -43,6 +44,13 @@ async function main() {
     const saida = path.resolve(process.argv[2] || 'qa-visual');
     fs.mkdirSync(saida, { recursive: true });
     const { base, ids } = criarBaseContratosDemo({ incluirC01: true });
+    // Formatos reais de Parcela, sem consultar ou alterar o Airtable.
+    const notas = base.tabelas[S.TABELAS.NOTAS_FISCAIS];
+    notas.find(n => n.id === rid('Nf0201')).fields[S.NOTAS_FISCAIS.PARCELA] = '- Parcela Entrada';
+    notas.find(n => n.id === rid('Nf0202')).fields[S.NOTAS_FISCAIS.PARCELA] = '- Parcela 2';
+    const unica = notas.find(n => n.id === rid('Nf0301')).fields;
+    unica[S.NOTAS_FISCAIS.PARCELA] = '- Parcela Única';
+    unica[S.NOTAS_FISCAIS.VENCIMENTO] = '2026-11-20T00:00:00.000Z';
     const service = createFinanceiroService({ airtable: base.airtable });
 
     // Artefatos do aceite da proposta 02 (mesmo formato de portal_proposal_artifacts).
@@ -127,7 +135,13 @@ async function main() {
         assert.equal(await page.locator('[role="tab"], #financeiroAbas').count(), 0, 'sem abas');
         assert.equal(await page.locator('#financeiroTabela tr.financeiro-detalhe-linha:visible').count(), 0, 'Detalhes recolhidos');
         const textoPainel = await page.locator('#painelFinanceiro').innerText();
-        assert.doesNotMatch(textoPainel, /C0\d - Parcela|Parcela \d|Valor da parcela|Identificação da parcela|Próximas/);
+        assert.doesNotMatch(textoPainel, /C0\d - Parcela|Valor da parcela|Identificação da parcela|Próximas/);
+        assert.equal(await page.locator('.financeiro-vencimentos:visible').count(), 0, 'vencimentos somente nos detalhes expandidos');
+        const painel = await (await context.request.get(origin + '/api/financeiro')).json();
+        for (const contrato of painel.contratos) for (const parcela of contrato.parcelas) {
+            assert.deepEqual(Object.keys(parcela).sort(), ['identificacao', 'vencimento']);
+        }
+        assert.doesNotMatch(JSON.stringify(painel), /airtableusercontent|dl\.airtable\.com|valorParcela|valorPago|dataPagamento/);
         assert.equal(await semOverflow(), true);
         await foto('financeiro-desktop-1440-recolhido.png');
 
@@ -136,8 +150,13 @@ async function main() {
         await detalhe.waitFor({ state: 'visible' });
         await page.waitForTimeout(300); // fim da rotação do chevron
         assert.deepEqual(await detalhe.locator('li.financeiro-documento strong').allTextContents(),
-            ['Proposta comercial', 'Comprovante de Contrato', 'NFSe', 'NFSe', 'Boleto']);
-        assert.doesNotMatch(await detalhe.innerText(), /Parcela \d|Vencimento|Valor pago/);
+            ['Proposta comercial', 'Comprovante de Contrato', 'NFSe - Parcela de Entrada', 'NFSe - Parcela 2', 'Boleto - Parcela 2']);
+        assert.deepEqual(await detalhe.locator('.financeiro-detalhe-grade dt').allTextContents(),
+            ['Contrato', 'Proposta', 'Situação do contrato', 'Condição de pagamento', 'Prazo para pagamento', 'Valor total']);
+        assert.deepEqual(await detalhe.locator('.financeiro-vencimento strong').allTextContents(), ['Parcela de Entrada', 'Parcela 2']);
+        assert.deepEqual(await detalhe.locator('.financeiro-vencimento span').allTextContents(), ['Vencimento não informado', '30/10/2026']);
+        assert.equal(await detalhe.locator('.financeiro-vencimentos-lista').evaluate(e => getComputedStyle(e).gridTemplateColumns.split(/\s+/).length), 2);
+        assert.doesNotMatch(await detalhe.innerText(), /Valor pago|Valor da parcela|Data do pagamento/);
         assert.equal(await detalhe.locator('.financeiro-documento-icone svg').count(), 5, 'todo documento tem ícone desenhado');
         await foto('financeiro-desktop-1440-C02-detalhes.png');
 
@@ -161,11 +180,26 @@ async function main() {
             await page.setViewportSize({ width: largura, height: altura });
             await page.waitForTimeout(250);
             assert.equal(await semOverflow(), true, `sem overflow horizontal em ${largura}px`);
+            if (largura === 390) {
+                assert.equal(await detalhe.locator('.financeiro-vencimentos-lista').evaluate(e => getComputedStyle(e).gridTemplateColumns.split(/\s+/).length), 1);
+            }
             await foto(`financeiro-${largura}-C02-detalhes.png`);
         }
+        await page.evaluate(() => document.documentElement.setAttribute('data-tema', 'escuro'));
+        await page.waitForTimeout(400);
+        assert.equal(await semOverflow(), true);
+        await foto('financeiro-390-C02-detalhes-escuro.png');
+        await page.evaluate(() => document.documentElement.setAttribute('data-tema', 'claro'));
         await page.locator('.financeiro-detalhes-btn[data-id="' + ids.c02 + '"]').click();
         await page.waitForTimeout(300);
         await foto('financeiro-390-recolhido.png');
+        await page.locator('.financeiro-detalhes-btn[data-id="' + ids.c03 + '"]').click();
+        const detalheUnico = page.locator('#fin-det-' + ids.c03);
+        assert.deepEqual(await detalheUnico.locator('.financeiro-vencimento strong').allTextContents(), ['Parcela Única']);
+        assert.deepEqual(await detalheUnico.locator('.financeiro-vencimento span').allTextContents(), ['20/11/2026']);
+        assert.equal(await semOverflow(), true);
+        await foto('financeiro-390-C03-parcela-unica.png');
+        await page.locator('.financeiro-detalhes-btn[data-id="' + ids.c03 + '"]').click();
 
         // ---- Propostas ----
         await page.setViewportSize({ width: 1440, height: 900 });

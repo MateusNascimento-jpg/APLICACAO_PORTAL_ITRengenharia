@@ -107,6 +107,13 @@ test('lista: escopo pela sessão (query ignorada), sem URLs do Airtable e sem ca
     const dados = JSON.parse(texto);
     assert.equal(dados.sucesso, true);
     assert.equal(dados.financeiroHabilitado, true);
+    for (const contrato of dados.contratos) for (const parcela of contrato.parcelas) {
+        assert.deepEqual(Object.keys(parcela).sort(), ['identificacao', 'vencimento']);
+    }
+    assert.ok(dados.contratos[0].parcelas.some(p => p.identificacao === 'Parcela 2' && p.vencimento === '2026-10-05'));
+    const fiscal = dados.contratos[0].documentos.find(d => d.registroId === IDS.nfA1 && d.tipo === 'nfse');
+    assert.equal(fiscal.rotulo, 'NFSe - Parcela 1');
+    assert.equal(fiscal.nome, ANEXOS.nfseA1.filename);
     assert.deepEqual(dados.contratos.map(c => c.nome), ['C105-2026', 'C118-2026']);
     assert.doesNotMatch(texto, /C200-2026|airtableusercontent|dl\.airtable\.com|appI163|tbl[A-Za-z0-9]{14}|fld[A-Za-z0-9]{14}/);
 

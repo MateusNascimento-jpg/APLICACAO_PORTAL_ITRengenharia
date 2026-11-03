@@ -12,6 +12,57 @@ const { rid, aid } = require('./helpers/financeiro-fixtures');
 const F = S.STATUS_FATURA;
 const C = S.STATUS_CONTRATO;
 
+test('identificação real do Airtable aceita um separador inicial válido sem aceitar ambiguidades', () => {
+    for (const [entrada, esperado] of [
+        ['- Parcela Entrada', 'Parcela de Entrada'],
+        ['- Parcela 2', 'Parcela 2'], ['- Parcela 3', 'Parcela 3'],
+        ['- Parcela Única', 'Parcela Única'],
+        ['C232 - Parcela Única', 'Parcela Única'],
+        ['C113-2026 - Parcela Entrada', 'Parcela de Entrada'],
+        ['  – Parcela 02  ', 'Parcela 2'], ['— Parcela Única', 'Parcela Única'],
+        ['-- Parcela 2', null], ['-Parcela 2', null], ['- - Parcela 2', null],
+        ['- 2', null], ['- C232 - Parcela 2', null], ['- Parcela 2 - Parcela 3', null],
+        ['- Parcela 2 e 3', null], ['- Parcela 0', null], ['- Parcela 4/2', null],
+        ['- <script>Parcela 2</script>', null], [['- Parcela 2', '- Parcela 3'], null],
+    ]) assert.equal(M.identificarParcela(entrada), esperado, String(entrada));
+});
+
+test('identificação explícita: entrada, única, número e ambiguidades sem inferência', () => {
+    for (const [entrada, esperado] of [
+        ['Entrada', 'Parcela de Entrada'], ['C02 - Parcela de Entrada', 'Parcela de Entrada'],
+        ['Única', 'Parcela Única'], ['C03 - Parcela única', 'Parcela Única'],
+        ['C105-2026 - Parcela 02/4', 'Parcela 2'], ['2', 'Parcela 2'],
+        ['C105-2026', null], ['Parcela 2 e 3', null], ['Parcela 0', null],
+        ['C105 - 2026', null], ['Parcela 2 - Parcela 3', null],
+        [['Entrada', 'Única'], null], ['  PARCELA DE ENTRADA  ', 'Parcela de Entrada'],
+        ['Parcela 4/2', null], ['<script>Entrada</script>', null], [null, null],
+    ]) assert.equal(M.identificarParcela(entrada), esperado, String(entrada));
+});
+
+test('parcelas públicas mínimas e documentos associados à fatura, sem IDs novos', async () => {
+    const { criarBaseFicticia, IDS, CNPJ_A } = require('./helpers/financeiro-fixtures');
+    const { createFinanceiroService } = require('../lib/financeiro/service');
+    const base = criarBaseFicticia();
+    const primeira = base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA1);
+    primeira.fields[S.NOTAS_FISCAIS.PARCELA] = 'Entrada';
+    primeira.fields[S.NOTAS_FISCAIS.VENCIMENTO] = '2026-02-30';
+    const painel = await createFinanceiroService({ airtable: base.airtable }).carregarPainel(CNPJ_A);
+    const contrato = painel.contratos.find(c => c.id === IDS.contA1);
+    assert.ok(contrato.parcelas.some(p => p.identificacao === 'Parcela de Entrada' && p.vencimento === null));
+    assert.equal(contrato.parcelas.length, 4, 'cancelada excluída; parcela sem anexo permanece');
+    for (const c of painel.contratos) for (const parcela of c.parcelas) {
+        assert.deepEqual(Object.keys(parcela).sort(), ['identificacao', 'vencimento']);
+    }
+    for (const doc of contrato.documentos.filter(d => d.tipo === 'nfse' || d.tipo === 'boleto')) {
+        const origem = base.registro(S.TABELAS.NOTAS_FISCAIS, doc.registroId);
+        assert.equal(doc.rotulo, S.TIPOS_DOCUMENTO[doc.tipo].rotulo + ' - ' + M.identificarParcela(origem.fields[S.NOTAS_FISCAIS.PARCELA]));
+    }
+    const recusada = base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA1);
+    recusada.fields[S.NOTAS_FISCAIS.CONTRATO] = [IDS.contB1];
+    const outro = await createFinanceiroService({ airtable: base.airtable }).carregarPainel(CNPJ_A);
+    assert.ok(!JSON.stringify(outro).includes('Parcela de Entrada'), 'vínculo divergente remove também os novos dados');
+});
+
 test('vínculos: aceita string ou { id }, e qualquer item malformado invalida a lista', () => {
     assert.deepEqual(M.linksValidos([rid('A'), { id: rid('B') }]), [rid('A'), rid('B')]);
     assert.deepEqual(M.linksValidos(undefined), []);
@@ -126,7 +177,7 @@ test('situação consolidada: status do contrato só decide cancelamento e ausê
     assert.equal(com(C.CONCLUIDO, F.PAGO).situacao, SIT.PAGO);
 });
 
-test('painel público: um item por contrato, sem URLs, IDs de cliente nem dados de parcela', () => {
+test('painel público: um item por contrato, sem URLs, IDs de cliente nem valores individuais', () => {
     const anexoNf = { id: aid('Nf'), nome: 'NFSe.pdf', mime: 'application/pdf', tamanho: 5, url: 'https://v5.airtableusercontent.com/segredo' };
     const anexoProp = { id: aid('Prop'), nome: 'Proposta.pdf', mime: 'application/pdf', tamanho: 5, url: 'https://dl.airtable.com/segredo' };
     const p1 = proposta(rid('P1'), { anexos: [anexoProp], contratoIds: [rid('C1')], valor: 9000, formaPagamento: 'Entrada + parcela final' });
@@ -147,17 +198,17 @@ test('painel público: um item por contrato, sem URLs, IDs de cliente nem dados 
     const json = JSON.stringify(painel);
     assert.doesNotMatch(json, /airtableusercontent|dl\.airtable\.com|segredo/);
     assert.doesNotMatch(json, new RegExp(rid('Cli')));
-    assert.doesNotMatch(json, /"faturas"|"parcela"|valorParcela|valorPago|vencimento|2026-11-04|Parcela /);
+    assert.doesNotMatch(json, /"faturas"|"parcela"|valorParcela|valorPago/);
     assert.equal(painel.estado, 'disponivel');
     assert.deepEqual(painel.contratos.map(c => c.id), [ativo.id, semFaturas.id]);
     const publico = painel.contratos[0];
-    assert.deepEqual(Object.keys(publico).sort(), ['documentos', 'id', 'nome', 'prazoPagamentoDias', 'proposta', 'revisao', 'situacao', 'status', 'valorTotal']);
+    assert.deepEqual(Object.keys(publico).sort(), ['documentos', 'id', 'nome', 'parcelas', 'prazoPagamentoDias', 'proposta', 'revisao', 'situacao', 'status', 'valorTotal']);
     assert.equal(publico.situacao, SIT.A_VENCER);
     assert.equal(publico.valorTotal, 9000, 'valor total = Valor da Proposta, não soma/parcela');
     assert.equal(publico.prazoPagamentoDias, 30);
     assert.deepEqual(publico.documentos.map(d => d.tipo), ['proposta', 'nfse'], 'NFSe de parcela cancelada não é listada');
     assert.deepEqual(publico.documentos[1], {
-        tipo: 'nfse', rotulo: 'NFSe', registroId: rid('F1'), anexoId: aid('Nf'),
+        tipo: 'nfse', rotulo: 'NFSe - Parcela não identificada', registroId: rid('F1'), anexoId: aid('Nf'),
         nome: 'NFSe.pdf', mime: 'application/pdf', tamanho: 5, visualizavel: true,
     });
     assert.equal(painel.contratos[1].situacao, SIT.EM_PREPARACAO, 'contrato válido sem NF ainda aparece');
