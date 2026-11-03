@@ -2,8 +2,7 @@
    FINANCEIRO — uma linha por contrato (somente consulta)
    Usa somente /api/financeiro e o proxy autenticado de documentos. Nada aqui
    decide autorização: o servidor filtra por CNPJ e consolida a situação de
-   cada contrato. As parcelas ficam no servidor; a tela lista CONTRATOS e não
-   recebe nem exibe parcelas. Todo texto vindo da API entra no DOM por
+   cada contrato. Os vencimentos aparecem apenas nos detalhes dos contratos. Todo texto vindo da API entra no DOM por
    textContent (nunca innerHTML).
    Depende de portal.js: NAVEGACAO_ATUAL, ocultarViewsPortal, limparNavAtiva,
    ativarViewInicial e aplicarIcones.
@@ -192,7 +191,7 @@
     return bloco;
   }
 
-  /* ---- Detalhes expandidos (inline, sem modal): só informações GERAIS ---- */
+  /* ---- Detalhes expandidos (inline, sem modal): dados gerais e vencimentos ---- */
   function itemDetalhe(grade, rotulo, valor, nota) {
     var item = el('div', 'financeiro-detalhe-item');
     item.appendChild(el('dt', null, rotulo));
@@ -214,7 +213,23 @@
     itemDetalhe(grade, 'Condição de pagamento', condicaoPagamento(contrato));
     itemDetalhe(grade, 'Prazo para pagamento', textoPrazo(contrato.prazoPagamentoDias));
     itemDetalhe(grade, 'Valor total', moeda(contrato.valorTotal));
-    caixa.appendChild(grade);
+    var vencimentos = el('div', 'financeiro-vencimentos');
+    vencimentos.appendChild(el('h3', 'financeiro-documentos-titulo', 'Vencimentos das parcelas'));
+    var lista = el('ul', 'financeiro-vencimentos-lista');
+    var parcelas = Array.isArray(contrato.parcelas) ? contrato.parcelas : [];
+    parcelas.forEach(function (parcela) {
+      if (!parcela || typeof parcela !== 'object') return;
+      var item = el('li', 'financeiro-vencimento');
+      item.appendChild(el('strong', null, parcela.identificacao || 'Parcela não identificada'));
+      item.appendChild(el('span', null, dataBR(parcela.vencimento) || 'Vencimento não informado'));
+      lista.appendChild(item);
+    });
+    if (parcelas.length) vencimentos.appendChild(lista);
+    else vencimentos.appendChild(el('p', 'financeiro-detalhe-nota-bloco', 'Nenhum vencimento de parcela disponível.'));
+    var gerais = el('div', 'financeiro-detalhe-gerais');
+    gerais.appendChild(grade);
+    gerais.appendChild(vencimentos);
+    caixa.appendChild(gerais);
     caixa.appendChild(listaDocumentos(contrato.documentos || []));
     return caixa;
   }

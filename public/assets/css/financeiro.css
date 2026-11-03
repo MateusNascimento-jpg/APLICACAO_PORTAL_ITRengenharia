@@ -264,3 +264,14 @@ body.financeiro-documento-erro {
     border-top: 1px solid var(--line-soft); background: var(--field);
   }
 }
+
+/* Vencimentos abaixo dos dados gerais, com os tokens existentes. */
+.financeiro-detalhe-gerais { min-width: 0; }
+.financeiro-vencimentos { margin-top: 16px; }
+.financeiro-vencimentos-lista { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 22px; }
+.financeiro-vencimento { min-width: 0; padding: 9px 0; border-bottom: 0.5px solid var(--line-soft); display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.financeiro-vencimento strong { color: var(--txt-3); font-size: 12.5px; font-weight: 650; }
+.financeiro-vencimento span { color: var(--txt-2); font-size: 13.5px; }
+@container financeiro (max-width: 600px) {
+  .financeiro-vencimentos-lista { grid-template-columns: minmax(0, 1fr); }
+}

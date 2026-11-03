@@ -29,6 +29,91 @@ const idsDe = painel => new Set([
 ]);
 const contratoDe = (painel, id) => painel.contratos.find(c => c.id === id);
 
+test('parcelas embaralhadas mantêm ordem comercial, vencimentos e documentos da fatura de origem', async () => {
+    const { base, service } = preparar();
+    const tabela = base.tabelas[S.TABELAS.NOTAS_FISCAIS];
+    const principal = base.registro(S.TABELAS.CONTRATOS, IDS.contA1).fields;
+    for (const [id, identificacao, vencimento] of [
+        [IDS.nfA1, 'Entrada', '2099-12-01'],
+        [IDS.nfA2, 'Parcela 10', '2026-01-01'],
+        [IDS.nfA3, 'Parcela 2', '2026-12-01'],
+        [IDS.nfA4, 'Parcela 3', null],
+    ]) {
+        Object.assign(base.registro(S.TABELAS.NOTAS_FISCAIS, id).fields,
+            { [N.PARCELA]: identificacao, [N.VENCIMENTO]: vencimento });
+    }
+    // Rótulos repetidos e desconhecidos não podem ser fundidos nem renumerados.
+    for (const [id, identificacao, vencimento] of [
+        [rid('AmbiguaA'), 'C105 - 2026', '2098-01-01'],
+        [rid('AmbiguaB'), null, null],
+        [rid('Repetida'), 'Parcela 2', '2026-11-01'],
+        [rid('repetida'), 'Parcela 2', '2026-10-01'],
+    ]) {
+        principal[C.PARCELAS].push(id);
+        tabela.push({ id, fields: { [N.CONTRATO]: [IDS.contA1],
+            [N.PARCELA]: identificacao, [N.VENCIMENTO]: vencimento, [N.STATUS_PAGAMENTO]: 'A Vencer' } });
+    }
+    const unico = base.registro(S.TABELAS.CONTRATOS, IDS.contA2).fields;
+    unico[C.PARCELAS] = [IDS.nfA5];
+    base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA5).fields[N.PARCELA] = 'Única';
+    const esperado = [
+        { identificacao: 'Parcela de Entrada', vencimento: '2099-12-01' },
+        { identificacao: 'Parcela 2', vencimento: '2026-12-01' },
+        { identificacao: 'Parcela 2', vencimento: '2026-11-01' },
+        { identificacao: 'Parcela 2', vencimento: '2026-10-01' },
+        { identificacao: 'Parcela 3', vencimento: null },
+        { identificacao: 'Parcela 10', vencimento: '2026-01-01' },
+        { identificacao: null, vencimento: '2098-01-01' },
+        { identificacao: null, vencimento: null },
+    ];
+    let documentosOriginais;
+    for (let rodada = 0; rodada < 4; rodada += 1) {
+        if (rodada % 2) tabela.reverse();
+        else tabela.push(tabela.shift());
+        const painel = await service.carregarPainel(CNPJ_A);
+        const contrato = contratoDe(painel, IDS.contA1);
+        assert.deepEqual(contrato.parcelas, esperado, 'ordem comercial independe de datas e da ordem da consulta');
+        assert.deepEqual(contratoDe(painel, IDS.contA2).parcelas,
+            [{ identificacao: 'Parcela Única', vencimento: null }]);
+        assert.equal(painel.contratos.length, 2);
+        assert.equal(contrato.situacao, 'Vencido');
+        if (documentosOriginais) assert.deepEqual(contrato.documentos, documentosOriginais);
+        documentosOriginais = contrato.documentos;
+        for (const documento of contrato.documentos.filter(d => d.tipo === 'nfse' || d.tipo === 'boleto')) {
+            const origem = base.registro(S.TABELAS.NOTAS_FISCAIS, documento.registroId).fields;
+            const rotulo = { Entrada: 'Parcela de Entrada', 'Parcela 10': 'Parcela 10', 'Parcela 2': 'Parcela 2' }[origem[N.PARCELA]];
+            assert.equal(documento.rotulo, S.TIPOS_DOCUMENTO[documento.tipo].rotulo + ' - ' + rotulo);
+            assert.ok(origem[documento.tipo === 'nfse' ? N.NFSE : N.BOLETO].some(a => a.id === documento.anexoId && a.filename === documento.nome));
+        }
+    }
+});
+
+test('vencimentos não calculam datas ou situação; documentos seguem a fatura com nomes repetidos', async () => {
+    const { base, service } = preparar();
+    const primeira = base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA1).fields;
+    const segunda = base.registro(S.TABELAS.NOTAS_FISCAIS, IDS.nfA2).fields;
+    primeira[N.PARCELA] = 'Entrada';
+    segunda[N.PARCELA] = 'Parcela Única';
+    primeira[N.VENCIMENTO] = '2099-01-01';
+    segunda[N.VENCIMENTO] = null;
+    primeira[N.DATA_EMISSAO_NF] = '2026-12-31';
+    segunda[N.DATA_EMISSAO_NF] = '2026-01-01';
+    for (const fields of [primeira, segunda]) {
+        fields[N.NFSE] = fields[N.NFSE].map(a => ({ ...a, filename: 'Mesmo nome.pdf' }));
+    }
+    const painel = await service.carregarPainel(CNPJ_A);
+    const contrato = contratoDe(painel, IDS.contA1);
+    assert.equal(contrato.situacao, 'Vencido', 'status oficial prevalece sobre datas');
+    assert.ok(contrato.parcelas.some(p => p.identificacao === 'Parcela Única' && p.vencimento === null));
+    assert.ok(contrato.parcelas.some(p => p.identificacao === 'Parcela de Entrada' && p.vencimento === '2099-01-01'));
+    for (const documento of contrato.documentos.filter(d => d.tipo === 'nfse')) {
+        assert.equal(documento.nome, 'Mesmo nome.pdf');
+        assert.equal(documento.rotulo, documento.registroId === IDS.nfA1 ? 'NFSe - Parcela de Entrada' : 'NFSe - Parcela Única');
+    }
+    const outro = await service.carregarPainel(CNPJ_B);
+    assert.doesNotMatch(JSON.stringify(outro), /Parcela de Entrada|Parcela Única|2099-01-01/);
+});
+
 test('1. cliente A recebe somente os próprios contratos, um item por contrato', async () => {
     const { base, service } = preparar();
     const painel = await service.carregarPainel(CNPJ_A);

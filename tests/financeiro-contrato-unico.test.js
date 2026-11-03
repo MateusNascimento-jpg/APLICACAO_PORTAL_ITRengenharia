@@ -1,7 +1,7 @@
 'use strict';
 
 // Critério de aceitação do Financeiro (handoff 24/10, ADR-002): UMA linha por
-// CONTRATO, nenhuma parcela listada (nem em Detalhes), situação consolidada
+// CONTRATO, vencimentos apenas em Detalhes, situação consolidada
 // que nunca vira "Pago" por causa de uma única parcela paga, sem abas e com
 // pequeno separador entre contratos. O teste executa o financeiro.js real
 // sobre um DOM mínimo, alimentado pelo serviço + mapper reais com uma base
@@ -67,7 +67,7 @@ async function painelDe(base, cnpj = CNPJ_A) {
     return { sucesso: true, financeiroHabilitado: true, ...painel };
 }
 
-test('API pública: um item por contrato, sem lista de parcelas e sem dados de parcela', async () => {
+test('API pública: um item por contrato, com vencimentos mínimos e sem valores individuais', async () => {
     const { base, ids } = baseC02C03();
     const dados = await painelDe(base);
     assert.equal(dados.faturas, undefined, 'a coleção de faturas não sai do servidor');
@@ -75,8 +75,8 @@ test('API pública: um item por contrato, sem lista de parcelas e sem dados de p
     const json = JSON.stringify(dados);
     // "Entrada + parcela final"/"Parcela única" são a CONDIÇÃO de pagamento do
     // contrato (Proposta.Forma de Pagamento); o que não pode sair são os
-    // registros de parcela: identificação, valores e datas de cada uma.
-    for (const proibido of ['C02 - Parcela', 'C03 - Parcela', '"parcela"', 'valorParcela', 'valorPago', 'vencimento', '12250', '2026-10-30', '2026-10-10', 'airtableusercontent']) {
+    // dados brutos, valores individuais e datas de pagamento.
+    for (const proibido of ['C02 - Parcela', 'C03 - Parcela', '"parcela"', 'valorParcela', 'valorPago', '12250', '2026-10-10', 'airtableusercontent']) {
         assert.ok(!json.includes(proibido), `${proibido} não pode chegar ao navegador`);
     }
     const c02 = dados.contratos.find(c => c.id === ids.c02);
@@ -107,8 +107,8 @@ test('tela: C02 com duas parcelas e C03 com uma parcela = duas linhas, dois Deta
     const cabecalho = tabela.querySelectorAll('th').map(th => th.textContent);
     assert.deepEqual(cabecalho.slice(0, 5), ['Contrato', 'Condição de pagamento', 'Valor total', 'Prazo para pagamento', 'Situação']);
     const textoTabela = tabela.textContent;
-    assert.doesNotMatch(textoTabela, /C0\d - Parcela|Parcela \d|Identificação da parcela|Valor da parcela|Próximas|A pagar|Pagas|Canceladas/);
-    assert.doesNotMatch(textoTabela, /12\.250,00|30\/10\/2026|10\/10\/2026/, 'nenhum valor/data de parcela isolada');
+    assert.doesNotMatch(textoTabela, /C0\d - Parcela|Identificação da parcela|Valor da parcela|Próximas|A pagar|Pagas|Canceladas/);
+    assert.doesNotMatch(textoTabela, /12\.250,00|10\/10\/2026/, 'nenhum valor individual ou data de pagamento');
 
     const [c02, c03] = linhas;
     assert.equal(c02.querySelector('td.fin-c-contrato').textContent, 'C02');
@@ -136,9 +136,14 @@ test('Detalhes: começa recolhido, expande só o contrato clicado e mostra dados
 
     const rotulos = detalhe02.querySelectorAll('dt').map(dt => dt.textContent);
     assert.deepEqual(rotulos, ['Contrato', 'Proposta', 'Situação do contrato', 'Condição de pagamento', 'Prazo para pagamento', 'Valor total']);
-    assert.doesNotMatch(detalhe02.textContent, /Identificação da parcela|Valor da parcela|Parcela \d|Vencimento|Emissão da NF|Valor pago|Data do pagamento/);
+    const vencimentos = detalhe02.querySelectorAll('.financeiro-vencimento');
+    assert.equal(vencimentos.length, 2);
+    assert.match(vencimentos[0].textContent, /Parcela 1.*Vencimento não informado/);
+    assert.match(vencimentos[1].textContent, /Parcela 2.*30\/10\/2026/);
+    assert.ok(detalhe02.querySelector('.financeiro-detalhe-gerais'));
+    assert.doesNotMatch(detalhe02.textContent, /Identificação da parcela|Valor da parcela|Emissão da NF|Valor pago|Data do pagamento/);
     const documentos = detalhe02.querySelectorAll('li.financeiro-documento');
-    assert.deepEqual(documentos.map(li => li.querySelector('strong').textContent), ['Proposta comercial', 'NFSe', 'NFSe', 'Boleto']);
+    assert.deepEqual(documentos.map(li => li.querySelector('strong').textContent), ['Proposta comercial', 'NFSe - Parcela 1', 'NFSe - Parcela 2', 'Boleto - Parcela 2']);
     for (const li of documentos) {
         assert.match(li.querySelector('a').href, /^\/api\/financeiro\/documentos\/(proposta|nfse|boleto)\/rec[A-Za-z0-9]{14}\/att[A-Za-z0-9]{14}$/);
     }
@@ -159,7 +164,7 @@ test('proposta aceita com artefatos: Proposta → Comprovante → NFSe/boleto na
     ];
     const { document } = await executarFinanceiro(dados);
     const itens = document.getElementById('fin-det-' + ids.c02).querySelectorAll('li.financeiro-documento');
-    assert.deepEqual(itens.map(li => li.querySelector('strong').textContent), ['Proposta comercial', 'Comprovante de Contrato', 'NFSe', 'NFSe', 'Boleto']);
+    assert.deepEqual(itens.map(li => li.querySelector('strong').textContent), ['Proposta comercial', 'Comprovante de Contrato', 'NFSe - Parcela 1', 'NFSe - Parcela 2', 'Boleto - Parcela 2']);
     assert.equal(itens[0].querySelector('a').href, `/api/propostas/${ids.prop02}/proposta-aceita`);
     assert.equal(itens[1].querySelector('a').href, `/api/propostas/${ids.prop02}/comprovante`);
 });
