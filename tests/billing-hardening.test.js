@@ -246,10 +246,11 @@ test('A5: invoice with two attachments is baselined, without blocking and withou
     assert.equal(f.events().length, 0);
 });
 test('A5: a transient failure on any record still aborts the whole baseline', async () => {
-    const f = fixture(); secondInvoice(f); const get = f.airtable.obterRegistro;
-    f.airtable.obterRegistro = async (table, id) => { if (id === f.ids.invoice) throw new Error('network offline'); return get(table, id); };
+    const f = fixture(); f.attach('boleto'); secondInvoice(f); const reader = f.pdfs.boleto;
+    Object.defineProperty(f.pdfs, 'boleto', { configurable: true, get() { throw new Error('network offline'); } });
     await assert.rejects(f.service.scan()); assert.equal(f.store.data.meta, null); assert.equal(f.store.data.states.size, 0);
-    f.airtable.obterRegistro = get; await f.service.scan(); assert.ok(f.store.data.meta);
+    Object.defineProperty(f.pdfs, 'boleto', { configurable: true, writable: true, value: reader });
+    await f.service.scan(); assert.ok(f.store.data.meta);
 });
 test('A5: a commit failure leaves no partial baseline or quarantine', async () => {
     const f = fixture(); secondInvoice(f); f.store.failCommit(true);
@@ -324,10 +325,9 @@ test('M4: delivery and lifecycle audit codes are not deduplicated', async () => 
 test('M5: scan stops between invoices when asked', async () => {
     const f = fixture(); await f.service.scan();
     const second = secondInvoice(f, 'recXXXXXXXXXXXXXX'); makeValid(f, second);
-    let reads = 0; const get = f.airtable.obterRegistro;
-    f.airtable.obterRegistro = async (table, id) => { if (table === S.TABELAS.NOTAS_FISCAIS) reads++; return get(table, id); };
-    const result = await f.service.scan({ shouldStop: () => reads >= 1 });
-    assert.equal(result.stopped, true); assert.equal(reads, 1);
+    let checks = 0;
+    const result = await f.service.scan({ shouldStop: () => ++checks > 1 });
+    assert.equal(result.stopped, true); assert.ok(!f.store.data.states.has(second.id));
 });
 test('M5: stopping during the baseline commits nothing', async () => {
     const f = fixture(); const result = await f.service.scan({ shouldStop: () => true });
