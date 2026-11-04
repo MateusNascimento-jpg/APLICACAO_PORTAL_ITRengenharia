@@ -71,6 +71,10 @@ app.use((req, res, next) => {
     next();
 });
 app.use(applySecurityHeaders);
+// Raw billing bodies must be authenticated before the general JSON parser.
+const billingWorker = require('./lib/billing').install(app, {
+    express, pool, airtable: require('./finance-airtable')
+});
 app.use(express.json({
     limit: '64kb',
     strict: true,
@@ -1110,6 +1114,7 @@ async function iniciar() {
     await cleanupSecurityState().catch(() => {});
     scheduleMaintenance();
     proposalsWorker.start();
+    billingWorker.start();
     server = app.listen(config.port, () => {
         console.log('===================================================');
         console.log(` Portal ITR: http://localhost:${config.port}`);
@@ -1141,6 +1146,7 @@ async function iniciar() {
 async function shutdown(signal) {
     console.log(`[SHUTDOWN] ${signal}: encerrando conexões...`);
     await proposalsWorker.stop();
+    await billingWorker.stop();
     if (server) {
         await new Promise(resolve => server.close(resolve));
     }
