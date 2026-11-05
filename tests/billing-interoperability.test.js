@@ -18,8 +18,7 @@ test('local corrected Notifications contract/protocol match byte-for-byte (D+5, 
 test('six end-to-end event types through actual local receiver and Portal HTTP; injected SMTP only', { skip: !available && 'Corrected Notifications checkout required' }, async t => {
     const { createReceiver, ROUTE } = require(path.join(notifications, 'billing/receiver.js'));
     for (const type of EVENTS) await t.test(type, async t => {
-        // The overdue rule is pending in production; this proves the protocol for when it is decided.
-        const f = fixture({ overdueBoletoPayable: type === 'BOLETO_OVERDUE_REMINDER' });
+        const f = fixture();
         await f.service.scan();
         f.attach(type === 'NFSE_AVAILABLE' ? 'nfse' : 'boleto'); await f.service.scan();
         if (type === 'BOLETO_D_MINUS_1') f.setNow('2026-11-05T12:00:00Z');

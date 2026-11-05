@@ -119,14 +119,14 @@ test('idempotence: same NFSe keeps one event across scans and URL changes', asyn
     assert.equal(f.events()[0].payload.document.sha256, hash(f.pdfs.nfse));
 });
 
-// O bloqueio do boleto vencido não muda.
-test('overdue boleto stays blocked and does not hold back the NFSe', async () => {
+// NFSe e cobrança seguem independentes após o vencimento.
+test('an overdue installment sends its NFSe and its boleto as separate messages', async () => {
     const f = fixture(); await f.service.scan(); f.setNow('2026-11-11T12:00:00Z'); f.attach('boleto'); f.attach('nfse'); await f.service.scan();
-    assert.deepEqual(types(f), ['NFSE_AVAILABLE']);
-    assert.ok(f.store.data.audit.some(a => a.code === 'BOLETO_OVERDUE_RULE_PENDING'));
+    assert.ok(types(f).includes('NFSE_AVAILABLE')); assert.ok(types(f).includes('BOLETO_AVAILABLE'));
+    assert.equal(find(f, 'NFSE_AVAILABLE').payload.document.kind, 'nfse'); assert.equal(find(f, 'BOLETO_AVAILABLE').payload.document.kind, 'boleto');
 });
 test('the shared contract still requires a document on the reminder', async () => {
-    const f = fixture({ overdueBoletoPayable: true }); await f.ready(); f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
+    const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
     assert.equal(valid({ ...find(f, 'BOLETO_OVERDUE_REMINDER').payload, document: null }), false);
 });
 

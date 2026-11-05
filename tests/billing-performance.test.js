@@ -83,7 +83,7 @@ test('catalog read and fresh read build the identical snapshot and state version
     }
 });
 test('catalog requests every field the source reads, and nothing about values or proposals PDF', () => {
-    assert.deepEqual(CATALOG_FIELDS[S.TABELAS.NOTAS_FISCAIS].slice().sort(), [N.CONTRATO, N.PARCELA, N.VALOR_PARCELA, N.VENCIMENTO, N.STATUS_PAGAMENTO, N.BOLETO, N.NFSE].sort());
+    assert.deepEqual(CATALOG_FIELDS[S.TABELAS.NOTAS_FISCAIS].slice().sort(), [N.CONTRATO, N.PARCELA, N.VALOR_PARCELA, N.VENCIMENTO, N.STATUS_PAGAMENTO, N.DATA_PAGAMENTO, N.VALOR_PAGO, N.BOLETO, N.NFSE].sort());
     assert.ok(!CATALOG_FIELDS[S.TABELAS.PROPOSTA].includes(S.PROPOSTA.VALOR)); assert.ok(!CATALOG_FIELDS[S.TABELAS.PROPOSTA].includes(S.PROPOSTA.ARQUIVOS));
 });
 

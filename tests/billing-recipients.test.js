@@ -145,7 +145,7 @@ test('new contact: no historical payment confirmation', async () => {
     assert.deepEqual(of(f, 'BOLETO_PAYMENT_RECORDED'), [A]);
 });
 test('new contact: skips the occurrence already formed today, joins the next ones', async () => {
-    const f = fixture({ overdueBoletoPayable: true }); setEmails(f, A); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
+    const f = fixture(); setEmails(f, A); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     setEmails(f, `${A};${B}`); await f.service.scan();
     assert.deepEqual(of(f, 'BOLETO_D_MINUS_1'), [A]);
     f.setNow('2026-11-06T12:00:00Z'); await f.service.scan();

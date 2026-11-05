@@ -5,7 +5,7 @@ const { createService } = require('../../lib/billing/service');
 const { hash } = require('../../lib/billing/protocol');
 const { memoryStore } = require('./billing-memory');
 const ids = { client: 'recAAAAAAAAAAAAAA', proposal: 'recBBBBBBBBBBBBBB', contract: 'recCCCCCCCCCCCCCC', invoice: 'recDDDDDDDDDDDDDD', boleto: 'attEEEEEEEEEEEEEE', nfse: 'attFFFFFFFFFFFFFF' };
-function fixture({ overdueBoletoPayable = false } = {}) {
+function fixture() {
     let now = Date.parse('2026-11-04T12:00:00Z'), failure = false;
     const store = memoryStore(), clock = () => now;
     const pdfs = { boleto: Buffer.from('%PDF-1.4\nBoleto ficticio\n%%EOF'), nfse: Buffer.from('%PDF-1.4\nNFSe ficticia\n%%EOF') };
@@ -26,7 +26,7 @@ function fixture({ overdueBoletoPayable = false } = {}) {
         const kind = url.includes('nfse') ? 'nfse' : 'boleto', bytes = pdfs[kind];
         return { bytes, hash: hash(bytes) };
     } });
-    const service = createService({ store, source, clock, overdueBoletoPayable });
+    const service = createService({ store, source, clock });
     function attach(kind) {
         invoice.fields[S.NOTAS_FISCAIS[kind.toUpperCase()]] = [{ id: ids[kind], type: 'application/pdf', size: pdfs[kind].length, url: 'https://v5.airtableusercontent.com/' + kind }];
     }

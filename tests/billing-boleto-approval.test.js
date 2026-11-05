@@ -1,5 +1,5 @@
 'use strict';
-// D2: boleto cadastrado no Airtable já foi aprovado pelo Financeiro. Vencido e NFSe ficam de fora. Sem rede.
+// D2: boleto cadastrado no Airtable já foi aprovado pelo Financeiro. Sem rede.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -13,13 +13,12 @@ const { createWorker } = require('../lib/billing/worker');
 const { register } = require('../lib/billing/routes');
 const { configuration } = require('../lib/billing/config');
 const { hash } = require('../lib/billing/protocol');
-const N = S.NOTAS_FISCAIS, PENDING = /BOLETO_OVERDUE_RULE_PENDING/;
+const N = S.NOTAS_FISCAIS;
 const cfg = { enabled: true, worker: true, origin: 'https://notifications.example.test', secret: Buffer.alloc(32, 3).toString('base64') };
 const noFetch = async () => { throw new Error('must not send'); };
 const worker = (f, fetcher = noFetch) => createWorker({ config: cfg, store: f.store, service: f.service, clock: f.clock, fetcher, random: () => 0 });
 const types = f => f.events().map(e => e.payload.type);
 const find = (f, type) => f.events().find(e => e.payload.type === type);
-const pendingAudits = f => f.store.data.audit.filter(a => a.code === 'BOLETO_OVERDUE_RULE_PENDING').length;
 const notifications = process.env.BILLING_NOTIFICATIONS_REPO || path.resolve(__dirname, '../../Emails_diarios_ITRengenharia');
 const available = fs.existsSync(path.join(notifications, 'billing/receiver.js'));
 
@@ -28,7 +27,7 @@ test('registered boleto needs no attestation: queued and authorized', async () =
     const f = fixture(); const e = await f.ready();
     assert.equal(e.payload.type, 'BOLETO_AVAILABLE');
     const { proof, bytes } = await f.service.validate(e.payload);
-    assert.equal(proof.documentPayable, true); assert.equal(proof.payableAfterDue, false);
+    assert.equal(proof.documentPayable, true); assert.equal(proof.payableAfterDue, true);
     assert.deepEqual(bytes.boleto, f.pdfs.boleto);
 });
 test('D−1 and D0 go out with only the registered boleto', async () => {
@@ -41,61 +40,6 @@ test('payment confirmation is unaffected', async () => {
     const f = fixture(); await f.ready(); f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan(); await f.service.scan();
     const { proof } = await f.service.validate(find(f, 'BOLETO_PAYMENT_RECORDED').payload);
     assert.equal(proof.newPaymentTransition, true);
-});
-
-// Boleto vencido: regra pendente.
-test('overdue reminders are not generated while the rule is pending', async () => {
-    const f = fixture(); await f.ready();
-    for (const day of ['11', '16', '21']) { f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan(); }
-    assert.ok(!types(f).includes('BOLETO_OVERDUE_REMINDER'));
-    assert.ok(pendingAudits(f) >= 1, 'the block is visible in the audit');
-});
-test('boleto first registered after its due date generates no availability', async () => {
-    const f = fixture(); await f.service.scan(); f.setNow('2026-11-07T12:00:00Z'); f.attach('boleto'); await f.service.scan();
-    assert.equal(f.events().length, 0); assert.equal(pendingAudits(f), 1);
-});
-test('status Vencido blocks even with a future or missing due date', async t => {
-    for (const due of ['2026-12-31', '']) await t.test(due || 'sem vencimento', async () => {
-        const f = fixture(); f.invoice.fields[N.VENCIMENTO] = due; await f.service.scan();
-        f.invoice.fields[N.STATUS_PAGAMENTO] = 'Vencido'; f.attach('boleto'); await f.service.scan();
-        assert.equal(f.events().length, 0); assert.equal(pendingAudits(f), 1);
-    });
-});
-test('the due day itself is not overdue, at the Sao Paulo boundary', async () => {
-    const f = fixture(); const e = await f.ready();
-    f.setNow('2026-11-07T02:59:59Z'); await f.service.validate(e.payload);
-    f.setNow('2026-11-07T03:00:00Z'); await assert.rejects(f.service.validate(e.payload), PENDING);
-});
-test('queued boleto that becomes overdue is refused and never reaches Notifications', async () => {
-    const f = fixture(); const e = await f.ready(); f.setNow('2026-11-07T12:00:00Z');
-    await worker(f).deliver(e);
-    const current = f.store.data.events.get(e.payload.eventId);
-    assert.equal(current.status, 'cancelled'); assert.equal(current.reason, 'BOLETO_OVERDUE_RULE_PENDING');
-});
-test('status changed to Vencido after queueing denies every phase', async t => {
-    for (const phase of ['prepare', 'pdf', 'smtp']) await t.test(phase, async () => {
-        const f = fixture(); const e = await f.ready(); const current = f.store.data.events.get(e.payload.eventId);
-        current.status = 'sending'; await f.store.repo.saveEvent(current);
-        f.invoice.fields[N.STATUS_PAGAMENTO] = 'Vencido';
-        await assert.rejects(f.service.validate(e.payload, phase), PENDING);
-    });
-});
-test('the block is audited once a day, per invoice', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
-    for (let i = 0; i < 5; i++) await f.service.scan();
-    assert.equal(pendingAudits(f), 1);
-});
-test('no configuration can release overdue boletos in the running application', () => {
-    for (const file of ['index.js', 'config.js', 'routes.js', 'worker.js', 'source.js', 'store.js'])
-        assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../lib/billing', file), 'utf8'), /overdueBoletoPayable/, file);
-    const env = { PORTAL_BILLING_ENABLED: 'true', BILLING_HMAC_SECRET: cfg.secret, PORTAL_BILLING_STORAGE_KEY: Buffer.alloc(32, 9).toString('base64'), PORTAL_BILLING_NOTIFICATIONS_ORIGIN: cfg.origin };
-    assert.ok(!Object.keys(configuration(env)).some(k => /overdue|payable/i.test(k)));
-});
-test('the recurring schedule stays intact behind the pending rule', async () => {
-    const f = fixture({ overdueBoletoPayable: true }); await f.ready();
-    f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
-    const { proof } = await f.service.validate(find(f, 'BOLETO_OVERDUE_REMINDER').payload);
-    assert.equal(proof.payableAfterDue, true);
 });
 
 // Verificações técnicas preservadas.
@@ -176,18 +120,6 @@ test('real receiver sends availability, D−1 and D0 with the exact registered P
     f.setNow('2026-11-06T12:00:00Z'); await f.service.scan(); await send('BOLETO_DUE_TODAY');
     assert.equal(r.sent.length, 3);
     for (const message of r.sent) assert.deepEqual(message.pdfs[0].content, f.pdfs.boleto);
-});
-test('real receiver sends nothing for an overdue reminder, even if one is presented', { skip: !available }, async t => {
-    const f = fixture({ overdueBoletoPayable: true }); await f.ready(); f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
-    const reminder = find(f, 'BOLETO_OVERDUE_REMINDER').payload;
-    const current = find(f, 'BOLETO_OVERDUE_REMINDER'); current.status = 'sending'; await f.store.repo.saveEvent(current);
-    // Same construction as lib/billing/index.js: no option, so the running default applies.
-    const strict = createService({ store: f.store, source: f.source, clock: f.clock });
-    await assert.rejects(strict.validate(reminder), PENDING);
-    const r = realReceiver(t, f, strict); await r.listening;
-    const result = await r.post(reminder);
-    assert.equal(result.status, 503); assert.equal(result.body.code, 'PORTAL_VALIDATION_FAILED');
-    assert.equal(r.sent.length, 0);
 });
 test('financial flags stay off by default', () => {
     assert.deepEqual(configuration({}), { enabled: false, worker: false });

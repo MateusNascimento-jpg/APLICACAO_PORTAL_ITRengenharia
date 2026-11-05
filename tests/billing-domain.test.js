@@ -50,8 +50,8 @@ test('NFSe independent of boleto and payment, with its own PDF', async () => {
     const result = await f.service.validate(e.payload); assert.equal(result.proof.paymentStatus, 'Pago');
     assert.deepEqual(result.bytes.nfse, f.pdfs.nfse); assert.equal(e.payload.document.kind, 'nfse');
 });
-test('schedule behind the pending overdue rule: D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight', async () => {
-    const f = fixture({ overdueBoletoPayable: true }); await f.ready();
+test('D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight', async () => {
+    const f = fixture(); await f.ready();
     for (const day of [5, 6, 7, 11, 12, 16, 21, 26]) {
         f.setNow(`2026-11-${String(day).padStart(2, '0')}T12:00:00Z`); await f.service.scan();
     }
@@ -61,7 +61,7 @@ test('schedule behind the pending overdue rule: D−1, D0, D+5/D+10/D+15/D+20; n
     assert.equal(calendar(p, Date.parse('2026-11-12T02:59:59Z')), true);
     assert.equal(calendar(p, Date.parse('2026-11-12T03:00:00Z')), false);
     assert.equal(today(Date.parse('2027-01-01T02:00:00Z')), '2026-12-31');
-    const missed = fixture({ overdueBoletoPayable: true }); await missed.ready(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
+    const missed = fixture(); await missed.ready(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
     assert.deepEqual(missed.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
 test('valid civil dates/leap year; invalid dates, timestamp offsets and contract values never guessed', () => {
@@ -130,10 +130,9 @@ test('tampered, substituted or revised boleto cannot be authorized', async t => 
         await f.service.scan(); assert.equal(f.events().length, 1);
     });
 });
-test('past due stays blocked while the rule is pending, regardless of status or PDF', async () => {
+test('past due keeps the charge going with the original boleto', async () => {
     const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
-    await f.service.scan(); assert.equal(f.events().length, 1);
-    assert.ok(f.store.data.audit.some(a => a.code === 'BOLETO_OVERDUE_RULE_PENDING'));
+    await f.service.scan(); assert.deepEqual(f.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
 test('changing attachment ID with same content never generates another availability; changed PDF is held for reconciliation', async () => {
     const f = fixture(); await f.ready(); f.invoice.fields[S.NOTAS_FISCAIS.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; await f.service.scan();

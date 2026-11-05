@@ -10,13 +10,17 @@ Resolver antes da ativação. Os templates e a presença do CNPJ não foram alte
 
 ## Aprovações de documentos
 
-Todo boleto e toda NFSe cadastrados no Airtable já foram conferidos e aprovados pelas equipes responsáveis, sem atestado adicional. Com isso, **as flags são a barreira que impede o envio real de boleto disponível, D−1, D0, NFSe e confirmação de pagamento.** As verificações técnicas continuam: integridade, anexos, vínculo com cliente/CNPJ, status, idempotência e ausência de envios retroativos.
+Todo boleto e toda NFSe cadastrados no Airtable já foram conferidos e aprovados pelas equipes responsáveis, sem atestado adicional. Com isso, **as flags são a barreira que impede o envio real de boleto disponível, D−1, D0, lembretes após o vencimento, NFSe e confirmação de pagamento.** As verificações técnicas continuam: integridade, anexos, vínculo com cliente/CNPJ, status, idempotência e ausência de envios retroativos.
 
-## Decisão pendente: boleto vencido
+## Boleto vencido
 
-A cobrança continua válida após o vencimento, sujeita aos encargos contratuais. Falta confirmar se o banco liquida o PDF original.
+A ITR confirmou que o PDF original continua pagável após o vencimento, com os encargos do contrato tratados pelo banco. Os lembretes D+5, D+10, D+15… anexam esse PDF enquanto a parcela estiver ativa e sem pagamento registrado. O sistema não calcula encargos nem altera valores ou boletos. O e-mail informa, sem percentual, que o pagamento após o vencimento está sujeito aos acréscimos previstos em contrato.
 
-Até lá, o bloqueio é mantido: nenhum boleto vencido é enviado, nem como lembrete D+5, D+10, D+15…, nem como "boleto disponível". O código de auditoria é `BOLETO_OVERDUE_RULE_PENDING`. Ocorrências passadas e eventos cancelados não são recriados.
+**Dados de pagamento sem status `Pago`.** Data ou valor de pagamento preenchidos com outro status suspendem as mensagens de cobrança da parcela (boleto disponível, D−1, D0 e lembretes), e a inconsistência fica na auditoria só como código. A suspensão não é durável: corrigido o cadastro, a parcela volta a ser avaliada. Ocorrências de dias já passados não são recuperadas. Valor pago igual a zero não conta como pagamento. NFSe e confirmação de pagamento não são afetadas. Um pagamento parcial também suspende a cobrança até a revisão do cadastro.
+
+## Boletos existentes na ativação (D4)
+
+A baseline é preservada: boletos existentes na ativação não recebem disponibilidade, D−1, D0 nem lembretes, ainda que vencidos. **Decisão futura:** a eventual inclusão controlada de parcelas antigas exige liberação específica. Disparos históricos não estão autorizados.
 
 ## Homologação obrigatória
 
