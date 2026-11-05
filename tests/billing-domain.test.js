@@ -94,7 +94,7 @@ test('unconfirmed payment oscillation never generates payment event and still st
 });
 test('recipient revocation, CNPJ mismatch, cross-client and broken reciprocal chains deny current intent', async t => {
     const changes = {
-        revoked: f => { f.store.data.grants[0].revoked = true; },
+        removed: f => { f.client.fields[require('../lib/billing/source').CLIENT_EMAIL] = 'second@example.test;third@example.test'; },
         wrongRecipient: f => { f.client.fields[require('../lib/billing/source').CLIENT_EMAIL] = 'other@example.test'; },
         wrongCnpj: f => { f.client.fields[S.CLIENTES.CNPJ] = '98765432000198'; },
         duplicateCnpj: f => { f.tables[S.TABELAS.CLIENTES].push({ ...f.client, id: 'recZZZZZZZZZZZZZZ' }); },
@@ -110,9 +110,9 @@ test('recipient revocation, CNPJ mismatch, cross-client and broken reciprocal ch
         const f = fixture(); const e = await f.ready(); change(f); await assert.rejects(f.service.validate(e.payload));
     });
 });
-test('individual recipients: one immutable event per authorized address, no implicit commercial authorization', async () => {
+test('individual recipients: one immutable event per registered address', async () => {
     const f = fixture(); const field = require('../lib/billing/source').CLIENT_EMAIL;
-    f.client.fields[field] += ';second@example.test;unauthorized@example.test'; f.grant('second@example.test');
+    f.client.fields[field] += ';second@example.test;invalido';
     await f.ready(); assert.deepEqual(f.events().map(e => e.payload.recipient).sort(), ['financeiro@example.test', 'second@example.test']);
     assert.equal(new Set(f.events().map(e => e.payload.eventId)).size, 2);
 });

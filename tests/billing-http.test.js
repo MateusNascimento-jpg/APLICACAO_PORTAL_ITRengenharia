@@ -61,7 +61,7 @@ test('event substitution, unknown event, wrong attachment and other client never
     }
     for (const path of [`/internal/billing/v1/pdf/${e.payload.eventId}/attZZZZZZZZZZZZZZ`, `/internal/billing/v1/pdf/${'a'.repeat(64)}/${e.payload.document.id}`])
         assert.equal((await fetch(s.origin + path, { headers: headers(secret, 'GET', path, '', f.clock()) })).status, 503);
-    f.store.data.grants[0].revoked = true;
+    f.client.fields[require('../lib/billing/source').CLIENT_EMAIL] = 'other@example.test';
     const r = await s.auth(e.payload); assert.equal(r.r.status, 503); assert.doesNotMatch(r.raw, /cnpj|123456|financeiro|stack|sha256/);
 });
 test('payment between prepare and SMTP prevents lease and persists stop', async t => {

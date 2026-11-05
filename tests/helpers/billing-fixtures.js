@@ -29,11 +29,6 @@ function fixture() {
     } });
     const service = createService({ store, source, clock });
     const baseEvidence = { clientId: ids.client, cnpj: '12345678000195', evidenceHash: hash('review ficticio'), validFrom: now - 86400000, validUntil: Date.parse('2028-01-01'), revoked: false };
-    function grant(recipient = 'financeiro@example.test') {
-        const g = validateEvidence({ ...baseEvidence, type: 'grant', recipient, authorized: true }, store.cipher);
-        store.data.grants.push(g); return g;
-    }
-    grant();
     function attest(kind, overrides = {}) {
         const d = validateEvidence({ ...baseEvidence, type: 'document', proposalId: ids.proposal, contractId: ids.contract, invoiceId: ids.invoice,
             sha256: hash(pdfs[kind]), kind, dueDate: invoice.fields[S.NOTAS_FISCAIS.VENCIMENTO] || null,
@@ -44,7 +39,7 @@ function fixture() {
         invoice.fields[S.NOTAS_FISCAIS[kind.toUpperCase()]] = [{ id: ids[kind], type: 'application/pdf', size: pdfs[kind].length, url: 'https://v5.airtableusercontent.com/' + kind }];
         attest(kind);
     }
-    return { store, source, service, clock, ids, tables, invoice, proposal, contract, client, pdfs, attach, attest, grant, airtable,
+    return { store, source, service, clock, ids, tables, invoice, proposal, contract, client, pdfs, attach, attest, airtable,
         setNow: v => { now = typeof v === 'number' ? v : Date.parse(v); }, fail: v => { failure = v; },
         events: () => [...store.data.events.values()], async ready(kind = 'boleto') { await service.scan(); attach(kind); await service.scan(); return this.events()[0]; }
     };

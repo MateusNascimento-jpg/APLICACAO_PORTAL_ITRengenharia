@@ -31,18 +31,18 @@ test('A1: NFSe attached after the boleto does not cancel the boleto, and vice ve
     await f.service.validate(find(f, 'BOLETO_AVAILABLE').payload);
     await f.service.validate(find(f, 'NFSE_AVAILABLE').payload);
 });
-test('A1: a new recipient does not cancel the intent of the current one', async () => {
+test('A1: a new address does not cancel the intent of the current one, nor receive it', async () => {
     const f = fixture(); const e = await f.ready(); const field = require('../lib/billing/source').CLIENT_EMAIL;
-    f.client.fields[field] += ';second@example.test'; f.grant('second@example.test'); await f.service.scan();
+    f.client.fields[field] += ';second@example.test'; await f.service.scan();
     assert.equal(f.store.data.events.get(e.payload.eventId).status, 'pending');
-    assert.equal(f.events().length, 2);
+    assert.equal(f.events().length, 1);
 });
 test('A1: material changes still cancel, and live checks still deny', async () => {
     const material = fixture(); const a = await material.ready();
     material.contract.fields[S.CONTRATOS.NOME] = 'C-OUTRO'; await material.service.scan();
     assert.equal(material.store.data.events.get(a.payload.eventId).status, 'cancelled');
     const revoked = fixture(); const b = await revoked.ready();
-    revoked.store.data.grants[0].revoked = true;
+    revoked.client.fields[require('../lib/billing/source').CLIENT_EMAIL] = 'other@example.test';
     await assert.rejects(revoked.service.validate(b.payload), /RECIPIENT_UNAUTHORIZED/);
     const unaccepted = fixture(); const c = await unaccepted.ready();
     unaccepted.proposal.fields[S.PROPOSTA.STATUS] = 'Enviada';

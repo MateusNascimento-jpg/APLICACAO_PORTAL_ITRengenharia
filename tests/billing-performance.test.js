@@ -108,7 +108,6 @@ test('changes right after a scan are denied without another scan', async t => {
         contractCancelled: f => { f.contract.fields[S.CONTRATOS.STATUS] = 'Cancelado'; },
         proposalRevoked: f => { f.proposal.fields[S.PROPOSTA.STATUS] = 'Enviada'; },
         recipientRemoved: f => { f.client.fields[CLIENT_EMAIL] = 'other@example.test'; },
-        grantRevoked: f => { f.store.data.grants[0].revoked = true; },
         duplicatedCnpj: f => { f.tables[S.TABELAS.CLIENTES].push({ ...f.client, id: 'recZZZZZZZZZZZZZZ' }); },
         attestationRevoked: f => { [...f.store.data.documents.values()][0].revoked = true; },
         relinked: f => { f.client.fields[CLIENT_PROPOSALS] = []; }

@@ -23,11 +23,9 @@ async function run(args, env = process.env) {
         // Test provision only, with workers stopped. Production provisioning needs an audited operator flow.
         await conn.beginTransaction();
         try {
-            const table = evidence.type === 'grant' ? 'grants' : 'documents';
-            const column = evidence.type === 'grant' ? 'client_id' : 'invoice_id';
-            await conn.query(`INSERT INTO portal_billing_${table} (id, ${column}, data) VALUES (?, ?, ?)
+            await conn.query(`INSERT INTO portal_billing_documents (id, invoice_id, data) VALUES (?, ?, ?)
                 ON DUPLICATE KEY UPDATE data=VALUES(data)`,
-            [evidence.id, evidence.type === 'grant' ? evidence.clientId : evidence.invoiceId, cipher.seal(evidence)]);
+            [evidence.id, evidence.invoiceId, cipher.seal(evidence)]);
             await conn.query('INSERT INTO portal_billing_audit (at_ms, subject, code) VALUES (?, ?, ?)', [Date.now(), evidence.id, 'LOCAL_EVIDENCE_IMPORTED']);
             await conn.commit();
         } catch (error) { await conn.rollback(); throw error; }
