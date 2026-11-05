@@ -6,7 +6,7 @@ const { hash } = require('../../lib/billing/protocol');
 const { validateEvidence } = require('../../lib/billing/evidence');
 const { memoryStore } = require('./billing-memory');
 const ids = { client: 'recAAAAAAAAAAAAAA', proposal: 'recBBBBBBBBBBBBBB', contract: 'recCCCCCCCCCCCCCC', invoice: 'recDDDDDDDDDDDDDD', boleto: 'attEEEEEEEEEEEEEE', nfse: 'attFFFFFFFFFFFFFF' };
-function fixture() {
+function fixture({ overdueBoletoPayable = false } = {}) {
     let now = Date.parse('2026-11-04T12:00:00Z'), failure = false;
     const store = memoryStore(), clock = () => now;
     const pdfs = { boleto: Buffer.from('%PDF-1.4\nBoleto ficticio\n%%EOF'), nfse: Buffer.from('%PDF-1.4\nNFSe ficticia\n%%EOF') };
@@ -27,9 +27,10 @@ function fixture() {
         const kind = url.includes('nfse') ? 'nfse' : 'boleto', bytes = pdfs[kind];
         return { bytes, hash: hash(bytes) };
     } });
-    const service = createService({ store, source, clock });
+    const service = createService({ store, source, clock, overdueBoletoPayable });
     const baseEvidence = { clientId: ids.client, cnpj: '12345678000195', evidenceHash: hash('review ficticio'), validFrom: now - 86400000, validUntil: Date.parse('2028-01-01'), revoked: false };
     function attest(kind, overrides = {}) {
+        if (kind === 'boleto') return null; // D2: a registered boleto needs no attestation.
         const d = validateEvidence({ ...baseEvidence, type: 'document', proposalId: ids.proposal, contractId: ids.contract, invoiceId: ids.invoice,
             sha256: hash(pdfs[kind]), kind, dueDate: invoice.fields[S.NOTAS_FISCAIS.VENCIMENTO] || null,
             amountCents: 150050, payable: true, payableAfterDue: true, ...overrides }, store.cipher);

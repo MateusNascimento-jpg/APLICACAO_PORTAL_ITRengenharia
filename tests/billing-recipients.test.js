@@ -124,11 +124,11 @@ test('a removed address gets no future occurrence; the others continue', async (
     assert.deepEqual(of(f, 'BOLETO_D_MINUS_1'), [A]);
 });
 test('an address removed after the audience was formed is not authorized by it', async () => {
-    const f = fixture(); setEmails(f, `${A};${B}`); await f.service.scan(); f.attach('boleto');
+    const f = fixture(); setEmails(f, `${A};${B}`); await f.service.scan(); f.attach('nfse');
     const proofs = new Map(f.store.data.documents); f.store.data.documents.clear();
     await f.service.scan(); assert.equal(f.events().length, 0);
     setEmails(f, A); f.store.data.documents = proofs; await f.service.scan();
-    assert.deepEqual(of(f, 'BOLETO_AVAILABLE'), [A]);
+    assert.deepEqual(of(f, 'NFSE_AVAILABLE'), [A]);
 });
 
 test('new contact: no historical boleto', async () => {
@@ -146,7 +146,7 @@ test('new contact: no historical payment confirmation', async () => {
     assert.deepEqual(of(f, 'BOLETO_PAYMENT_RECORDED'), [A]);
 });
 test('new contact: skips the occurrence already formed today, joins the next ones', async () => {
-    const f = fixture(); setEmails(f, A); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
+    const f = fixture({ overdueBoletoPayable: true }); setEmails(f, A); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     setEmails(f, `${A};${B}`); await f.service.scan();
     assert.deepEqual(of(f, 'BOLETO_D_MINUS_1'), [A]);
     f.setNow('2026-11-06T12:00:00Z'); await f.service.scan();
@@ -264,8 +264,8 @@ test('a grant evidence can no longer be created', () => {
     const f = fixture();
     assert.throws(() => validateEvidence({ type: 'grant', clientId: f.ids.client, cnpj: '12345678000195', evidenceHash: 'a'.repeat(64), validFrom: 1, validUntil: 2, revoked: false, recipient: A, authorized: true }, f.store.cipher), /EVIDENCE_TYPE_INVALID/);
 });
-test('D2 still pending: a registered address without document attestation sends nothing', async () => {
-    const f = fixture(); await f.service.scan(); f.attach('boleto'); f.store.data.documents.clear(); await f.service.scan();
+test('a registered address does not release an NFSe without attestation', async () => {
+    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.store.data.documents.clear(); await f.service.scan();
     assert.equal(f.events().length, 0); assert.ok(f.store.data.audit.some(a => a.code === 'DOCUMENT_UNVERIFIED'));
 });
 test('financial flags stay off by default', () => {

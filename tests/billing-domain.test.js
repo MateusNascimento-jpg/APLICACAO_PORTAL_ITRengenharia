@@ -50,8 +50,8 @@ test('NFSe independent of boleto and payment, with its own PDF', async () => {
     const result = await f.service.validate(e.payload); assert.equal(result.proof.paymentStatus, 'Pago');
     assert.deepEqual(result.bytes.nfse, f.pdfs.nfse); assert.equal(e.payload.document.kind, 'nfse');
 });
-test('D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight', async () => {
-    const f = fixture(); await f.ready();
+test('schedule behind the pending overdue rule: D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight', async () => {
+    const f = fixture({ overdueBoletoPayable: true }); await f.ready();
     for (const day of [5, 6, 7, 11, 12, 16, 21, 26]) {
         f.setNow(`2026-11-${String(day).padStart(2, '0')}T12:00:00Z`); await f.service.scan();
     }
@@ -61,7 +61,7 @@ test('D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight
     assert.equal(calendar(p, Date.parse('2026-11-12T02:59:59Z')), true);
     assert.equal(calendar(p, Date.parse('2026-11-12T03:00:00Z')), false);
     assert.equal(today(Date.parse('2027-01-01T02:00:00Z')), '2026-12-31');
-    const missed = fixture(); await missed.ready(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
+    const missed = fixture({ overdueBoletoPayable: true }); await missed.ready(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
     assert.deepEqual(missed.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
 test('valid civil dates/leap year; invalid dates, timestamp offsets and contract values never guessed', () => {
@@ -116,29 +116,24 @@ test('individual recipients: one immutable event per registered address', async 
     await f.ready(); assert.deepEqual(f.events().map(e => e.payload.recipient).sort(), ['financeiro@example.test', 'second@example.test']);
     assert.equal(new Set(f.events().map(e => e.payload.eventId)).size, 2);
 });
-test('tampered, substituted, foreign, expired or unpayable document cannot be authorized', async t => {
+test('tampered, substituted or revised boleto cannot be authorized', async t => {
     const changes = {
         tampered: f => { f.pdfs.boleto = Buffer.from('%PDF-1.4\nOutro conteudo\n%%EOF'); },
         replaced: f => { f.pdfs.boleto = Buffer.from('%PDF-1.4\nNovo boleto\n%%EOF'); f.attach('boleto'); },
         removed: f => { f.invoice.fields[S.NOTAS_FISCAIS.BOLETO] = []; },
         multiple: f => { f.invoice.fields[S.NOTAS_FISCAIS.BOLETO].push({ ...f.invoice.fields[S.NOTAS_FISCAIS.BOLETO][0], id: f.ids.nfse }); },
-        wrongOwner: f => { [...f.store.data.documents.values()][0].clientId = 'recZZZZZZZZZZZZZZ'; },
-        expired: f => { [...f.store.data.documents.values()][0].validUntil = f.clock() - 1; },
-        unpayable: f => { [...f.store.data.documents.values()][0].payable = false; },
         revisedDue: f => { f.invoice.fields[S.NOTAS_FISCAIS.VENCIMENTO] = '2026-11-07'; },
-        revisedAmount: f => { f.invoice.fields[S.NOTAS_FISCAIS.VALOR_PARCELA] = 1200; },
-        missingProof: f => { f.store.data.documents.clear(); }
+        revisedAmount: f => { f.invoice.fields[S.NOTAS_FISCAIS.VALOR_PARCELA] = 1200; }
     };
     for (const [name, change] of Object.entries(changes)) await t.test(name, async () => {
         const f = fixture(); const e = await f.ready(); change(f); await assert.rejects(f.service.validate(e.payload));
         await f.service.scan(); assert.equal(f.events().length, 1);
     });
 });
-test('past due requires explicit payableAfterDue, not status or PDF extension', async () => {
+test('past due stays blocked while the rule is pending, regardless of status or PDF', async () => {
     const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
-    [...f.store.data.documents.values()][0].payableAfterDue = false;
     await f.service.scan(); assert.equal(f.events().length, 1);
-    assert.ok(f.store.data.audit.some(a => a.code === 'DOCUMENT_NOT_PAYABLE'));
+    assert.ok(f.store.data.audit.some(a => a.code === 'BOLETO_OVERDUE_RULE_PENDING'));
 });
 test('changing attachment ID with same content never generates another availability; changed PDF is held for reconciliation', async () => {
     const f = fixture(); await f.ready(); f.invoice.fields[S.NOTAS_FISCAIS.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; await f.service.scan();

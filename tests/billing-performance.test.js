@@ -109,7 +109,6 @@ test('changes right after a scan are denied without another scan', async t => {
         proposalRevoked: f => { f.proposal.fields[S.PROPOSTA.STATUS] = 'Enviada'; },
         recipientRemoved: f => { f.client.fields[CLIENT_EMAIL] = 'other@example.test'; },
         duplicatedCnpj: f => { f.tables[S.TABELAS.CLIENTES].push({ ...f.client, id: 'recZZZZZZZZZZZZZZ' }); },
-        attestationRevoked: f => { [...f.store.data.documents.values()][0].revoked = true; },
         relinked: f => { f.client.fields[CLIENT_PROPOSALS] = []; }
     };
     for (const [name, change] of Object.entries(changes)) await t.test(name, async () => {

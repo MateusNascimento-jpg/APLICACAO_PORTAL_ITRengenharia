@@ -301,7 +301,7 @@ test('M1: an old invoice with an attachment error stays silent after the fix', a
 
 // M4
 test('M4: repeated denial is audited once a day per subject and code', async () => {
-    const f = fixture(); await f.ready(); f.store.data.documents.clear(); f.setNow('2026-11-05T12:00:00Z');
+    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.store.data.documents.clear(); f.setNow('2026-11-05T12:00:00Z');
     const count = () => f.store.data.audit.filter(a => a.code === 'DOCUMENT_UNVERIFIED').length;
     for (let i = 0; i < 10; i++) await f.service.scan();
     assert.equal(count(), 1);

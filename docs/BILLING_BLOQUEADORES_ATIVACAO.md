@@ -8,9 +8,12 @@ Nenhum item abaixo está resolvido. As flags financeiras devem continuar desliga
 
 Resolver antes da ativação. Os templates e a presença do CNPJ não foram alterados.
 
-## Decisão pendente
+## Decisões pendentes
 
-**D2:** atestado dos boletos. Enquanto não for decidida, a exigência de atestado por documento continua impedindo qualquer envio financeiro.
+A D2 aprovou os boletos cadastrados no Airtable, sem atestado adicional. Com isso, **as flags passam a ser a barreira que impede o envio de boleto disponível, D−1, D0 e confirmação de pagamento.** Duas regras continuam em aberto:
+
+- **Boleto vencido.** Não se presume que continue pagável. Enquanto a regra não for definida, boleto vencido não é enviado, nem como lembrete D+5, D+10, D+15…, nem como "boleto disponível". O código de auditoria é `BOLETO_OVERDUE_RULE_PENDING`. Ocorrências passadas não são recuperadas depois.
+- **NFSe.** A aprovação da D2 não a cobre. Ela continua exigindo atestado, e o único fluxo para criá-lo hoje é a ferramenta de laboratório, então nenhuma NFSe sai em produção até haver uma decisão específica.
 
 ## Homologação obrigatória
 
