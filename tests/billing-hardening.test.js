@@ -69,7 +69,7 @@ test('A3: an outage of many hours stays retryable and is bounded', async () => {
     const id = f.events()[0].payload.eventId;
     const w = worker(f, async () => { throw new TypeError('fetch failed'); });
     let tries = 0;
-    for (; tries < 40 && ['pending', 'retry'].includes(f.store.data.events.get(id).status); tries++) {
+    for (; tries < 200 && ['pending', 'retry'].includes(f.store.data.events.get(id).status); tries++) {
         await w.deliver(f.store.data.events.get(id)); f.setNow(f.clock() + 3600000);
     }
     assert.equal(f.store.data.events.get(id).status, 'blocked');
@@ -152,7 +152,7 @@ test('A4: storage failure, lost ack and DELIVERY_UNCERTAIN are not proof and kee
     });
 });
 test('A4: an obsolete event holding a lease ends uncertain, never silently cancelled', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     const e = find(f, 'BOLETO_D_MINUS_1');
     await worker(f, async () => { await f.service.validate(e.payload, 'smtp'); throw new TypeError('socket hang up'); }).deliver(e);
     assert.equal(f.store.data.events.get(e.payload.eventId).status, 'retry');

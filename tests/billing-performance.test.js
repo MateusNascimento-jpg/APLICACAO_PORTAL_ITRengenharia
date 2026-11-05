@@ -263,7 +263,7 @@ test('a failed scan retries with backoff up to the interval', async () => {
     assert.deepEqual(moments, [0, 2, 6, 11]);
 });
 test('payment between scans stops a queued reminder at the proof', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     const reminder = f.events().find(e => e.payload.type === 'BOLETO_D_MINUS_1');
     f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago';
     await createWorker({ config: cfg, store: f.store, service: f.service, clock: f.clock, fetcher: async () => { throw new Error('must not send'); } }).deliver(reminder);

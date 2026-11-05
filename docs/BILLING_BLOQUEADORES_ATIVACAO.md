@@ -32,7 +32,29 @@ A parada por pagamento, a revalidação de destinatários e do CNPJ e a baseline
 
 **Continuam retidos, com auditoria:** troca de cliente, contrato, proposta ou CNPJ (permanente, exige conciliação), outro conteúdo no mesmo anexo (até surgir um novo anexo), PDF ausente ou ilegível, novos valores vazios, volta a uma versão já anunciada e NFSe substituída depois da tentativa de envio.
 
-**Limite conhecido:** o sistema não lê o conteúdo do PDF. Uma divergência entre o impresso e os dados do Airtable não é detectada nem retida; somente dados vazios ou inválidos são. Só a comparação automática do PDF, que depende de decisão própria, permitiria reter esses casos.
+**Limite conhecido:** uma divergência entre o impresso no PDF e os dados do Airtable não é detectada nem retida; somente dados vazios ou inválidos são.
+
+## Contrato inadimplente (D5)
+
+O status `Inadimplente` é aceito no Portal e no receptor, para cobrança, NFSe e confirmação. Pagamento registrado, cancelamento e dados inconsistentes continuam impedindo envios.
+
+## Janela de envio (D6)
+
+Os e-mails financeiros saem das 08:00 às 18:00 em São Paulo, todos os dias. Portal e receptor conferem a janela de forma independente. As varreduras continuam fora dela, então um pagamento registrado à noite cancela a mensagem da manhã. Fora da janela, o evento fica retido até as 08:00, com auditoria `OUTSIDE_SEND_WINDOW`. Lembrete do dia não enviado até as 18:00 é cancelado na manhã seguinte como `OBSOLETE`; disponibilidade, atualização, NFSe e confirmação saem na próxima abertura. Os mecanismos legados não têm essa janela.
+
+## E-mails no mesmo dia (D8)
+
+Disponibilidade ou atualização com entrega confirmada pelo receptor no dia substitui o lembrete desse dia para aquele destinatário (`REMINDER_CONSOLIDATED`). Enquanto estiver pendente, o lembrete apenas espera. Entrega incerta, bloqueada ou cancelada não suprime nada. A disponibilidade com vencimento passado informa a data e os acréscimos previstos em contrato. Atualização, NFSe e confirmação nunca são suprimidas.
+
+**Limite conhecido:** se a disponibilidade pendente só sair em outro dia, o lembrete daquele dia não é criado, e o e-mail que sair traz o vencimento correto.
+
+## Canal financeiro (D9)
+
+Sem endereço oficial, nenhum Reply-To ou contato é configurado; os e-mails continuam orientando a procurar a equipe financeira, sem indicar um canal.
+
+## Conteúdo do PDF
+
+O sistema não lê o conteúdo do PDF nem usa OCR, por decisão da ITR: a equipe financeira confere os documentos antes de cadastrá-los. Continuam valendo as verificações de integridade (SHA-256), vínculo com cliente/CNPJ, pagamento e idempotência.
 
 ## Boletos existentes na ativação (D4)
 

@@ -118,7 +118,7 @@ test('an update already queued is replaced if the data changes again', async () 
     assert.equal(updates(f).filter(e => e.status === 'pending').length, 1);
 });
 test('no second message about the same day: the update carries the document', async () => {
-    const f = await notified(); f.setNow('2026-11-06T09:00:00Z'); swapPdf(f); await settle(f); await deliver(f); await f.service.scan();
+    const f = await notified(); f.setNow('2026-11-06T12:00:00Z'); swapPdf(f); await settle(f); await deliver(f); await f.service.scan();
     assert.equal(updates(f).length, 1); assert.equal(of(f, 'BOLETO_DUE_TODAY').length, 0);
     f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
     assert.equal(of(f, 'BOLETO_OVERDUE_REMINDER').length, 1);

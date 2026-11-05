@@ -31,7 +31,7 @@ test('registered boleto needs no attestation: queued and authorized', async () =
     assert.deepEqual(bytes.boleto, f.pdfs.boleto);
 });
 test('D−1 and D0 go out with only the registered boleto', async () => {
-    const f = fixture(); await f.ready();
+    const f = fixture(); await f.ready(); await f.sent();
     f.setNow('2026-11-05T12:00:00Z'); await f.service.scan(); await f.service.validate(find(f, 'BOLETO_D_MINUS_1').payload);
     f.setNow('2026-11-06T12:00:00Z'); await f.service.scan(); await f.service.validate(find(f, 'BOLETO_DUE_TODAY').payload);
     assert.deepEqual(types(f), ['BOLETO_AVAILABLE', 'BOLETO_D_MINUS_1', 'BOLETO_DUE_TODAY']);
@@ -78,7 +78,7 @@ test('invalid PDF content from the source is denied', async () => {
 test('a boleto replaced before anything was sent follows the new document, with no block', async () => {
     const f = fixture(); await f.ready(); f.pdfs.boleto = Buffer.from('%PDF-1.4\nBoleto corrigido\n%%EOF'); f.attach('boleto'); f.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG';
     f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
-    assert.deepEqual(types(f), ['BOLETO_AVAILABLE', 'BOLETO_AVAILABLE', 'BOLETO_D_MINUS_1']);
+    assert.deepEqual(types(f), ['BOLETO_AVAILABLE', 'BOLETO_AVAILABLE']);
     assert.deepEqual(f.store.data.states.get(f.ids.invoice).blockedKinds, []);
 });
 test('a boleto already present at the baseline gets no retroactive message', async () => {

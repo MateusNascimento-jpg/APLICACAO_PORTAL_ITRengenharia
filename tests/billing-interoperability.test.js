@@ -22,6 +22,7 @@ test('every end-to-end event type through actual local receiver and Portal HTTP;
         const f = fixture();
         await f.service.scan();
         f.attach(type === 'NFSE_AVAILABLE' ? 'nfse' : 'boleto'); await f.service.scan();
+        if (/MINUS|TODAY|OVERDUE/.test(type)) await f.sent();
         if (type === 'BOLETO_D_MINUS_1') f.setNow('2026-11-05T12:00:00Z');
         if (type === 'BOLETO_DUE_TODAY') f.setNow('2026-11-06T12:00:00Z');
         if (type === 'BOLETO_OVERDUE_REMINDER') f.setNow('2026-11-11T12:00:00Z');

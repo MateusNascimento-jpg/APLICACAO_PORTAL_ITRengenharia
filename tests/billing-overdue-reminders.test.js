@@ -22,23 +22,23 @@ const find = (f, type) => f.events().find(e => e.payload.type === type);
 const notifications = process.env.BILLING_NOTIFICATIONS_REPO || path.resolve(__dirname, '../../Emails_diarios_ITRengenharia');
 const available = fs.existsSync(path.join(notifications, 'billing/receiver.js'));
 async function overdue(day = '11', prepare = () => {}) {
-    const f = fixture(); await f.ready(); prepare(f); f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); prepare(f); f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan();
     return f;
 }
 
 // Lembretes retomados.
 test('D+5, D+10, D+15 and later are generated while unpaid', async () => {
-    const f = fixture(); await f.ready();
+    const f = fixture(); await f.ready(); await f.sent();
     for (const day of ['11', '16', '21', '26']) { f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan(); }
     assert.deepEqual(reminders(f).map(e => e.payload.scheduledFor), ['2026-11-11', '2026-11-16', '2026-11-21', '2026-11-26']);
     assert.ok(reminders(f).every(e => valid(e.payload)));
 });
 test('the recurrence continues past the end of the month', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-12-06T12:00:00Z'); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.setNow('2026-12-06T12:00:00Z'); await f.service.scan();
     assert.deepEqual(reminders(f).map(e => e.payload.scheduledFor), ['2026-12-06']);
 });
 test('D+1, D+6 and other days generate nothing, and missed days are not recovered', async () => {
-    const f = fixture(); await f.ready();
+    const f = fixture(); await f.ready(); await f.sent();
     for (const day of ['07', '12', '13']) { f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan(); }
     assert.equal(reminders(f).length, 0);
     f.setNow('2026-11-16T12:00:00Z'); await f.service.scan();
@@ -59,7 +59,7 @@ test('status Vencido does not stop the reminder', async () => {
     await f.service.validate(reminders(f)[0].payload);
 });
 test('the amount is never recalculated', async () => {
-    const f = fixture(); await f.ready();
+    const f = fixture(); await f.ready(); await f.sent();
     for (const day of ['11', '16', '21']) { f.setNow(`2026-11-${day}T12:00:00Z`); await f.service.scan(); }
     assert.deepEqual(reminders(f).map(e => e.payload.amountCents), [150050, 150050, 150050]);
 });
@@ -89,9 +89,11 @@ test('technical checks still deny a reminder', async t => {
         await assert.rejects(f.service.validate(reminders(f)[0].payload));
     });
 });
-test('a boleto replaced before anything was sent: the reminder attaches the current one', async () => {
-    const f = await overdue('11', x => { x.pdfs.boleto = Buffer.from('%PDF-1.4\nSegunda via\n%%EOF'); x.attach('boleto'); x.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; });
-    assert.deepEqual(reminders(f).map(e => e.payload.document.sha256), [hash(f.pdfs.boleto)]);
+test('a boleto replaced before anything was sent: availability follows the current one and the reminder waits for it', async () => {
+    const f = fixture(); await f.ready(); f.pdfs.boleto = Buffer.from('%PDF-1.4\nSegunda via\n%%EOF'); f.attach('boleto'); f.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG';
+    f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
+    assert.equal(find(f, 'BOLETO_AVAILABLE').status, 'cancelled'); assert.equal(reminders(f).length, 0);
+    assert.ok(f.events().some(e => e.status === 'pending' && e.payload.document.sha256 === hash(f.pdfs.boleto)));
 });
 test('API failure on authorization: no send, intent stays retryable', async () => {
     const f = await overdue(); f.airtable.obterRegistro = async () => { throw new Error('network offline'); };
@@ -101,7 +103,7 @@ test('API failure on authorization: no send, intent stays retryable', async () =
 
 // Pagamento revalidado antes de cada envio; parcela ativa.
 test('paid before the occurrence: no reminder, only one confirmation', async () => {
-    const f = fixture(); await f.ready(); f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan(); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan(); await f.service.scan();
     f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
     assert.equal(reminders(f).length, 0);
     assert.equal(f.events().filter(e => e.payload.type === 'BOLETO_PAYMENT_RECORDED').length, 1);
@@ -125,7 +127,7 @@ test('paid between prepare and SMTP: no lease', async () => {
     assert.deepEqual(f.store.data.states.get(f.ids.invoice).leases, []);
 });
 test('a payment reversal does not restart reminders on its own', async () => {
-    const f = fixture(); await f.ready(); f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan();
     f.invoice.fields[N.STATUS_PAGAMENTO] = 'Vencido'; f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
     assert.equal(reminders(f).length, 0);
 });

@@ -125,7 +125,7 @@ test('an overdue installment sends its NFSe and its boleto as separate messages'
     assert.equal(find(f, 'NFSE_AVAILABLE').payload.document.kind, 'nfse'); assert.equal(find(f, 'BOLETO_AVAILABLE').payload.document.kind, 'boleto');
 });
 test('the shared contract still requires a document on the reminder', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
+    const f = fixture(); await f.ready(); await f.sent(); f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
     assert.equal(valid({ ...find(f, 'BOLETO_OVERDUE_REMINDER').payload, document: null }), false);
 });
 

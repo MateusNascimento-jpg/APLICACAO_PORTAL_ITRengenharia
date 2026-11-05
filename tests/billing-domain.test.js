@@ -51,7 +51,7 @@ test('NFSe independent of boleto and payment, with its own PDF', async () => {
     assert.deepEqual(result.bytes.nfse, f.pdfs.nfse); assert.equal(e.payload.document.kind, 'nfse');
 });
 test('D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight', async () => {
-    const f = fixture(); await f.ready();
+    const f = fixture(); await f.ready(); await f.sent();
     for (const day of [5, 6, 7, 11, 12, 16, 21, 26]) {
         f.setNow(`2026-11-${String(day).padStart(2, '0')}T12:00:00Z`); await f.service.scan();
     }
@@ -61,7 +61,7 @@ test('D−1, D0, D+5/D+10/D+15/D+20; no D+1, D+6 or catch-up, Sao Paulo midnight
     assert.equal(calendar(p, Date.parse('2026-11-12T02:59:59Z')), true);
     assert.equal(calendar(p, Date.parse('2026-11-12T03:00:00Z')), false);
     assert.equal(today(Date.parse('2027-01-01T02:00:00Z')), '2026-12-31');
-    const missed = fixture(); await missed.ready(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
+    const missed = fixture(); await missed.ready(); await missed.sent(); missed.setNow('2026-11-16T12:00:00Z'); await missed.service.scan();
     assert.deepEqual(missed.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
 test('valid civil dates/leap year; invalid dates, timestamp offsets and contract values never guessed', () => {
@@ -131,7 +131,7 @@ test('tampered, substituted or revised boleto cannot be authorized', async t => 
     });
 });
 test('past due keeps the charge going with the original boleto', async () => {
-    const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
+    const f = fixture(); await f.ready(); await f.sent(); f.setNow('2026-11-11T12:00:00Z');
     await f.service.scan(); assert.deepEqual(f.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
 test('changing attachment ID with same content never generates another availability and keeps the message', async () => {

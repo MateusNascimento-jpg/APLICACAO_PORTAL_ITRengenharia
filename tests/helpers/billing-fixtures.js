@@ -32,6 +32,12 @@ function fixture() {
     }
     return { store, source, service, clock, ids, tables, invoice, proposal, contract, client, pdfs, attach, airtable,
         setNow: v => { now = typeof v === 'number' ? v : Date.parse(v); }, fail: v => { failure = v; },
+        // Records what is queued as delivered, with a receipt, so later days are plain reminder days.
+        async sent() {
+            for (const e of store.data.events.values()) if (['pending', 'retry'].includes(e.status)) {
+                await store.repo.saveEvent({ ...structuredClone(e), status: 'sent', attempts: 1, receipt: { code: 'SENT', eventId: e.payload.eventId, at: now } });
+            }
+        },
         events: () => [...store.data.events.values()], async ready(kind = 'boleto') { await service.scan(); attach(kind); await service.scan(); return this.events()[0]; }
     };
 }

@@ -118,7 +118,7 @@ test('removal is read at the source, without a scan, and the PDF is refused too'
     await assert.rejects(f.service.validate(e.payload, 'pdf'), /RECIPIENT_UNAUTHORIZED/);
 });
 test('a removed address gets no future occurrence; the others continue', async () => {
-    const f = fixture(); setEmails(f, `${A};${B}`); await f.ready(); setEmails(f, A);
+    const f = fixture(); setEmails(f, `${A};${B}`); await f.ready(); await f.sent(); setEmails(f, A);
     f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     assert.deepEqual(of(f, 'BOLETO_D_MINUS_1'), [A]);
 });
@@ -145,7 +145,7 @@ test('new contact: no historical payment confirmation', async () => {
     assert.deepEqual(of(f, 'BOLETO_PAYMENT_RECORDED'), [A]);
 });
 test('new contact: skips the occurrence already formed today, joins the next ones', async () => {
-    const f = fixture(); setEmails(f, A); await f.ready(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
+    const f = fixture(); setEmails(f, A); await f.ready(); await f.sent(); f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
     setEmails(f, `${A};${B}`); await f.service.scan();
     assert.deepEqual(of(f, 'BOLETO_D_MINUS_1'), [A]);
     f.setNow('2026-11-06T12:00:00Z'); await f.service.scan();
