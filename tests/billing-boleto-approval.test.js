@@ -49,7 +49,6 @@ test('technical checks still deny a boleto', async t => {
         sizeChanged: f => { f.pdfs.boleto = Buffer.from('%PDF-1.4\nOutro conteudo\n%%EOF'); },
         notPdfMime: f => { f.invoice.fields[N.BOLETO][0].type = 'image/png'; },
         badAttachmentId: f => { f.invoice.fields[N.BOLETO][0].id = 'x'; },
-        otherAttachment: f => { f.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; },
         twoAttachments: f => { f.invoice.fields[N.BOLETO].push({ ...f.invoice.fields[N.BOLETO][0], id: 'attGGGGGGGGGGGGGG' }); },
         removed: f => { f.invoice.fields[N.BOLETO] = []; },
         dueDateChanged: f => { f.invoice.fields[N.VENCIMENTO] = '2026-11-20'; },
@@ -76,11 +75,11 @@ test('invalid PDF content from the source is denied', async () => {
     const service = createService({ store: f.store, source: createSource({ airtable: f.airtable, cipher: f.store.cipher, pdfReader }), clock: f.clock });
     await assert.rejects(service.validate(e.payload));
 });
-test('a boleto replaced after detection stays held for reconciliation', async () => {
-    const f = fixture(); await f.ready(); f.pdfs.boleto = Buffer.from('%PDF-1.4\nBoleto corrigido\n%%EOF'); f.attach('boleto');
+test('a boleto replaced before anything was sent follows the new document, with no block', async () => {
+    const f = fixture(); await f.ready(); f.pdfs.boleto = Buffer.from('%PDF-1.4\nBoleto corrigido\n%%EOF'); f.attach('boleto'); f.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG';
     f.setNow('2026-11-05T12:00:00Z'); await f.service.scan();
-    assert.deepEqual(types(f), ['BOLETO_AVAILABLE']);
-    assert.ok(f.store.data.states.get(f.ids.invoice).blockedKinds.includes('boleto'));
+    assert.deepEqual(types(f), ['BOLETO_AVAILABLE', 'BOLETO_AVAILABLE', 'BOLETO_D_MINUS_1']);
+    assert.deepEqual(f.store.data.states.get(f.ids.invoice).blockedKinds, []);
 });
 test('a boleto already present at the baseline gets no retroactive message', async () => {
     const f = fixture(); f.attach('boleto'); await f.service.scan(); await f.service.scan();

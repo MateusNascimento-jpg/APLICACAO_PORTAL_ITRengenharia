@@ -122,7 +122,7 @@ test('own PDF swapped with same attachment id and size is detected by the proof'
     f.pdfs.boleto = Buffer.from(original.toString().replace('Boleto', 'Fraude'));
     assert.equal(f.pdfs.boleto.length, original.length);
     await assert.rejects(f.service.validate(e.payload));
-    assert.ok(f.store.data.states.get(f.ids.invoice).blockedKinds.includes('boleto'));
+    assert.ok(f.store.data.states.get(f.ids.invoice).suspect.boleto);
 });
 test('a reused digest never enters a proof as if it were this event document', async () => {
     const f = fixture(); await f.ready('nfse'); await f.service.scan(); f.attach('boleto'); await f.service.scan();

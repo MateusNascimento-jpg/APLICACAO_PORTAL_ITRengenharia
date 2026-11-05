@@ -127,18 +127,16 @@ test('tampered, substituted or revised boleto cannot be authorized', async t => 
     };
     for (const [name, change] of Object.entries(changes)) await t.test(name, async () => {
         const f = fixture(); const e = await f.ready(); change(f); await assert.rejects(f.service.validate(e.payload));
-        await f.service.scan(); assert.equal(f.events().length, 1);
+        await f.service.scan(); await assert.rejects(f.service.validate(e.payload));
     });
 });
 test('past due keeps the charge going with the original boleto', async () => {
     const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
     await f.service.scan(); assert.deepEqual(f.events().map(e => e.payload.type), ['BOLETO_AVAILABLE', 'BOLETO_OVERDUE_REMINDER']);
 });
-test('changing attachment ID with same content never generates another availability; changed PDF is held for reconciliation', async () => {
+test('changing attachment ID with same content never generates another availability and keeps the message', async () => {
     const f = fixture(); await f.ready(); f.invoice.fields[S.NOTAS_FISCAIS.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; await f.service.scan();
-    assert.equal(f.events().length, 1); assert.equal(f.events()[0].status, 'cancelled');
-    f.pdfs.boleto = Buffer.from('%PDF-1.4\nReplaced document\n%%EOF'); f.attach('boleto'); await f.service.scan();
-    assert.equal(f.events().length, 1); assert.ok(f.store.data.states.get(f.ids.invoice).blockedKinds.includes('boleto'));
+    assert.equal(f.events().length, 1); assert.equal(f.events()[0].status, 'pending');
 });
 test('two scanners, two workers and restart produce one HTTP dispatch', async () => {
     const f = fixture(); await f.service.scan(); f.attach('boleto');

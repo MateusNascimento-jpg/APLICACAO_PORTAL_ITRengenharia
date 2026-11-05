@@ -75,7 +75,6 @@ test('technical checks still deny a reminder', async t => {
         contentSwapped: f => { f.pdfs.boleto = Buffer.from(f.pdfs.boleto.toString().replace('Boleto', 'Fraude')); },
         sizeChanged: f => { f.pdfs.boleto = Buffer.from('%PDF-1.4\nOutro conteudo\n%%EOF'); },
         notPdfMime: f => { f.invoice.fields[N.BOLETO][0].type = 'image/png'; },
-        otherAttachment: f => { f.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; },
         removed: f => { f.invoice.fields[N.BOLETO] = []; },
         invalidCnpj: f => { f.client.fields[S.CLIENTES.CNPJ] = '123'; },
         duplicateCnpj: f => { f.tables[S.TABELAS.CLIENTES].push({ ...f.client, id: 'recZZZZZZZZZZZZZZ' }); },
@@ -90,10 +89,9 @@ test('technical checks still deny a reminder', async t => {
         await assert.rejects(f.service.validate(reminders(f)[0].payload));
     });
 });
-test('a replaced boleto is not attached and stays held for reconciliation', async () => {
-    const f = await overdue('11', x => { x.pdfs.boleto = Buffer.from('%PDF-1.4\nSegunda via\n%%EOF'); x.attach('boleto'); });
-    assert.equal(reminders(f).length, 0);
-    assert.ok(f.store.data.states.get(f.ids.invoice).blockedKinds.includes('boleto'));
+test('a boleto replaced before anything was sent: the reminder attaches the current one', async () => {
+    const f = await overdue('11', x => { x.pdfs.boleto = Buffer.from('%PDF-1.4\nSegunda via\n%%EOF'); x.attach('boleto'); x.invoice.fields[N.BOLETO][0].id = 'attGGGGGGGGGGGGGG'; });
+    assert.deepEqual(reminders(f).map(e => e.payload.document.sha256), [hash(f.pdfs.boleto)]);
 });
 test('API failure on authorization: no send, intent stays retryable', async () => {
     const f = await overdue(); f.airtable.obterRegistro = async () => { throw new Error('network offline'); };

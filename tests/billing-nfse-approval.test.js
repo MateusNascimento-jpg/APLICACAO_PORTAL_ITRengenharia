@@ -83,7 +83,6 @@ test('technical checks still deny an NFSe', async t => {
         sizeChanged: f => { f.pdfs.nfse = Buffer.from('%PDF-1.4\nOutra nota fiscal\n%%EOF'); },
         notPdfMime: f => { f.invoice.fields[N.NFSE][0].type = 'application/xml'; },
         badAttachmentId: f => { f.invoice.fields[N.NFSE][0].id = 'x'; },
-        otherAttachment: f => { f.invoice.fields[N.NFSE][0].id = 'attGGGGGGGGGGGGGG'; },
         twoAttachments: f => { f.invoice.fields[N.NFSE].push({ ...f.invoice.fields[N.NFSE][0], id: 'attGGGGGGGGGGGGGG' }); },
         removed: f => { f.invoice.fields[N.NFSE] = []; },
         installmentCancelled: f => { f.invoice.fields[N.STATUS_PAGAMENTO] = 'Cancelado'; },
@@ -106,10 +105,10 @@ test('API failure on authorization: no send, intent stays retryable', async () =
     const f = fixture(); const e = await f.ready('nfse'); f.airtable.obterRegistro = async () => { throw new Error('network offline'); };
     await worker(f).deliver(e); assert.equal(f.store.data.events.get(e.payload.eventId).status, 'retry');
 });
-test('a replaced NFSe is held for reconciliation, with no automatic message', async () => {
-    const f = fixture(); await f.ready('nfse'); f.pdfs.nfse = Buffer.from('%PDF-1.4\nNota substituta\n%%EOF'); f.attach('nfse'); await f.service.scan();
-    assert.equal(f.events().length, 1);
-    assert.ok(f.store.data.states.get(f.ids.invoice).blockedKinds.includes('nfse'));
+test('an NFSe replaced before anything was sent follows the new document', async () => {
+    const f = fixture(); await f.ready('nfse'); f.pdfs.nfse = Buffer.from('%PDF-1.4\nNota substituta\n%%EOF'); f.attach('nfse'); f.invoice.fields[N.NFSE][0].id = 'attGGGGGGGGGGGGGG'; await f.service.scan();
+    assert.deepEqual(f.events().map(e => e.status), ['cancelled', 'pending']);
+    assert.deepEqual(f.store.data.states.get(f.ids.invoice).blockedKinds, []);
 });
 test('idempotence: same NFSe keeps one event across scans and URL changes', async () => {
     const f = fixture(); const e = await f.ready('nfse');

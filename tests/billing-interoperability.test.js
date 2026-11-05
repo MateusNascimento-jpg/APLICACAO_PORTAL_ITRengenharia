@@ -1,4 +1,5 @@
 'use strict';
+const { UPDATE_SETTLE_MS } = require('../lib/billing/service');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +16,7 @@ const available = fs.existsSync(path.join(notifications, 'billing/receiver.js'))
 test('local corrected Notifications contract/protocol match byte-for-byte (D+5, never D+1)', { skip: !available && 'Set BILLING_NOTIFICATIONS_REPO to the corrected local checkout' }, () => {
     for (const file of ['contract.js', 'protocol.js']) assert.equal(fs.readFileSync(path.join(notifications, 'billing', file), 'utf8'), fs.readFileSync(path.join(__dirname, '../lib/billing', file), 'utf8'));
 });
-test('six end-to-end event types through actual local receiver and Portal HTTP; injected SMTP only', { skip: !available && 'Corrected Notifications checkout required' }, async t => {
+test('every end-to-end event type through actual local receiver and Portal HTTP; injected SMTP only', { skip: !available && 'Corrected Notifications checkout required' }, async t => {
     const { createReceiver, ROUTE } = require(path.join(notifications, 'billing/receiver.js'));
     for (const type of EVENTS) await t.test(type, async t => {
         const f = fixture();
@@ -25,6 +26,10 @@ test('six end-to-end event types through actual local receiver and Portal HTTP; 
         if (type === 'BOLETO_DUE_TODAY') f.setNow('2026-11-06T12:00:00Z');
         if (type === 'BOLETO_OVERDUE_REMINDER') f.setNow('2026-11-11T12:00:00Z');
         if (type === 'BOLETO_PAYMENT_RECORDED') { f.invoice.fields[S.NOTAS_FISCAIS.STATUS_PAGAMENTO] = 'Pago'; await f.service.scan(); }
+        if (type === 'BOLETO_UPDATED') {
+            const first = f.events()[0]; first.status = 'sent'; first.attempts = 1; await f.store.repo.saveEvent(first);
+            f.invoice.fields[S.NOTAS_FISCAIS.VALOR_PARCELA] = 1600; await f.service.scan(); f.setNow(f.clock() + UPDATE_SETTLE_MS);
+        }
         await f.service.scan();
         const e = f.events().find(e => e.payload.type === type); assert.ok(e, type);
         const secret = Buffer.alloc(32, 3).toString('base64');
