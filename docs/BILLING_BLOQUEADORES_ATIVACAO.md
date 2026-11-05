@@ -48,9 +48,13 @@ Disponibilidade ou atualização com entrega confirmada pelo receptor no dia sub
 
 **Limite conhecido:** se a disponibilidade pendente só sair em outro dia, o lembrete daquele dia não é criado, e o e-mail que sair traz o vencimento correto.
 
+## Estorno (D7)
+
+A cobrança continua parada depois de um estorno, com auditoria diária. **Não há alerta entregue nem forma de retomar a cobrança**, porque o Portal não tem mecanismo de monitoramento nem identidade de operador financeiro. Ver `docs/BILLING_D7_ESTORNO_ESPECIFICACAO.md`.
+
 ## Canal financeiro (D9)
 
-Sem endereço oficial, nenhum Reply-To ou contato é configurado; os e-mails continuam orientando a procurar a equipe financeira, sem indicar um canal.
+Configuração opcional no serviço de Notificações (`BILLING_FINANCE_CONTACT_EMAIL`). Sem o endereço oficial, nenhum Reply-To ou contato é usado, e os e-mails continuam orientando a procurar a equipe financeira.
 
 ## Conteúdo do PDF
 
