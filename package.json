@@ -21,7 +21,9 @@
     "test:security": "node --test tests/security-*.test.js tests/client-scope.test.js tests/abuse-guard.test.js",
     "test:load": "node scripts/security-load-test.js",
     "scope:diagnose": "node scripts/diagnose-client-scope.js",
-    "diagnose:notifications": "node scripts/diagnose-notifications.js"
+    "diagnose:notifications": "node scripts/diagnose-notifications.js",
+    "billing:migrate": "node scripts/billing-migrate.js",
+    "billing:report": "node scripts/billing-report.js"
   },
   "repository": {
     "type": "git",

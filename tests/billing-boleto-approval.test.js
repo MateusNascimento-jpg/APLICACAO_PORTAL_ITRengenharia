@@ -72,7 +72,7 @@ test('technical checks still deny a boleto', async t => {
 test('invalid PDF content from the source is denied', async () => {
     const f = fixture(); const e = await f.ready(); const pdfReader = async () => { throw new Error('PDF_CONTENT_INVALID'); };
     const { createSource } = require('../lib/billing/source');
-    const service = createService({ store: f.store, source: createSource({ airtable: f.airtable, cipher: f.store.cipher, pdfReader }), clock: f.clock });
+    const service = createService({ store: f.store, source: createSource({ airtable: f.airtable, cipher: f.store.cipher, pdfReader }), clock: f.clock, pilotClients: [f.ids.client] });
     await assert.rejects(service.validate(e.payload));
 });
 test('a boleto replaced before anything was sent follows the new document, with no block', async () => {

@@ -45,7 +45,7 @@ function syntheticBase(size) {
     const store = memoryStore();
     const pdfReader = async () => { counters.pdfs++; return { bytes: pdf, hash: hash(pdf) }; };
     const source = createSource({ airtable, cipher: store.cipher, pdfReader });
-    const service = createService({ store, source, clock: () => Date.parse('2026-11-04T12:00:00Z') });
+    const service = createService({ store, source, clock: () => Date.parse('2026-11-04T12:00:00Z'), pilotClients: tables[S.TABELAS.CLIENTES].map(c => c.id) });
     const reset = () => Object.keys(counters).forEach(k => { counters[k] = 0; });
     return { tables, counters, reset, airtable, store, source, service };
 }

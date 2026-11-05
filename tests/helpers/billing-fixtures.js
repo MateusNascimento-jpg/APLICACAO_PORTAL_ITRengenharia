@@ -26,7 +26,7 @@ function fixture() {
         const kind = url.includes('nfse') ? 'nfse' : 'boleto', bytes = pdfs[kind];
         return { bytes, hash: hash(bytes) };
     } });
-    const service = createService({ store, source, clock });
+    const service = createService({ store, source, clock, pilotClients: [ids.client] });
     function attach(kind) {
         invoice.fields[S.NOTAS_FISCAIS[kind.toUpperCase()]] = [{ id: ids[kind], type: 'application/pdf', size: pdfs[kind].length, url: 'https://v5.airtableusercontent.com/' + kind }];
     }

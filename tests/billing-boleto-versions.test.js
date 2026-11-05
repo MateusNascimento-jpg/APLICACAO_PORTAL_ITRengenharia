@@ -311,17 +311,17 @@ test('other content under the same attachment is an anomaly, not a correction; a
 // Reinicialização.
 test('a restart keeps the settling time, what was announced, and sends nothing twice', async () => {
     const f = await notified(); swapPdf(f); await f.service.scan();
-    const restarted = createService({ store: f.store, source: f.source, clock: f.clock });
+    const restarted = createService({ store: f.store, source: f.source, clock: f.clock, pilotClients: [f.ids.client] });
     later(f); await restarted.scan(); await deliver(f);
     assert.equal(updates(f).length, 1);
-    const again = createService({ store: f.store, source: f.source, clock: f.clock });
+    const again = createService({ store: f.store, source: f.source, clock: f.clock, pilotClients: [f.ids.client] });
     await again.scan(); await again.scan();
     assert.equal(updates(f).length, 1); assert.equal(updates(f)[0].status, 'sent');
     assert.equal(f.store.data.states.get(f.ids.invoice).announced.sha256, hash(f.pdfs.boleto));
 });
 test('a restart while the update is queued delivers the same event', async () => {
     const f = await notified(); swapPdf(f); await settle(f); const id = updates(f)[0].payload.eventId;
-    const restarted = createService({ store: f.store, source: f.source, clock: f.clock });
+    const restarted = createService({ store: f.store, source: f.source, clock: f.clock, pilotClients: [f.ids.client] });
     await restarted.scan(); await deliver(f);
     assert.deepEqual(updates(f).map(e => [e.payload.eventId, e.status]), [[id, 'sent']]);
 });

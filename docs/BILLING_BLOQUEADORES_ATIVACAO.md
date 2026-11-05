@@ -6,7 +6,7 @@ Nenhum item abaixo está resolvido. As flags financeiras devem continuar desliga
 
 **Credencial inicial derivada do CNPJ.** A senha gerada do Portal é a sigla do cliente seguida dos 6 primeiros dígitos do CNPJ (`lib/portal-access.js`, `senhaGerada`). Os e-mails financeiros exibem o CNPJ completo, e a decisão D1 os envia a todos os endereços cadastrados. Cada destinatário recebe a parte numérica da credencial; somente a sigla fica fora do e-mail.
 
-Resolver antes da ativação. Os templates e a presença do CNPJ não foram alterados.
+Resolver antes da ativação. Os templates e a presença do CNPJ não foram alterados. Análise e proposta em `BILLING_SEGURANCA_SENHA.md`.
 
 ## Aprovações de documentos
 
@@ -58,11 +58,15 @@ Configuração opcional no serviço de Notificações (`BILLING_FINANCE_CONTACT_
 
 ## Conteúdo do PDF
 
-O sistema não lê o conteúdo do PDF nem usa OCR, por decisão da ITR: a equipe financeira confere os documentos antes de cadastrá-los. Continuam valendo as verificações de integridade (SHA-256), vínculo com cliente/CNPJ, pagamento e idempotência.
+O sistema não lê o conteúdo do PDF nem usa OCR, por decisão da ITR: a equipe financeira confere os documentos antes de cadastrá-los. Continuam valendo as verificações de integridade (SHA-256), vínculo com cliente/CNPJ, pagamento e idempotência. O risco residual está em `BILLING_RISCO_CONTEUDO_PDF.md`.
 
 ## Boletos existentes na ativação (D4)
 
 A baseline é preservada: boletos existentes na ativação não recebem disponibilidade, D−1, D0 nem lembretes, ainda que vencidos. **Decisão futura:** a eventual inclusão controlada de parcelas antigas exige liberação específica. Disparos históricos não estão autorizados.
+
+## Piloto
+
+`PORTAL_BILLING_PILOT_CLIENTS` lista os IDs exatos dos clientes liberados. A lista começa vazia, então ninguém é elegível, e um formato inválido impede a subida. A conferência acontece no agendamento e em cada prova de envio. Documentos e pagamentos vistos antes da liberação nunca geram mensagens. Um cliente retirado tem as mensagens pendentes canceladas; se voltar, recebe só as próximas ocorrências.
 
 ## Homologação obrigatória
 
@@ -73,5 +77,7 @@ A baseline é preservada: boletos existentes na ativação não recebem disponib
 5. Confirmar que nenhuma otimização utiliza autorização financeira obsoleta.
 
 ## Migration 006
+
+Caminho de aplicação em `BILLING_MIGRATION_006.md`.
 
 As tabelas `portal_billing_grants` e `portal_billing_documents` continuam na migration porque não se sabe se ela foi aplicada em algum ambiente. O código não lê nem grava essas tabelas. Qualquer remoção exige uma decisão separada.

@@ -22,7 +22,7 @@ test('flags are off by default; invalid keys/origin and legacy NF ownership fail
 test('baseline persists existing PDFs and Pago, with no historical availability, reminders or confirmation after restart', async () => {
     const f = fixture(); f.attach('boleto'); f.attach('nfse'); f.invoice.fields[S.NOTAS_FISCAIS.STATUS_PAGAMENTO] = 'Pago';
     await f.service.scan();
-    const restarted = createService({ store: f.store, source: f.source, clock: f.clock });
+    const restarted = createService({ store: f.store, source: f.source, clock: f.clock, pilotClients: [f.ids.client] });
     await restarted.scan(); f.setNow('2026-11-11T12:00:00Z'); await restarted.scan();
     assert.equal(f.events().length, 0); assert.ok(f.store.data.meta); assert.equal(f.store.data.states.get(f.ids.invoice).stopped, true);
     f.invoice.fields[S.NOTAS_FISCAIS.STATUS_PAGAMENTO] = 'A Vencer'; await restarted.scan();

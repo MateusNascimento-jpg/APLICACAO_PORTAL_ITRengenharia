@@ -33,7 +33,7 @@ test('a reversal keeps collection stopped across later dates', async t => {
 test('the stop survives a restart', async () => {
     const f = await paid(), before = f.events().filter(e => COLLECTION.includes(e.payload.type)).length;
     f.invoice.fields[N.STATUS_PAGAMENTO] = 'Vencido';
-    const restarted = createService({ store: f.store, source: f.source, clock: f.clock });
+    const restarted = createService({ store: f.store, source: f.source, clock: f.clock, pilotClients: [f.ids.client] });
     f.setNow('2026-11-11T12:00:00Z'); await restarted.scan();
     assert.equal(collectionAfter(f, before), 0);
 });
