@@ -8,12 +8,15 @@ Nenhum item abaixo está resolvido. As flags financeiras devem continuar desliga
 
 Resolver antes da ativação. Os templates e a presença do CNPJ não foram alterados.
 
-## Decisões pendentes
+## Aprovações de documentos
 
-A D2 aprovou os boletos cadastrados no Airtable, sem atestado adicional. Com isso, **as flags passam a ser a barreira que impede o envio de boleto disponível, D−1, D0 e confirmação de pagamento.** Duas regras continuam em aberto:
+Todo boleto e toda NFSe cadastrados no Airtable já foram conferidos e aprovados pelas equipes responsáveis, sem atestado adicional. Com isso, **as flags são a barreira que impede o envio real de boleto disponível, D−1, D0, NFSe e confirmação de pagamento.** As verificações técnicas continuam: integridade, anexos, vínculo com cliente/CNPJ, status, idempotência e ausência de envios retroativos.
 
-- **Boleto vencido.** Não se presume que continue pagável. Enquanto a regra não for definida, boleto vencido não é enviado, nem como lembrete D+5, D+10, D+15…, nem como "boleto disponível". O código de auditoria é `BOLETO_OVERDUE_RULE_PENDING`. Ocorrências passadas não são recuperadas depois.
-- **NFSe.** A aprovação da D2 não a cobre. Ela continua exigindo atestado, e o único fluxo para criá-lo hoje é a ferramenta de laboratório, então nenhuma NFSe sai em produção até haver uma decisão específica.
+## Decisão pendente: boleto vencido
+
+A cobrança continua válida após o vencimento, sujeita aos encargos contratuais. Falta confirmar se o banco liquida o PDF original.
+
+Até lá, o bloqueio é mantido: nenhum boleto vencido é enviado, nem como lembrete D+5, D+10, D+15…, nem como "boleto disponível". O código de auditoria é `BOLETO_OVERDUE_RULE_PENDING`. Ocorrências passadas e eventos cancelados não são recriados.
 
 ## Homologação obrigatória
 
@@ -25,4 +28,4 @@ A D2 aprovou os boletos cadastrados no Airtable, sem atestado adicional. Com iss
 
 ## Migration 006
 
-A tabela `portal_billing_grants` continua na migration porque não se sabe se ela foi aplicada em algum ambiente. Desde a D1, o código não lê nem grava essa tabela. Qualquer remoção exige uma decisão separada.
+As tabelas `portal_billing_grants` e `portal_billing_documents` continuam na migration porque não se sabe se ela foi aplicada em algum ambiente. O código não lê nem grava essas tabelas. Qualquer remoção exige uma decisão separada.

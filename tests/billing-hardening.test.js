@@ -263,7 +263,7 @@ test('A5: an invoice created after the cutoff is still armed after its chain is 
     f.setNow('2026-11-04T13:00:00Z'); await f.service.scan();
     assert.ok(!f.store.data.states.has(late.id));
     makeValid(f, late); late.fields[N.BOLETO] = [{ id: f.ids.boleto, type: 'application/pdf', size: f.pdfs.boleto.length, url: 'https://v5.airtableusercontent.com/boleto' }];
-    f.attest('boleto', { invoiceId: late.id }); await f.service.scan();
+    await f.service.scan();
     assert.deepEqual(f.events().filter(e => e.payload.invoiceId === late.id).map(e => e.payload.type), ['BOLETO_AVAILABLE']);
 });
 
@@ -287,7 +287,7 @@ test('M1: new invoice with an attachment error is armed once the attachment is f
     late.fields[N.BOLETO] = [{ id: f.ids.boleto, type: 'application/pdf', size: 1, url: 'https://v5.airtableusercontent.com/boleto' }];
     f.setNow('2026-11-04T13:00:00Z'); await f.service.scan();
     assert.equal(f.store.data.states.get(late.id).seen.boleto, false);
-    late.fields[N.BOLETO][0].size = f.pdfs.boleto.length; f.attest('boleto', { invoiceId: late.id }); await f.service.scan();
+    late.fields[N.BOLETO][0].size = f.pdfs.boleto.length; await f.service.scan();
     assert.deepEqual(f.events().filter(e => e.payload.invoiceId === late.id).map(e => e.payload.type), ['BOLETO_AVAILABLE']);
 });
 test('M1: an old invoice with an attachment error stays silent after the fix', async () => {
@@ -295,14 +295,14 @@ test('M1: an old invoice with an attachment error stays silent after the fix', a
     const old = secondInvoice(f); makeValid(f, old);
     old.fields[N.BOLETO] = [{ id: f.ids.boleto, type: 'application/pdf', size: 1, url: 'https://v5.airtableusercontent.com/boleto' }];
     await f.service.scan();
-    old.fields[N.BOLETO][0].size = f.pdfs.boleto.length; f.attest('boleto', { invoiceId: old.id }); await f.service.scan();
+    old.fields[N.BOLETO][0].size = f.pdfs.boleto.length; await f.service.scan();
     assert.equal(f.events().filter(e => e.payload.invoiceId === old.id).length, 0);
 });
 
 // M4
 test('M4: repeated denial is audited once a day per subject and code', async () => {
-    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.store.data.documents.clear(); f.setNow('2026-11-05T12:00:00Z');
-    const count = () => f.store.data.audit.filter(a => a.code === 'DOCUMENT_UNVERIFIED').length;
+    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.proposal.fields[S.PROPOSTA.STATUS] = 'Enviada'; f.setNow('2026-11-05T12:00:00Z');
+    const count = () => f.store.data.audit.filter(a => a.code === 'STATUS_INELIGIBLE').length;
     for (let i = 0; i < 10; i++) await f.service.scan();
     assert.equal(count(), 1);
     f.setNow(f.clock() + 86400000 + 1); await f.service.scan();

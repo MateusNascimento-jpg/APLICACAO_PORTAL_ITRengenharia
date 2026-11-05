@@ -3,7 +3,6 @@ const S = require('../../lib/financeiro/schema');
 const { createSource, CLIENT_EMAIL, CLIENT_PROPOSALS } = require('../../lib/billing/source');
 const { createService } = require('../../lib/billing/service');
 const { hash } = require('../../lib/billing/protocol');
-const { validateEvidence } = require('../../lib/billing/evidence');
 const { memoryStore } = require('./billing-memory');
 const ids = { client: 'recAAAAAAAAAAAAAA', proposal: 'recBBBBBBBBBBBBBB', contract: 'recCCCCCCCCCCCCCC', invoice: 'recDDDDDDDDDDDDDD', boleto: 'attEEEEEEEEEEEEEE', nfse: 'attFFFFFFFFFFFFFF' };
 function fixture({ overdueBoletoPayable = false } = {}) {
@@ -28,19 +27,10 @@ function fixture({ overdueBoletoPayable = false } = {}) {
         return { bytes, hash: hash(bytes) };
     } });
     const service = createService({ store, source, clock, overdueBoletoPayable });
-    const baseEvidence = { clientId: ids.client, cnpj: '12345678000195', evidenceHash: hash('review ficticio'), validFrom: now - 86400000, validUntil: Date.parse('2028-01-01'), revoked: false };
-    function attest(kind, overrides = {}) {
-        if (kind === 'boleto') return null; // D2: a registered boleto needs no attestation.
-        const d = validateEvidence({ ...baseEvidence, type: 'document', proposalId: ids.proposal, contractId: ids.contract, invoiceId: ids.invoice,
-            sha256: hash(pdfs[kind]), kind, dueDate: invoice.fields[S.NOTAS_FISCAIS.VENCIMENTO] || null,
-            amountCents: 150050, payable: true, payableAfterDue: true, ...overrides }, store.cipher);
-        store.data.documents.set(d.id, d); return d;
-    }
     function attach(kind) {
         invoice.fields[S.NOTAS_FISCAIS[kind.toUpperCase()]] = [{ id: ids[kind], type: 'application/pdf', size: pdfs[kind].length, url: 'https://v5.airtableusercontent.com/' + kind }];
-        attest(kind);
     }
-    return { store, source, service, clock, ids, tables, invoice, proposal, contract, client, pdfs, attach, attest, airtable,
+    return { store, source, service, clock, ids, tables, invoice, proposal, contract, client, pdfs, attach, airtable,
         setNow: v => { now = typeof v === 'number' ? v : Date.parse(v); }, fail: v => { failure = v; },
         events: () => [...store.data.events.values()], async ready(kind = 'boleto') { await service.scan(); attach(kind); await service.scan(); return this.events()[0]; }
     };

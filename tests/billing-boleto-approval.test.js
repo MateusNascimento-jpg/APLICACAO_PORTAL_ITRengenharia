@@ -11,8 +11,6 @@ const { CLIENT_EMAIL } = require('../lib/billing/source');
 const { createService } = require('../lib/billing/service');
 const { createWorker } = require('../lib/billing/worker');
 const { register } = require('../lib/billing/routes');
-const { validateEvidence } = require('../lib/billing/evidence');
-const { documentKey } = require('../lib/billing/policy');
 const { configuration } = require('../lib/billing/config');
 const { hash } = require('../lib/billing/protocol');
 const N = S.NOTAS_FISCAIS, PENDING = /BOLETO_OVERDUE_RULE_PENDING/;
@@ -28,16 +26,10 @@ const available = fs.existsSync(path.join(notifications, 'billing/receiver.js'))
 // Aprovação do boleto.
 test('registered boleto needs no attestation: queued and authorized', async () => {
     const f = fixture(); const e = await f.ready();
-    assert.equal(f.store.data.documents.size, 0);
     assert.equal(e.payload.type, 'BOLETO_AVAILABLE');
     const { proof, bytes } = await f.service.validate(e.payload);
     assert.equal(proof.documentPayable, true); assert.equal(proof.payableAfterDue, false);
     assert.deepEqual(bytes.boleto, f.pdfs.boleto);
-});
-test('boleto authorization does not consult the attestation table', async () => {
-    const f = fixture(); const e = await f.ready(); const read = f.store.repo.document; let calls = 0;
-    f.store.repo.document = async id => { calls++; return read(id); };
-    await f.service.validate(e.payload); assert.equal(calls, 0);
 });
 test('D−1 and D0 go out with only the registered boleto', async () => {
     const f = fixture(); await f.ready();
@@ -87,13 +79,6 @@ test('status changed to Vencido after queueing denies every phase', async t => {
         f.invoice.fields[N.STATUS_PAGAMENTO] = 'Vencido';
         await assert.rejects(f.service.validate(e.payload, phase), PENDING);
     });
-});
-test('a stored record cannot unlock an overdue boleto', async () => {
-    const f = fixture(); const e = await f.ready(); const d = e.payload.document;
-    f.store.data.documents.set(documentKey(f.ids.invoice, d), { id: 'x', kind: 'boleto', sha256: d.sha256, clientId: f.ids.client, payable: true, payableAfterDue: true, validFrom: 0, validUntil: Date.parse('2030-01-01'), revoked: false, evidenceHash: 'a'.repeat(64) });
-    f.setNow('2026-11-11T12:00:00Z'); await f.service.scan();
-    assert.ok(!types(f).includes('BOLETO_OVERDUE_REMINDER'));
-    await assert.rejects(f.service.validate(e.payload), PENDING);
 });
 test('the block is audited once a day, per invoice', async () => {
     const f = fixture(); await f.ready(); f.setNow('2026-11-11T12:00:00Z');
@@ -164,40 +149,6 @@ test('idempotence: same boleto keeps one event across scans and URL changes', as
     f.invoice.fields[N.BOLETO][0].url += '?novo-token'; await f.service.scan();
     assert.equal(f.events().length, 1); assert.equal(f.events()[0].payload.eventId, e.payload.eventId);
     assert.equal(f.events()[0].payload.document.sha256, hash(f.pdfs.boleto));
-});
-
-// NFSe: fora da aprovação.
-test('NFSe still needs its attestation', async () => {
-    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.store.data.documents.clear(); await f.service.scan();
-    assert.equal(f.events().length, 0); assert.ok(f.store.data.audit.some(a => a.code === 'DOCUMENT_UNVERIFIED'));
-});
-test('NFSe with an invalid attestation is denied', async t => {
-    const changes = {
-        missing: f => { f.store.data.documents.clear(); },
-        revoked: f => { [...f.store.data.documents.values()][0].revoked = true; },
-        expired: f => { [...f.store.data.documents.values()][0].validUntil = f.clock() - 1; },
-        otherClient: f => { [...f.store.data.documents.values()][0].clientId = 'recZZZZZZZZZZZZZZ'; }
-    };
-    for (const [name, change] of Object.entries(changes)) await t.test(name, async () => {
-        const f = fixture(); const e = await f.ready('nfse'); change(f);
-        await assert.rejects(f.service.validate(e.payload), /DOCUMENT_UNVERIFIED/);
-    });
-});
-test('boleto approval does not release the NFSe of the same installment', async () => {
-    const f = fixture(); await f.service.scan(); f.attach('boleto'); f.attach('nfse'); f.store.data.documents.clear(); await f.service.scan();
-    assert.deepEqual(types(f), ['BOLETO_AVAILABLE']);
-});
-test('attested NFSe keeps working, also after the due date, and without a boleto', async () => {
-    const f = fixture(); const e = await f.ready('nfse'); f.setNow('2026-11-20T12:00:00Z');
-    const { bytes } = await f.service.validate(e.payload);
-    assert.deepEqual(bytes.nfse, f.pdfs.nfse); assert.equal(f.invoice.fields[N.BOLETO], undefined);
-});
-test('attestation evidence is accepted for NFSe and refused for boleto', () => {
-    const f = fixture();
-    const base = { type: 'document', clientId: f.ids.client, cnpj: '12345678000195', evidenceHash: 'a'.repeat(64), validFrom: 1, validUntil: 2, revoked: false,
-        proposalId: f.ids.proposal, contractId: f.ids.contract, invoiceId: f.ids.invoice, sha256: 'b'.repeat(64), dueDate: null, amountCents: null, payable: false, payableAfterDue: false };
-    assert.equal(validateEvidence({ ...base, kind: 'nfse' }, f.store.cipher).kind, 'nfse');
-    assert.throws(() => validateEvidence({ ...base, kind: 'boleto' }, f.store.cipher), /DOCUMENT_EVIDENCE_INVALID/);
 });
 
 // Compatibilidade com o receptor real, sem alterar as Notificações.

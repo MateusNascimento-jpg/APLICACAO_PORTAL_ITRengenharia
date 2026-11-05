@@ -10,7 +10,6 @@ const { fixture, S } = require('./helpers/billing-fixtures');
 const { parseRecipients, CLIENT_EMAIL, CLIENT_PROPOSALS } = require('../lib/billing/source');
 const { createWorker } = require('../lib/billing/worker');
 const { register } = require('../lib/billing/routes');
-const { validateEvidence } = require('../lib/billing/evidence');
 const { configuration } = require('../lib/billing/config');
 const { eventId, valid } = require('../lib/billing/contract');
 const { emails } = require('../lib/portal-access');
@@ -125,9 +124,9 @@ test('a removed address gets no future occurrence; the others continue', async (
 });
 test('an address removed after the audience was formed is not authorized by it', async () => {
     const f = fixture(); setEmails(f, `${A};${B}`); await f.service.scan(); f.attach('nfse');
-    const proofs = new Map(f.store.data.documents); f.store.data.documents.clear();
+    f.proposal.fields[S.PROPOSTA.STATUS] = 'Enviada';
     await f.service.scan(); assert.equal(f.events().length, 0);
-    setEmails(f, A); f.store.data.documents = proofs; await f.service.scan();
+    setEmails(f, A); f.proposal.fields[S.PROPOSTA.STATUS] = 'Aceita'; await f.service.scan();
     assert.deepEqual(of(f, 'NFSE_AVAILABLE'), [A]);
 });
 
@@ -259,14 +258,6 @@ test('no functional dependency on the parallel table; migration 006 is preserved
     assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../scripts/billing-local.js'), 'utf8'), /grants/);
     const sql = fs.readFileSync(path.join(__dirname, '../migrations/006_billing_automation.sql'), 'utf8');
     assert.match(sql, /CREATE TABLE IF NOT EXISTS portal_billing_grants/); assert.doesNotMatch(sql, /DROP|TRUNCATE|DELETE/i);
-});
-test('a grant evidence can no longer be created', () => {
-    const f = fixture();
-    assert.throws(() => validateEvidence({ type: 'grant', clientId: f.ids.client, cnpj: '12345678000195', evidenceHash: 'a'.repeat(64), validFrom: 1, validUntil: 2, revoked: false, recipient: A, authorized: true }, f.store.cipher), /EVIDENCE_TYPE_INVALID/);
-});
-test('a registered address does not release an NFSe without attestation', async () => {
-    const f = fixture(); await f.service.scan(); f.attach('nfse'); f.store.data.documents.clear(); await f.service.scan();
-    assert.equal(f.events().length, 0); assert.ok(f.store.data.audit.some(a => a.code === 'DOCUMENT_UNVERIFIED'));
 });
 test('financial flags stay off by default', () => {
     assert.deepEqual(configuration({}), { enabled: false, worker: false });
