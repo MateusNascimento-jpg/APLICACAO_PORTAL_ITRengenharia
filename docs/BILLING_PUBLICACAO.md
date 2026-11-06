@@ -50,16 +50,16 @@ Dispensa cadastrar clientes no ENV. Não exige migration: o marco fica em uma li
 5. [ ] Se aparecer `GENERAL_ACTIVATION_INCOMPLETE`, o marco não foi gravado e a varredura seguinte recomeça. Até lá, vale só a lista do piloto
 6. [ ] Lançar um cliente de teste completo e confirmar a entrega do primeiro boleto
 
-**Fica em silêncio para sempre:** tudo o que existia antes do marco, mesmo que o worker estivesse desligado. Isso inclui boletos e NFSe anexados, pagamentos, parcelas criadas e mensagens pendentes de quem não está na lista do piloto. Uma parcela ilegível na passagem também fica de fora: sem histórico, só entra em silêncio; com histórico, sua próxima leitura correta é silenciosa.
+**Parcelas anteriores ao marco ficam em silêncio para sempre,** inclusive para boleto, NFSe e confirmação de pagamento, mesmo que esses eventos ocorram depois do marco. A regra é conferida pela data de criação no Airtable, na varredura e em cada prova de envio. Parcela sem data válida também fica de fora.
 
-**Segue as regras D1–D9 depois do marco:** parcelas novas de qualquer cliente válido, e também eventos novos em parcelas antigas: NFSe ou boleto anexados pela primeira vez e pagamento registrado. Substituir um boleto já existente na baseline continua sem gerar mensagem.
+**Parcelas criadas depois do marco, de qualquer cliente válido,** seguem as regras D1–D9: disponibilidade, atualização, lembretes, NFSe e confirmação de pagamento. Uma parcela nova de cliente antigo também entra. Uma parcela criada durante a passagem silenciosa, já com documento anexado, não anuncia esse documento; os eventos seguintes valem normalmente.
 
-**Lista do piloto:** quem continua nela mantém o fluxo em andamento ao atravessar o marco. Quem saiu perde os lembretes das parcelas já em curso. A lista pode ficar vazia no modo geral.
+**Lista do piloto:** quem continua nela mantém o fluxo ao atravessar o marco, inclusive em parcelas antigas, porque foi liberado pela lista. Para que o silêncio valha para todos, deixe a lista vazia no modo geral.
 
 **Pausar e voltar ao piloto:**
 
-- Desligar só o worker pausa e mantém o marco. Na volta, documentos e pagamentos registrados durante a pausa geram mensagens, porque são posteriores ao marco. Lembretes de dias passados não são recuperados.
-- Voltar a `PORTAL_BILLING_MODE=pilot` com o worker ligado invalida o marco na primeira varredura (`GENERAL_MODE_REVOKED`). Religar `general` faz nova passagem silenciosa e grava outro marco, e as parcelas anteriores a ele deixam de receber lembretes. Use esse caminho quando a pausa for longa e o acumulado não deva sair.
+- Desligar só o worker pausa e mantém o marco. Na volta, documentos e pagamentos das parcelas novas registrados durante a pausa geram mensagens. Lembretes de dias passados não são recuperados.
+- Voltar a `PORTAL_BILLING_MODE=pilot` com o worker ligado invalida o marco na primeira varredura (`GENERAL_MODE_REVOKED`). Religar `general` faz nova passagem silenciosa e grava outro marco, e as parcelas anteriores a ele deixam de receber qualquer mensagem. Use esse caminho quando a pausa for longa e o acumulado não deva sair.
 
 ## Rollback
 

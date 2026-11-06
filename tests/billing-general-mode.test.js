@@ -132,13 +132,11 @@ test('a parcel with a broken chain at the mark, fixed afterwards, stays silent',
     n.invoice.fields[N.CONTRATO] = link; await s.scan(); tick(f); await s.scan();
     assert.equal(f.events().length, 0);
 });
-test('a known parcel unreadable at the mark does not release what arrived before it', async () => {
+test('a known parcel unreadable at the mark stays silent once it is readable again', async () => {
     const f = await baselined(); f.attach('boleto'); const link = f.invoice.fields[N.CONTRATO]; delete f.invoice.fields[N.CONTRATO]; tick(f);
-    const s = await activated(f); assert.equal(state(f).quiet, true);
-    f.invoice.fields[N.CONTRATO] = link; await s.scan(); tick(f); await s.scan();
-    assert.equal(f.events().length, 0); assert.equal(state(f).quiet, undefined);
-    f.attach('nfse'); await s.scan();
-    assert.deepEqual(f.events().map(e => e.payload.type), ['NFSE_AVAILABLE'], 'the silence covers one reading, not the future');
+    const s = await activated(f);
+    f.invoice.fields[N.CONTRATO] = link; await s.scan(); tick(f); f.attach('nfse'); await s.scan();
+    assert.equal(f.events().length, 0);
 });
 test('a document unreadable at the mark does not go out once it becomes readable', async () => {
     const f = await baselined(); f.invoice.fields[N.BOLETO] = [{ id: 'attGGGGGGGGGGGGGG', type: 'image/png', size: 10, url: 'https://v5.airtableusercontent.com/boleto' }]; tick(f);
@@ -236,16 +234,48 @@ test('after the mark: a new parcel of an old client goes out, and its old parcel
     f.tables[S.TABELAS.NOTAS_FISCAIS].push(fresh); f.contract.fields[S.CONTRATOS.PARCELAS] = [old.id, fresh.id]; await s.scan();
     assert.deepEqual(f.events().map(e => [e.payload.type, e.payload.invoiceId]), [['BOLETO_AVAILABLE', fresh.id]]);
 });
-test('after the mark: an old parcel only gets new events, and replacing its boleto announces nothing', async () => {
+test('after the mark: an old parcel stays silent, for a replaced boleto, a new NFSe and a payment', async () => {
     const f = fixture(); f.attach('boleto'); await pilotOnly(f, []).scan(); tick(f);
     const s = await activated(f);
     f.invoice.fields[N.BOLETO] = pdf(f, 'boleto', NEW_BOLETO); await s.scan(); tick(f, 1000000); await s.scan();
-    assert.equal(f.events().length, 0);
     f.attach('nfse'); await s.scan();
-    assert.deepEqual(f.events().map(e => e.payload.type), ['NFSE_AVAILABLE']);
-    await f.sent();
     f.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await s.scan(); await s.scan();
+    assert.equal(f.events().length, 0); assert.equal(state(f).transitionId, null); assert.equal(state(f).stopped, true);
+});
+test('after the mark: an old parcel without a boleto stays silent when it receives its first one', async () => {
+    const f = await baselined(), s = await activated(f); f.attach('boleto'); await s.scan();
+    for (const day of ['05', '06', '11']) { f.setNow(`2026-11-${day}T12:00:00Z`); await s.scan(); }
+    assert.equal(f.events().length, 0);
+});
+test('after the mark: an old parcel of a client that also has new parcels stays silent', async () => {
+    const f = await baselined(), s = await activated(f);
+    const fresh = { id: 'recPPPPPPPPPPPPPP', createdTime: iso(f.clock()), fields: { ...f.invoice.fields, [N.BOLETO]: pdf(f, 'boleto', NEW_BOLETO), [N.VENCIMENTO]: '2026-12-01' } };
+    f.tables[S.TABELAS.NOTAS_FISCAIS].push(fresh); f.contract.fields[S.CONTRATOS.PARCELAS] = [f.invoice.id, fresh.id]; f.attach('boleto'); await s.scan();
+    assert.deepEqual(f.events().map(e => e.payload.invoiceId), [fresh.id]);
+});
+test('a parcel created at the exact mark, or without a valid date, does not start the flow', async t => {
+    for (const [name, created] of [['no marco', f => iso(f.store.data.general.activatedAt)], ['sem data', () => undefined], ['data inválida', () => 'ontem']]) await t.test(name, async () => {
+        const f = await baselined(), s = await activated(f), n = register(f); n.invoice.createdTime = created(f); n.invoice.fields[N.BOLETO] = pdf(f, 'boleto', NEW_BOLETO); await s.scan();
+        n.invoice.fields[N.NFSE] = pdf(f, 'nfse', NEW_NFSE); await s.scan();
+        assert.equal(f.events().length, 0);
+    });
+});
+test('the proof refuses an old parcel, even for an event that claims to be new', async () => {
+    const f = await baselined(), s = await activated(f), n = register(f); n.invoice.fields[N.BOLETO] = pdf(f, 'boleto', NEW_BOLETO); await s.scan();
+    const [e] = f.events(); await s.validate(e.payload);
+    n.invoice.createdTime = '2020-01-01T00:00:00Z';
+    await assert.rejects(s.validate(e.payload), /CLIENT_NOT_RELEASED/);
+});
+test('after the mark: a new parcel keeps its legitimate events: update, reminders and payment', async () => {
+    const f = await baselined(), s = await activated(f), n = register(f); n.invoice.fields[N.BOLETO] = pdf(f, 'boleto', NEW_BOLETO); await s.scan(); await f.sent();
+    n.invoice.fields[N.VENCIMENTO] = '2026-11-25'; await s.scan(); tick(f, 1000000); await s.scan();
+    assert.equal(of(f, 'BOLETO_UPDATED').length, 1); await f.sent();
+    f.setNow('2026-11-24T12:00:00Z'); await s.scan(); assert.equal(of(f, 'BOLETO_D_MINUS_1').length, 1); await f.sent();
+    f.setNow('2026-11-25T12:00:00Z'); await s.scan(); assert.equal(of(f, 'BOLETO_DUE_TODAY').length, 1); await f.sent();
+    f.setNow('2026-11-30T12:00:00Z'); await s.scan(); assert.equal(of(f, 'BOLETO_OVERDUE_REMINDER').length, 1); await f.sent();
+    n.invoice.fields[N.STATUS_PAGAMENTO] = 'Pago'; await s.scan(); await s.scan();
     assert.equal(of(f, 'BOLETO_PAYMENT_RECORDED').length, 1);
+    await s.validate(of(f, 'BOLETO_PAYMENT_RECORDED')[0].payload);
 });
 test('the proof for a new client carries the same guarantees', async () => {
     const f = await baselined(), s = await activated(f), n = register(f); n.invoice.fields[N.BOLETO] = pdf(f, 'boleto', NEW_BOLETO); await s.scan();
