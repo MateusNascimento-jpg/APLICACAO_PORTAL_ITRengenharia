@@ -78,3 +78,17 @@ test('recovery: a failure in the middle of a delivery leaves the event retryable
     for (const e of await store.due(f.clock())) await w.deliver(e);
     assert.equal((await events())[0].status, 'retry');
 });
+test('general mode: the mark is durable, encrypted, in its own row, and the baseline row is untouched', { skip }, async t => {
+    const { pool, f, store, events } = await setup(t);
+    const source = createSource({ airtable: f.airtable, cipher: store.cipher, pdfReader: async url => { const bytes = f.pdfs[url.includes('nfse') ? 'nfse' : 'boleto']; return { bytes, hash: hash(bytes) }; } });
+    const general = () => createService({ store, source, clock: f.clock, mode: 'general' });
+    await general().scan();
+    const [[before]] = await pool.query("SELECT data FROM portal_billing_meta WHERE id = 'baseline'");
+    f.attach('boleto');
+    assert.equal((await general().scan()).general, 'activated');
+    const [[after]] = await pool.query("SELECT data FROM portal_billing_meta WHERE id = 'baseline'"); assert.equal(after.data, before.data);
+    const [[row]] = await pool.query("SELECT data FROM portal_billing_meta WHERE id = 'general'"); assert.doesNotMatch(row.data, /activatedAt/);
+    assert.equal((await general().scan()).general, undefined); assert.equal((await events()).length, 0);
+    const conn = await pool.getConnection();
+    try { assert.equal((await buildReport(conn, f.clock())).generalMode.active, true); } finally { conn.release(); }
+});

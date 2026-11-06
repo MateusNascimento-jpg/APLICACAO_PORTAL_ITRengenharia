@@ -34,6 +34,8 @@ O campo `digest` é o SHA-256 do relatório e serve para conferir que o registro
 
 `baselineComplete: false` ou `truncated: true` também pedem atenção: no primeiro caso, o baseline ainda não terminou; no segundo, a lista foi cortada em 500 linhas.
 
+`generalMode` informa se o marco do modo geral está ativo, conforme a auditoria. `GENERAL_ACTIVATION_INCOMPLETE` em `errors` indica que a passagem silenciosa não leu tudo: o marco não foi gravado e a varredura seguinte recomeça.
+
 ## Registro
 
 Anote data, responsável, código de saída, `digest` e ações tomadas. A ITR precisa definir um responsável e um substituto antes da ativação.

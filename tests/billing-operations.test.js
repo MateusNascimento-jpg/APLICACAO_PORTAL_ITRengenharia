@@ -21,6 +21,7 @@ function reportConn({ meta = [{ id: 'baseline' }], counts = [], open = [], stuck
         if (text.includes('GROUP BY status')) return [counts];
         if (text.includes("status IN ('uncertain', 'blocked')")) return [open];
         if (text.includes("status = 'sending'")) return [stuck];
+        if (text.includes("subject = 'general-mode'")) return [[]];
         if (text.includes('portal_billing_audit')) return [audit.filter(a => a.last_at >= params[0])];
         return [[]];
     } };
@@ -141,4 +142,18 @@ test('migration script: the plan runs for real without touching the database', (
 test('the application itself never applies the migration', () => {
     const server = fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8'), index = fs.readFileSync(path.join(__dirname, '../lib/billing/index.js'), 'utf8');
     assert.doesNotMatch(server + index, /migrate/);
+});
+test('report: shows the general mode from the audit, and a failed activation needs attention', async () => {
+    const general = codes => ({ sql: [], async query(text) {
+        this.sql.push(text);
+        if (text.includes("subject = 'general-mode'")) return [codes];
+        if (text.includes('portal_billing_meta')) return [[{ id: 'baseline' }]];
+        return [[]];
+    } });
+    assert.deepEqual((await buildReport(general([]), NOW)).generalMode, { active: false, lastActivatedAt: null, lastRevokedAt: null });
+    const on = await buildReport(general([{ code: 'GENERAL_MODE_ACTIVATED', last_at: 10 }]), NOW);
+    assert.deepEqual(on.generalMode, { active: true, lastActivatedAt: 10, lastRevokedAt: null }); assert.equal(on.attention, false);
+    assert.equal((await buildReport(general([{ code: 'GENERAL_MODE_ACTIVATED', last_at: 10 }, { code: 'GENERAL_MODE_REVOKED', last_at: 20 }]), NOW)).generalMode.active, false);
+    assert.equal(sectionOf('GENERAL_MODE_ACTIVATED'), null); assert.equal(sectionOf('GENERAL_MODE_REVOKED'), null);
+    assert.equal(sectionOf('GENERAL_ACTIVATION_INCOMPLETE'), 'errors');
 });

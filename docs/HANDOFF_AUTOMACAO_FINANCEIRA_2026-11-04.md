@@ -51,6 +51,7 @@ export NODE_OPTIONS=--require=./tests/offline-guard.cjs NODE_ENV=test
 | D8 | Lembrete só é suprimido com recibo de entrega do mesmo dia para o destinatário |
 | D9 | `BILLING_FINANCE_CONTACT_EMAIL` opcional, só nas Notificações; endereço oficial pendente |
 | Piloto | `PORTAL_BILLING_PILOT_CLIENTS`: IDs exatos, lista vazia por padrão |
+| Modo geral | `PORTAL_BILLING_MODE=general`: todo cliente válido, com marco durável e sem mensagens anteriores a ele. Padrão `pilot` |
 | PDF | Sem leitor ou OCR, por decisão da ITR |
 
 ## Situação

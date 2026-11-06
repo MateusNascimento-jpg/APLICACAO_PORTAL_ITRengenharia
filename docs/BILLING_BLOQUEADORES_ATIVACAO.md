@@ -68,6 +68,10 @@ A baseline é preservada: boletos existentes na ativação não recebem disponib
 
 `PORTAL_BILLING_PILOT_CLIENTS` lista os IDs exatos dos clientes liberados. A lista começa vazia, então ninguém é elegível, e um formato inválido impede a subida. A conferência acontece no agendamento e em cada prova de envio. Documentos e pagamentos vistos antes da liberação nunca geram mensagens. Um cliente retirado tem as mensagens pendentes canceladas; se voltar, recebe só as próximas ocorrências.
 
+## Modo geral
+
+`PORTAL_BILLING_MODE=general` dispensa a lista, depois de um marco durável gravado por uma passagem silenciosa completa. Nada anterior ao marco gera mensagem. O padrão continua `pilot`, e as validações não mudam. Procedimento e efeitos em `BILLING_PUBLICACAO.md`. **O modo geral amplia a todos os clientes o alcance do bloqueador de segurança acima.**
+
 ## Homologação obrigatória
 
 1. Verificar por acesso somente leitura o campo `fldVMUZcwtKKrrpDN` e a paridade com o Airtable real.

@@ -2,12 +2,13 @@
 const { createCipher } = require('../../lib/billing/crypto');
 const { canonical } = require('../../lib/billing/protocol');
 function memoryStore() {
-    let data = { meta: null, states: new Map(), events: new Map(), versions: new Map(), audit: [], nonces: new Set() };
+    let data = { meta: null, general: null, states: new Map(), events: new Map(), versions: new Map(), audit: [], nonces: new Set() };
     const locks = new Set();
     let failCommit = false;
     const copy = structuredClone;
     const repo = {
         meta: async () => copy(data.meta), saveMeta: async d => { data.meta = copy(d); },
+        generalMode: async () => copy(data.general), saveGeneralMode: async d => { data.general = copy(d); },
         state: async id => copy(data.states.get(id)), saveState: async (id, d) => { data.states.set(id, copy(d)); },
         event: async id => copy(data.events.get(id)),
         events: async id => copy([...data.events.values()].filter(e => e.payload.invoiceId === id)),

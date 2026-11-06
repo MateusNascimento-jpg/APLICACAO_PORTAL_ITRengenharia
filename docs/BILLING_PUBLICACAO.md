@@ -39,6 +39,28 @@ Publique as Notificações e depois o Portal, em sequência.
 9. [ ] Lançar um boleto novo do piloto e confirmar a entrega; só documentos lançados depois da liberação geram mensagens
 10. [ ] Rodar a rotina diária e ampliar a lista aos poucos
 
+## Ativar o modo geral
+
+Dispensa cadastrar clientes no ENV. Não exige migration: o marco fica em uma linha própria de `portal_billing_meta`, e a linha do baseline não muda.
+
+1. [ ] `npm run billing:report`: `baselineComplete: true`, sem `openEvents` nem `stuckEvents`, e backup do MySQL feito
+2. [ ] Portal publicado com este código, em uma única instância durante a troca
+3. [ ] Definir `PORTAL_BILLING_MODE=general` e reiniciar o Portal, com `PORTAL_BILLING_ENABLED=true` e `PORTAL_BILLING_WORKER_ENABLED=true`
+4. [ ] Na varredura seguinte, a passagem silenciosa lê todas as parcelas e nada novo é enfileirado. Ao concluir, grava o marco. Confirmar `generalMode.active: true` em `npm run billing:report`
+5. [ ] Se aparecer `GENERAL_ACTIVATION_INCOMPLETE`, o marco não foi gravado e a varredura seguinte recomeça. Até lá, vale só a lista do piloto
+6. [ ] Lançar um cliente de teste completo e confirmar a entrega do primeiro boleto
+
+**Fica em silêncio para sempre:** tudo o que existia antes do marco, mesmo que o worker estivesse desligado. Isso inclui boletos e NFSe anexados, pagamentos, parcelas criadas e mensagens pendentes de quem não está na lista do piloto. Uma parcela ilegível na passagem também fica de fora: sem histórico, só entra em silêncio; com histórico, sua próxima leitura correta é silenciosa.
+
+**Segue as regras D1–D9 depois do marco:** parcelas novas de qualquer cliente válido, e também eventos novos em parcelas antigas: NFSe ou boleto anexados pela primeira vez e pagamento registrado. Substituir um boleto já existente na baseline continua sem gerar mensagem.
+
+**Lista do piloto:** quem continua nela mantém o fluxo em andamento ao atravessar o marco. Quem saiu perde os lembretes das parcelas já em curso. A lista pode ficar vazia no modo geral.
+
+**Pausar e voltar ao piloto:**
+
+- Desligar só o worker pausa e mantém o marco. Na volta, documentos e pagamentos registrados durante a pausa geram mensagens, porque são posteriores ao marco. Lembretes de dias passados não são recuperados.
+- Voltar a `PORTAL_BILLING_MODE=pilot` com o worker ligado invalida o marco na primeira varredura (`GENERAL_MODE_REVOKED`). Religar `general` faz nova passagem silenciosa e grava outro marco, e as parcelas anteriores a ele deixam de receber lembretes. Use esse caminho quando a pausa for longa e o acumulado não deva sair.
+
 ## Rollback
 
 Desligar, nesta ordem, `PORTAL_BILLING_WORKER_ENABLED`, `PORTAL_BILLING_ENABLED` e `BILLING_EMAILS_ENABLED`. Preservar fila, auditoria e recibos, e conciliar as entregas incertas antes de religar. As tabelas `portal_billing_*` podem permanecer.
