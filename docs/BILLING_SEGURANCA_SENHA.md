@@ -1,6 +1,6 @@
 # Senha do Portal derivada do CNPJ: análise e proposta
 
-**Situação:** somente análise. O login e os e-mails não foram alterados.
+**Situação:** Fase 1 implementada em 06/11/2026, só nos templates financeiros. A Fase 2 não foi feita, e **sem ela a liberação geral a clientes reais continua impedida**. O login e os e-mails comerciais não foram alterados.
 
 ## O problema
 
@@ -10,7 +10,7 @@ A senha do cliente é a sigla seguida dos 6 primeiros dígitos do CNPJ (`lib/por
 - **Não pode ser trocada:** as rotas de troca de senha estão desativadas e respondem HTTP 410. `config.js` recusa outro valor em `CLIENT_AUTH_MODE`.
 - **Mesma para toda a empresa:** não há como revogar o acesso de uma só pessoa.
 - **Enviada por e-mail:** a recuperação manda a senha em texto (`access_email_template.js`).
-- **A automação amplia a exposição:** os e-mails financeiros exibem o CNPJ completo a todos os endereços do cadastro (D1).
+- **A automação ampliaria a exposição:** os e-mails financeiros exibiam o CNPJ completo a todos os endereços do cadastro (D1). A Fase 1 retirou essa linha.
 
 Existem proteções: limite de tentativas por IP e por conta, atraso nas falhas e auditoria. Elas dificultam a tentativa, mas a senha continua previsível.
 
@@ -31,6 +31,15 @@ Existem proteções: limite de tentativas por IP e por conta, atraso nas falhas 
 - **Precisa conferir:** se as telas de criação e redefinição de senha ainda funcionam, porque hoje são redirecionadas, e como comunicar os clientes.
 - **Regressão:** exige nova homologação do login, por isso depende da sua aprovação.
 
+## Risco residual depois da Fase 1
+
+Ocultar o CNPJ não torna a senha segura:
+
+- **Anexos:** boletos e NFSe normalmente trazem o CNPJ do cliente, e o sistema não lê nem altera esses PDFs. Quem recebe o e-mail continua vendo o número no anexo.
+- **Fórmula:** os 6 primeiros dígitos do CNPJ são públicos, e a sigla pode ser conhecida ou adivinhada.
+- **Outros canais:** os e-mails comerciais e os mecanismos homologados, como a recuperação com senha em texto, não mudaram.
+- **Dado interno:** o CNPJ continua na prova autenticada entre Portal e Notificações, exigida pelo contrato, mas não aparece no e-mail nem nos recibos.
+
 ## Recomendação
 
-Aplicar a Fase 1 antes do piloto e a Fase 2 antes de liberar além dos clientes do piloto. Até lá, o risco precisa de aceite formal da ITR.
+A Fase 1 está aplicada. A Fase 2 é a correção necessária e **deve ser concluída antes da liberação geral a clientes reais**. Ela altera a autenticação e exige aprovação e homologação próprias.

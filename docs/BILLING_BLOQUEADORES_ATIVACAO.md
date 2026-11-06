@@ -4,9 +4,9 @@ Nenhum item abaixo está resolvido. As flags financeiras devem continuar desliga
 
 ## Bloqueador de segurança
 
-**Credencial inicial derivada do CNPJ.** A senha gerada do Portal é a sigla do cliente seguida dos 6 primeiros dígitos do CNPJ (`lib/portal-access.js`, `senhaGerada`). Os e-mails financeiros exibem o CNPJ completo, e a decisão D1 os envia a todos os endereços cadastrados. Cada destinatário recebe a parte numérica da credencial; somente a sigla fica fora do e-mail.
+**Credencial derivada do CNPJ: impede a liberação geral a clientes reais.** A senha gerada do Portal é a sigla do cliente seguida dos 6 primeiros dígitos do CNPJ (`lib/portal-access.js`, `senhaGerada`).
 
-Resolver antes da ativação. Os templates e a presença do CNPJ não foram alterados. Análise e proposta em `BILLING_SEGURANCA_SENHA.md`.
+Por decisão de 06/11/2026, o corpo dos e-mails financeiros não exibe mais o CNPJ. **Isso reduz a exposição, mas não torna a senha segura:** a fórmula continua previsível, e boletos e NFSe anexados normalmente trazem o CNPJ do cliente. A correção é a senha pessoal por cliente, e o login não foi alterado. Risco residual e correção em `BILLING_SEGURANCA_SENHA.md`.
 
 ## Aprovações de documentos
 
@@ -70,7 +70,7 @@ A baseline é preservada: boletos existentes na ativação não recebem disponib
 
 ## Modo geral
 
-`PORTAL_BILLING_MODE=general` dispensa a lista, depois de um marco durável gravado por uma passagem silenciosa completa. Nada anterior ao marco gera mensagem. O padrão continua `pilot`, e as validações não mudam. Procedimento e efeitos em `BILLING_PUBLICACAO.md`. **O modo geral amplia a todos os clientes o alcance do bloqueador de segurança acima.**
+`PORTAL_BILLING_MODE=general` dispensa a lista, depois de um marco durável gravado por uma passagem silenciosa completa. Só parcelas criadas depois do marco iniciam o fluxo; as anteriores ficam em silêncio, inclusive para boleto, NFSe e confirmação de pagamento. O padrão continua `pilot`, e as validações não mudam. Procedimento e efeitos em `BILLING_PUBLICACAO.md`. **O modo geral amplia a todos os clientes o alcance do bloqueador de segurança acima.**
 
 ## Homologação obrigatória
 
