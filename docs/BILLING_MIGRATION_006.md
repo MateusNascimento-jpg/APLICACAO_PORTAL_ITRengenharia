@@ -26,7 +26,9 @@ Saída `0` indica banco conforme, `2` indica tabelas ou colunas faltando e `1` i
 
 `tests/billing-mysql.test.js` cobre migrations, cifragem, locks, transações, nonces, reinício e falhas. Sem as variáveis abaixo, os testes de banco ficam como pulados.
 
-**Último resultado:** 7/7, além de `billing-migrate` e `billing-report` com saída 0. A instância foi criada só para isso, com pasta de dados temporária, `--no-defaults`, escuta em 127.0.0.1, porta própria e usuário restrito ao banco, e foi apagada ao final. O servidor MySQL da máquina não foi acessado.
+**Último resultado (06/11/2026, MySQL 8.0.46, Node.js 22.22.0):** 10/10. A instância foi criada só para isso, com pasta de dados temporária, `--no-defaults`, escuta em 127.0.0.1, porta própria e usuário restrito ao banco, e foi apagada ao final. O servidor MySQL da máquina e o banco `portal_itr` não foram acessados.
+
+**Marco do modo geral sob queda real do servidor (`taskkill /F`):** marco gravado sem commit desapareceu depois da queda; passagem interrompida não deixou marco; marco e baseline confirmados continuaram idênticos depois de cada religamento, sem nova ativação; a parcela antiga ficou em silêncio; a parcela nova gerou um único evento, que sobreviveu à queda seguinte.
 
 ```bash
 export BILLING_LOCAL_DB_NAME=itr_billing_test_homologacao BILLING_LOCAL_DB_USER=<usuário> BILLING_LOCAL_DB_PASSWORD=<senha>

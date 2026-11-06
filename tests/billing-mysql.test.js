@@ -5,7 +5,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { localOptions } = require('../scripts/billing-local');
-const { fixture } = require('./helpers/billing-fixtures');
+const { fixture, S } = require('./helpers/billing-fixtures');
 const { createStore } = require('../lib/billing/store');
 const { createSource } = require('../lib/billing/source');
 const { createService } = require('../lib/billing/service');
@@ -78,9 +78,10 @@ test('recovery: a failure in the middle of a delivery leaves the event retryable
     for (const e of await store.due(f.clock())) await w.deliver(e);
     assert.equal((await events())[0].status, 'retry');
 });
+const sourceOf = (f, store) => createSource({ airtable: f.airtable, cipher: store.cipher, pdfReader: async url => { const bytes = f.pdfs[url.includes('nfse') ? 'nfse' : 'boleto']; return { bytes, hash: hash(bytes) }; } });
 test('general mode: the mark is durable, encrypted, in its own row, and the baseline row is untouched', { skip }, async t => {
     const { pool, f, store, events } = await setup(t);
-    const source = createSource({ airtable: f.airtable, cipher: store.cipher, pdfReader: async url => { const bytes = f.pdfs[url.includes('nfse') ? 'nfse' : 'boleto']; return { bytes, hash: hash(bytes) }; } });
+    const source = sourceOf(f, store);
     const general = () => createService({ store, source, clock: f.clock, mode: 'general' });
     await general().scan();
     const [[before]] = await pool.query("SELECT data FROM portal_billing_meta WHERE id = 'baseline'");
@@ -91,4 +92,32 @@ test('general mode: the mark is durable, encrypted, in its own row, and the base
     assert.equal((await general().scan()).general, undefined); assert.equal((await events()).length, 0);
     const conn = await pool.getConnection();
     try { assert.equal((await buildReport(conn, f.clock())).generalMode.active, true); } finally { conn.release(); }
+});
+test('general mode: a failure while recording the mark is rolled back, and the next scan activates', { skip }, async t => {
+    const { pool, f, store } = await setup(t), source = sourceOf(f, store);
+    const broken = { ...store, locked: (scope, work) => store.locked(scope, repo => {
+        const failing = Object.create(repo);
+        failing.audit = async (subject, code, now) => { if (code === 'GENERAL_MODE_ACTIVATED') throw new Error('MYSQL_UNAVAILABLE'); return repo.audit(subject, code, now); };
+        return work(failing);
+    }) };
+    await createService({ store, source, clock: f.clock, mode: 'general' }).scan();
+    await assert.rejects(createService({ store: broken, source, clock: f.clock, mode: 'general' }).scan(), /MYSQL_UNAVAILABLE/);
+    const [rows] = await pool.query("SELECT id FROM portal_billing_meta WHERE id = 'general'"); assert.equal(rows.length, 0);
+    assert.equal((await createService({ store, source, clock: f.clock, mode: 'general' }).scan()).general, 'activated');
+});
+test('general mode: after a restart of the Portal the mark holds, old parcels stay silent and new ones start', { skip }, async t => {
+    const { pool, f, store, events } = await setup(t), first = createService({ store, source: sourceOf(f, store), clock: f.clock, mode: 'general' });
+    await first.scan(); f.setNow(f.clock() + 60000); assert.equal((await first.scan()).general, 'activated');
+    const [[before]] = await pool.query("SELECT data FROM portal_billing_meta WHERE id = 'general'");
+    const pool2 = require('mysql2/promise').createPool({ ...options, connectionLimit: 8 }); t.after(() => pool2.end());
+    const store2 = createStore(pool2, key), source2 = sourceOf(f, store2), restarted = createService({ store: store2, source: source2, clock: f.clock, mode: 'general' });
+    f.setNow(f.clock() + 60000); f.attach('boleto');
+    const created = new Date(f.clock()).toISOString(); f.setNow(f.clock() + 60000);
+    assert.equal((await restarted.scan()).general, undefined);
+    const [[after]] = await pool2.query("SELECT data FROM portal_billing_meta WHERE id = 'general'"); assert.equal(after.data, before.data);
+    assert.equal((await events()).length, 0);
+    const fresh = { id: 'recPPPPPPPPPPPPPP', createdTime: created, fields: { ...f.invoice.fields, [S.NOTAS_FISCAIS.VENCIMENTO]: '2026-12-01' } };
+    f.tables[S.TABELAS.NOTAS_FISCAIS].push(fresh); f.contract.fields[S.CONTRATOS.PARCELAS] = [f.invoice.id, fresh.id];
+    await restarted.scan();
+    assert.deepEqual((await events()).map(e => [e.payload.type, e.payload.invoiceId]), [['BOLETO_AVAILABLE', fresh.id]]);
 });
