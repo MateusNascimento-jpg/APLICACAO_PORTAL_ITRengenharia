@@ -714,7 +714,13 @@ app.get('/api/navegacao', autenticado, somenteClientePortal, async (req, res) =>
     try {
         const [relatorios, resultado] = await Promise.all([
             temTrabalhosAutorizados(req.session.airtableId),
-            financeiroHabilitado() ? listarPropostasPorCnpj(req.session.documento) : { propostas: [] }
+            // Falha da base financeira (ex.: CNPJ duplicado) oculta só Propostas/Financeiro, nunca os relatórios.
+            financeiroHabilitado()
+                ? listarPropostasPorCnpj(req.session.documento).catch(error => {
+                    console.error(`[${req.requestId}] [NAVEGACAO_FINANCEIRO]`, error.message);
+                    return { propostas: [] };
+                })
+                : { propostas: [] }
         ]);
         return res.json({
             sucesso: true,

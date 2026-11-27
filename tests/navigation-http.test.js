@@ -19,6 +19,7 @@ let reports = false;
 let proposals = false;
 let proposalStatus = undefined;
 let failed = false;
+let financeFailed = false;
 const calls = [];
 const realLoad = Module._load;
 Module._load = function (request, parent, isMain) {
@@ -47,6 +48,7 @@ Module._load = function (request, parent, isMain) {
             habilitado: () => true,
             listarPropostasPorCnpj: async (cnpj) => {
                 calls.push(cnpj);
+                if (financeFailed) throw Error('FINANCE_DUPLICATE_CNPJ');
                 return { propostas: proposals ? [{ id: 'recP', status: proposalStatus }] : [] };
             },
         };
@@ -96,6 +98,12 @@ test('navegação: quatro cenários, sessão obrigatória, CNPJ da sessão e fal
     assert.deepEqual([...new Set(calls)].sort(), ['12345678000190', 'recAAAAAAAAAAAAAA'].sort());
     assert.equal((await get('')).status, 401);
     assert.equal((await get('Director')).status, 403);
+    // Base financeira com erro (ex.: CNPJ duplicado): relatórios continuam visíveis, Propostas/Financeiro ocultos.
+    financeFailed = true; reports = true; proposals = true; proposalStatus = 'Aceita';
+    const semFinanceiro = await get();
+    assert.equal(semFinanceiro.status, 200);
+    assert.deepEqual(await semFinanceiro.json(), { sucesso: true, relatorios: true, propostas: false, financeiro: false });
+    financeFailed = false;
     failed = true;
     assert.equal((await get()).status, 503);
 });
